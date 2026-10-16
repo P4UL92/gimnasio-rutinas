@@ -136,5 +136,56 @@ assert.equal(
   'Al recorrer desde Jueves, Sábado pasa al Domingo'
 );
 
+// 9. Verificar Cronómetro de Sesión (Inicio, Vuelta, Pausa, Reinicio)
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas de ilustraciones SVG, mapa anatómico, gráficos estadísticos, cargas (kg/Nivel), series 4x12 y excepciones al Domingo pasaron con éxito.');
+app.selectDay('lunes');
+assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
+app.startSessionStopwatch();
+assert.equal(doc.getElementById('btn-stopwatch-toggle').textContent.trim(), '⏸ Pausar');
+assert.ok(app.getStopwatchElapsedMs() >= 0);
+
+app.lapSessionStopwatch();
+const laps = doc.querySelectorAll('#stopwatch-laps-list .lap-item');
+assert.equal(laps.length, 1, 'Debe haber 1 vuelta registrada');
+assert.ok(laps[0].textContent.includes('Vuelta 1'));
+
+app.pauseSessionStopwatch();
+assert.equal(doc.getElementById('btn-stopwatch-toggle').textContent.trim(), '▶ Iniciar');
+
+app.resetSessionStopwatch();
+assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
+assert.equal(doc.querySelectorAll('#stopwatch-laps-list .lap-item').length, 0);
+
+// 10. Verificar Cronómetro de Serie (TUT - Time Under Tension) y avance de serie
+const tutButtons = doc.querySelectorAll('.btn-tut-stopwatch');
+assert.equal(tutButtons.length, 6, 'Cada ejercicio debe tener su botón de cronómetro de serie (TUT)');
+
+const firstEx = state.schedule.lunes.exercises[0];
+const initialDoneSets = (firstEx.completedSets || []).filter(Boolean).length;
+app.startTutStopwatch('lunes', firstEx.id);
+const timingBtn = doc.querySelector(`.btn-tut-stopwatch[data-exercise-id="${firstEx.id}"]`);
+assert.ok(timingBtn.classList.contains('is-timing'), 'El botón debe activarse en modo cronometraje');
+
+app.stopTutStopwatch();
+const afterDoneSets = (firstEx.completedSets || []).filter(Boolean).length;
+assert.equal(afterDoneSets, initialDoneSets + 1, 'Al finalizar TUT debe marcar la serie como completada');
+
+// 11. Verificar Modo Flotante Dual (Descanso vs Cronómetro)
+app.switchFloatingTimerMode('stopwatch');
+assert.equal(doc.getElementById('panel-timer-stopwatch').hidden, false);
+assert.equal(doc.getElementById('panel-timer-rest').hidden, true);
+
+app.switchFloatingTimerMode('rest');
+assert.equal(doc.getElementById('panel-timer-rest').hidden, false);
+assert.equal(doc.getElementById('panel-timer-stopwatch').hidden, true);
+
+// 12. Verificar que el registro de sesión guarde la duración del cronómetro
+app.startSessionStopwatch();
+app.logCurrentWorkoutSession();
+const lastHistory = app.getState().history[0];
+assert.ok(typeof lastHistory.durationMs === 'number', 'El historial debe registrar durationMs');
+assert.ok(typeof lastHistory.durationText === 'string', 'El historial debe registrar durationText');
+app.resetSessionStopwatch();
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las pruebas de ilustraciones SVG, mapa anatómico, gráficos estadísticos, cargas (kg/Nivel), series 4x12, excepciones al Domingo y cronómetro (Sesión + TUT + Flotante dual) pasaron con éxito.');

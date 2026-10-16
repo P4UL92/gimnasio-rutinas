@@ -59,6 +59,33 @@
       </div>
     </section>
 
+    <!-- Barra del Cronómetro de Entrenamiento -->
+    <section class="workout-stopwatch-bar" id="workout-stopwatch-bar" aria-label="Cronómetro de entrenamiento">
+      <div class="stopwatch-main-row">
+        <div class="stopwatch-display-group">
+          <span class="stopwatch-pulse-dot" id="stopwatch-pulse-dot" aria-hidden="true"></span>
+          <div>
+            <span class="stopwatch-title">CRONÓMETRO DE SESIÓN</span>
+            <strong id="session-stopwatch-digits" class="stopwatch-digits">00:00:00</strong>
+          </div>
+        </div>
+        <div class="stopwatch-controls">
+          <button type="button" id="btn-stopwatch-toggle" class="btn-stopwatch-primary">
+            ▶ Iniciar
+          </button>
+          <button type="button" id="btn-stopwatch-lap" class="btn-stopwatch-secondary" disabled title="Marcar vuelta o serie">
+            🚩 Vuelta
+          </button>
+          <button type="button" id="btn-stopwatch-reset" class="btn-stopwatch-ghost" title="Reiniciar cronómetro">
+            ↺
+          </button>
+        </div>
+      </div>
+      <div id="stopwatch-laps-drawer" class="stopwatch-laps-drawer" hidden>
+        <ol id="stopwatch-laps-list" class="stopwatch-laps-list"></ol>
+      </div>
+    </section>
+
     <nav class="day-tabs-nav" aria-label="Días de la semana">
       <ul id="day-tabs-list" class="day-tabs-list">
         <!-- Generado dinámicamente por app.js -->
@@ -236,23 +263,47 @@
   </main>
 
   <aside id="rest-timer-bar" class="rest-timer-bar" aria-live="polite" hidden>
-    <div class="timer-info">
-      <svg class="timer-ring-svg" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
-        <circle cx="20" cy="20" r="16" fill="none" stroke="#1e293b" stroke-width="4"/>
-        <circle id="timer-ring-circle" cx="20" cy="20" r="16" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="100.5" stroke-dashoffset="0" stroke-linecap="round"/>
-      </svg>
-      <div>
-        <div class="timer-top-line">
-          <span class="timer-badge">⏱️ DESCANSO</span>
-          <strong id="timer-countdown" class="timer-digits">01:15</strong>
+    <div class="timer-mode-switcher">
+      <button type="button" id="btn-mode-rest" class="timer-mode-tab is-active">⏳ Descanso</button>
+      <button type="button" id="btn-mode-stopwatch" class="timer-mode-tab">⏱️ Cronómetro</button>
+    </div>
+
+    <!-- Panel 1: Temporizador de Descanso -->
+    <div id="panel-timer-rest" class="timer-panel-content">
+      <div class="timer-info">
+        <svg class="timer-ring-svg" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
+          <circle cx="20" cy="20" r="16" fill="none" stroke="#1e293b" stroke-width="4"/>
+          <circle id="timer-ring-circle" cx="20" cy="20" r="16" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="100.5" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="timer-top-line">
+            <span class="timer-badge">⏱️ DESCANSO</span>
+            <strong id="timer-countdown" class="timer-digits">01:15</strong>
+          </div>
+          <span id="timer-exercise-label" class="timer-ex-name">Serie completada</span>
         </div>
-        <span id="timer-exercise-label" class="timer-ex-name">Serie completada</span>
+      </div>
+      <div class="timer-controls">
+        <button type="button" id="btn-timer-minus" class="btn-timer-step">-15s</button>
+        <button type="button" id="btn-timer-plus" class="btn-timer-step">+15s</button>
+        <button type="button" id="btn-timer-skip" class="btn-timer-close">Listo</button>
       </div>
     </div>
-    <div class="timer-controls">
-      <button type="button" id="btn-timer-minus" class="btn-timer-step">-15s</button>
-      <button type="button" id="btn-timer-plus" class="btn-timer-step">+15s</button>
-      <button type="button" id="btn-timer-skip" class="btn-timer-close">Listo</button>
+
+    <!-- Panel 2: Cronómetro Flotante -->
+    <div id="panel-timer-stopwatch" class="timer-panel-content" hidden>
+      <div class="timer-info">
+        <span class="timer-badge timer-badge-live">⏱️ VIVO</span>
+        <div>
+          <strong id="floating-stopwatch-digits" class="timer-digits">00:00:00</strong>
+          <span id="floating-stopwatch-sub" class="timer-ex-name">Cronómetro activo</span>
+        </div>
+      </div>
+      <div class="timer-controls">
+        <button type="button" id="btn-floating-stopwatch-toggle" class="btn-timer-close">Pausa</button>
+        <button type="button" id="btn-floating-stopwatch-lap" class="btn-timer-step">🚩</button>
+        <button type="button" id="btn-floating-stopwatch-hide" class="btn-timer-step">✕</button>
+      </div>
     </div>
   </aside>
 

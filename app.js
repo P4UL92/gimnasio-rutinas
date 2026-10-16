@@ -86,6 +86,239 @@
     }
   }
 
+  // Cronómetro General de Sesión y Cronómetro TUT de Serie
+  const stopwatchState = {
+    running: false,
+    startTime: 0,
+    accumulatedMs: 0,
+    intervalId: null,
+    laps: []
+  };
+
+  const tutState = {
+    activeDayId: null,
+    activeExerciseId: null,
+    startTime: 0,
+    intervalId: null,
+    elapsedSeconds: 0
+  };
+
+  let currentFloatingTimerMode = 'rest'; // 'rest' | 'stopwatch'
+
+  function formatStopwatchTime(totalMs) {
+    const totalSec = Math.floor(totalMs / 1000);
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  function formatStopwatchDurationText(totalMs) {
+    const totalSec = Math.floor(totalMs / 1000);
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    if (hrs > 0) return `${hrs}h ${mins}m ${secs}s`;
+    if (mins > 0) return `${mins}m ${secs}s`;
+    return `${secs}s`;
+  }
+
+  function getStopwatchElapsedMs() {
+    if (!stopwatchState.running) return stopwatchState.accumulatedMs;
+    return stopwatchState.accumulatedMs + (Date.now() - stopwatchState.startTime);
+  }
+
+  function updateStopwatchDisplays() {
+    const elapsedMs = getStopwatchElapsedMs();
+    const formatted = formatStopwatchTime(elapsedMs);
+
+    const mainDigitsEl = document.getElementById('session-stopwatch-digits');
+    if (mainDigitsEl) mainDigitsEl.textContent = formatted;
+
+    const floatDigitsEl = document.getElementById('floating-stopwatch-digits');
+    if (floatDigitsEl) floatDigitsEl.textContent = formatted;
+
+    const dotEl = document.getElementById('stopwatch-pulse-dot');
+    if (dotEl) {
+      dotEl.classList.toggle('is-running', stopwatchState.running);
+    }
+
+    const toggleBtn = document.getElementById('btn-stopwatch-toggle');
+    if (toggleBtn) {
+      toggleBtn.textContent = stopwatchState.running ? '⏸ Pausar' : '▶ Iniciar';
+      toggleBtn.classList.toggle('is-active', stopwatchState.running);
+    }
+
+    const floatToggleBtn = document.getElementById('btn-floating-stopwatch-toggle');
+    if (floatToggleBtn) {
+      floatToggleBtn.textContent = stopwatchState.running ? 'Pausa' : 'Seguir';
+    }
+
+    const lapBtn = document.getElementById('btn-stopwatch-lap');
+    if (lapBtn) {
+      lapBtn.disabled = !stopwatchState.running && elapsedMs === 0;
+    }
+  }
+
+  function startSessionStopwatch() {
+    if (stopwatchState.running) return;
+    stopwatchState.running = true;
+    stopwatchState.startTime = Date.now();
+    if (stopwatchState.intervalId) clearInterval(stopwatchState.intervalId);
+    stopwatchState.intervalId = setInterval(updateStopwatchDisplays, 250);
+    updateStopwatchDisplays();
+  }
+
+  function pauseSessionStopwatch() {
+    if (!stopwatchState.running) return;
+    stopwatchState.accumulatedMs += Date.now() - stopwatchState.startTime;
+    stopwatchState.running = false;
+    if (stopwatchState.intervalId) {
+      clearInterval(stopwatchState.intervalId);
+      stopwatchState.intervalId = null;
+    }
+    updateStopwatchDisplays();
+  }
+
+  function toggleSessionStopwatch() {
+    if (stopwatchState.running) {
+      pauseSessionStopwatch();
+    } else {
+      startSessionStopwatch();
+    }
+  }
+
+  function resetSessionStopwatch() {
+    if (stopwatchState.intervalId) {
+      clearInterval(stopwatchState.intervalId);
+      stopwatchState.intervalId = null;
+    }
+    stopwatchState.running = false;
+    stopwatchState.startTime = 0;
+    stopwatchState.accumulatedMs = 0;
+    stopwatchState.laps = [];
+    renderStopwatchLaps();
+    updateStopwatchDisplays();
+  }
+
+  function lapSessionStopwatch() {
+    const elapsedMs = getStopwatchElapsedMs();
+    const lapTimeFormatted = formatStopwatchTime(elapsedMs);
+    const lapNumber = stopwatchState.laps.length + 1;
+    stopwatchState.laps.unshift({
+      lapNumber,
+      timeFormatted: lapTimeFormatted,
+      totalMs: elapsedMs
+    });
+    renderStopwatchLaps();
+    showCelebrationToast(`🚩 Vuelta ${lapNumber}: ${lapTimeFormatted}`);
+  }
+
+  function renderStopwatchLaps() {
+    const drawer = document.getElementById('stopwatch-laps-drawer');
+    const list = document.getElementById('stopwatch-laps-list');
+    if (!drawer || !list) return;
+
+    if (stopwatchState.laps.length === 0) {
+      drawer.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    drawer.hidden = false;
+    list.innerHTML = '';
+    for (const lap of stopwatchState.laps) {
+      const li = document.createElement('li');
+      li.className = 'lap-item';
+      li.innerHTML = `<strong>Vuelta ${lap.lapNumber}</strong> <span>${lap.timeFormatted}</span>`;
+      list.appendChild(li);
+    }
+  }
+
+  function switchFloatingTimerMode(mode) {
+    currentFloatingTimerMode = mode;
+    const btnRest = document.getElementById('btn-mode-rest');
+    const btnStopwatch = document.getElementById('btn-mode-stopwatch');
+    const panelRest = document.getElementById('panel-timer-rest');
+    const panelStopwatch = document.getElementById('panel-timer-stopwatch');
+    const bar = document.getElementById('rest-timer-bar');
+
+    if (btnRest) btnRest.classList.toggle('is-active', mode === 'rest');
+    if (btnStopwatch) btnStopwatch.classList.toggle('is-active', mode === 'stopwatch');
+    if (panelRest) panelRest.hidden = mode !== 'rest';
+    if (panelStopwatch) panelStopwatch.hidden = mode !== 'stopwatch';
+    if (bar) bar.hidden = false;
+
+    if (mode === 'stopwatch') {
+      updateStopwatchDisplays();
+    }
+  }
+
+  function startTutStopwatch(dayId, exerciseId) {
+    if (tutState.intervalId) {
+      clearInterval(tutState.intervalId);
+    }
+    tutState.activeDayId = dayId;
+    tutState.activeExerciseId = exerciseId;
+    tutState.startTime = Date.now();
+    tutState.elapsedSeconds = 0;
+
+    if (!stopwatchState.running) {
+      startSessionStopwatch();
+    }
+
+    tutState.intervalId = setInterval(() => {
+      tutState.elapsedSeconds = Math.floor((Date.now() - tutState.startTime) / 1000);
+      updateTutButton(exerciseId);
+    }, 250);
+
+    renderExercisesList();
+    showCelebrationToast('⏱️ Serie iniciada. Ejecuta tus 12 repeticiones');
+  }
+
+  function stopTutStopwatch() {
+    if (!tutState.activeExerciseId) return;
+    const dayId = tutState.activeDayId || state.selectedDay;
+    const exId = tutState.activeExerciseId;
+    const finalSeconds = Math.max(1, Math.floor((Date.now() - tutState.startTime) / 1000));
+
+    if (tutState.intervalId) {
+      clearInterval(tutState.intervalId);
+      tutState.intervalId = null;
+    }
+    tutState.activeExerciseId = null;
+    tutState.activeDayId = null;
+    tutState.elapsedSeconds = 0;
+
+    const day = state.schedule[dayId];
+    if (day) {
+      const ex = day.exercises.find(e => e.id === exId);
+      if (ex) {
+        const nextIdx = (ex.completedSets || []).findIndex(done => !done);
+        const setNumToComplete = nextIdx !== -1 ? nextIdx : (ex.completedSets.length - 1);
+        ex.completedSets[setNumToComplete] = true;
+        saveState();
+        renderAll();
+        showCelebrationToast(`✅ Serie ${setNumToComplete + 1} completada (${finalSeconds}s bajo tensión)`);
+        playCompletionTone();
+        startRestTimer(ex.restSeconds || 75, `${ex.name} (Serie ${setNumToComplete + 1}/${ex.sets} · TUT: ${finalSeconds}s)`);
+        return;
+      }
+    }
+    renderExercisesList();
+  }
+
+  function updateTutButton(exerciseId) {
+    const btn = document.querySelector(`.btn-tut-stopwatch[data-exercise-id="${exerciseId}"]`);
+    if (btn) {
+      const mins = Math.floor(tutState.elapsedSeconds / 60);
+      const secs = tutState.elapsedSeconds % 60;
+      const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      btn.classList.add('is-timing');
+      btn.innerHTML = `<span class="tut-icon">⏹️</span> Finalizar Serie (${timeStr})`;
+    }
+  }
+
   function showCelebrationToast(message) {
     const toast = document.getElementById('celebration-toast');
     if (!toast) return;
@@ -212,6 +445,9 @@
       0
     );
 
+    const durationMs = getStopwatchElapsedMs();
+    const durationText = formatStopwatchDurationText(durationMs);
+
     const record = {
       id: `session-${Date.now()}`,
       dateISO: new Date().toISOString(),
@@ -219,7 +455,9 @@
       title: day.title,
       setsDone: doneSets || totalSets,
       setsPlanned: totalSets,
-      volumeKg: dayStat ? (dayStat.doneKg || dayStat.plannedKg) : 0
+      volumeKg: dayStat ? (dayStat.doneKg || dayStat.plannedKg) : 0,
+      durationMs: durationMs,
+      durationText: durationText
     };
 
     state.history.unshift(record);
@@ -228,7 +466,8 @@
     }
     saveState();
     renderAll();
-    showCelebrationToast(`🏆 Sesión de ${day.dayName} registrada en tu historial`);
+    const durMsg = durationText ? ` · ⏱️ ${durationText}` : '';
+    showCelebrationToast(`🏆 Sesión de ${day.dayName} registrada en tu historial${durMsg}`);
     playCompletionTone();
     return true;
   }
@@ -386,7 +625,7 @@
     restTotalSeconds = Math.max(5, Number(seconds) || 75);
     restRemainingSeconds = restTotalSeconds;
     labelEl.textContent = labelText || 'Descanso entre series';
-    bar.hidden = false;
+    switchFloatingTimerMode('rest');
     updateTimerDisplay();
 
     restTimerInterval = setInterval(() => {
@@ -737,6 +976,38 @@
     }
     contentCol.appendChild(setsRow);
 
+    const tutRow = document.createElement('div');
+    tutRow.className = 'set-stopwatch-row';
+
+    const isTimingThis = tutState.activeExerciseId === ex.id;
+    const tutBtn = document.createElement('button');
+    tutBtn.type = 'button';
+    tutBtn.className = 'btn-tut-stopwatch';
+    tutBtn.dataset.exerciseId = ex.id;
+    if (isTimingThis) {
+      tutBtn.classList.add('is-timing');
+      const mins = Math.floor(tutState.elapsedSeconds / 60);
+      const secs = tutState.elapsedSeconds % 60;
+      const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      tutBtn.innerHTML = `<span class="tut-icon">⏹️</span> Finalizar Serie (${timeStr})`;
+    } else {
+      tutBtn.innerHTML = `<span class="tut-icon">⏱️</span> Iniciar Serie (TUT)`;
+    }
+    tutBtn.addEventListener('click', () => {
+      if (tutState.activeExerciseId === ex.id) {
+        stopTutStopwatch();
+      } else {
+        startTutStopwatch(dayId, ex.id);
+      }
+    });
+
+    const tutInfo = document.createElement('span');
+    tutInfo.className = 'tut-status-text';
+    tutInfo.textContent = 'Mide tiempo bajo tensión (TUT) y avanza serie';
+
+    tutRow.append(tutBtn, tutInfo);
+    contentCol.appendChild(tutRow);
+
     const footer = document.createElement('div');
     footer.className = 'exercise-card-footer';
 
@@ -995,10 +1266,11 @@
             hour: '2-digit',
             minute: '2-digit'
           });
+          const durBadge = item.durationText ? ` · ⏱️ ${item.durationText}` : '';
           li.innerHTML = `
             <div>
               <strong>${item.dayName}: ${item.title}</strong>
-              <div><small>${dateStr}</small></div>
+              <div><small>${dateStr}${durBadge}</small></div>
             </div>
             <div>
               <strong>${item.setsDone}/${item.setsPlanned} series</strong> · <span>${item.volumeKg} kg</span>
@@ -1303,6 +1575,21 @@
       });
     }
 
+    // Cronómetro de Sesión y Flotante
+    document.getElementById('btn-stopwatch-toggle')?.addEventListener('click', toggleSessionStopwatch);
+    document.getElementById('btn-stopwatch-lap')?.addEventListener('click', lapSessionStopwatch);
+    document.getElementById('btn-stopwatch-reset')?.addEventListener('click', resetSessionStopwatch);
+
+    document.getElementById('btn-mode-rest')?.addEventListener('click', () => switchFloatingTimerMode('rest'));
+    document.getElementById('btn-mode-stopwatch')?.addEventListener('click', () => switchFloatingTimerMode('stopwatch'));
+
+    document.getElementById('btn-floating-stopwatch-toggle')?.addEventListener('click', toggleSessionStopwatch);
+    document.getElementById('btn-floating-stopwatch-lap')?.addEventListener('click', lapSessionStopwatch);
+    document.getElementById('btn-floating-stopwatch-hide')?.addEventListener('click', () => {
+      const bar = document.getElementById('rest-timer-bar');
+      if (bar) bar.hidden = true;
+    });
+
     document.getElementById('btn-timer-minus')?.addEventListener('click', () => {
       restRemainingSeconds = Math.max(0, restRemainingSeconds - 15);
       updateTimerDisplay();
@@ -1374,7 +1661,17 @@
     toggleExerciseLoadUnit,
     adjustExerciseLoad,
     toggleSetCompletion,
-    logCurrentWorkoutSession
+    logCurrentWorkoutSession,
+    // Cronómetro & TUT APIs
+    startSessionStopwatch,
+    pauseSessionStopwatch,
+    toggleSessionStopwatch,
+    resetSessionStopwatch,
+    lapSessionStopwatch,
+    getStopwatchElapsedMs,
+    startTutStopwatch,
+    stopTutStopwatch,
+    switchFloatingTimerMode
   };
 
   bindEvents();
