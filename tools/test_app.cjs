@@ -6,6 +6,7 @@ const { JSDOM } = require('jsdom');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const routinesCode = fs.readFileSync(path.join(root, 'routines-data.js'), 'utf8');
+const visualsCode = fs.readFileSync(path.join(root, 'visual-engine.js'), 'utf8');
 const appCode = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 
 const dom = new JSDOM(html, {
@@ -15,10 +16,12 @@ const dom = new JSDOM(html, {
 
 const { window } = dom;
 window.eval(routinesCode);
+window.eval(visualsCode);
 window.eval(appCode);
 
 const app = window.GymApp;
 assert.ok(app, 'GymApp debe inicializarse en window');
+assert.ok(window.GYM_VISUALS, 'GYM_VISUALS debe inicializarse en window');
 
 // 1. Verificar marcas base exactas solicitadas por el usuario en Lunes
 app.restoreOriginalSchedule();
@@ -49,7 +52,21 @@ assert.equal(exBicepsPolea.loadValue, 10);
 assert.equal(exBicepsPolea.sets, 4);
 assert.equal(exBicepsPolea.reps, 12);
 
-// 2. Verificar todos los días de Lunes a Sábado
+// 2. Verificar ilustraciones SVG animadas, mapa anatómico y gráficos estadísticos en DOM
+const doc = window.document;
+const exerciseSVGs = doc.querySelectorAll('.ex-anim-svg');
+assert.equal(exerciseSVGs.length, 6, 'Cada uno de los 6 ejercicios del día debe renderizar su ilustración SVG animada');
+
+const anatomyFigures = doc.querySelectorAll('#day-anatomy-panel svg');
+assert.equal(anatomyFigures.length, 2, 'Debe renderizar el mapa anatómico frontal y posterior');
+
+const barCols = doc.querySelectorAll('#daily-bars-chart .bar-col');
+assert.equal(barCols.length, 7, 'El gráfico de barras debe mostrar los 7 días (Lunes a Domingo)');
+
+const muscleRows = doc.querySelectorAll('#muscle-stats-tbody tr');
+assert.equal(muscleRows.length, 5, 'La tabla accesible del gráfico de distribución muscular debe tener 5 grupos');
+
+// 3. Verificar todos los días de Lunes a Sábado
 const trainingDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 for (const d of trainingDays) {
   assert.ok(state.schedule[d].exercises.length >= 6, `${d} debe tener su rutina completa`);
@@ -59,7 +76,7 @@ for (const d of trainingDays) {
   }
 }
 
-// 3. Verificar cambio de unidad kg <-> Nivel y ajuste de peso
+// 4. Verificar cambio de unidad kg <-> Nivel y ajuste de peso
 app.adjustExerciseLoad('lunes', 'lun-espalda-polea-estrecho', 1);
 assert.equal(
   app.getState().schedule.lunes.exercises[0].loadValue,
@@ -73,15 +90,23 @@ assert.equal(
   'Nivel debe regresar a 6'
 );
 
-// 4. Verificar marcado de series (4 series)
+// 5. Verificar marcado de series (4 series) y actualización de tonelaje
 app.toggleSetCompletion('lunes', 'lun-espalda-maquina-amplio', 0);
 assert.equal(
   app.getState().schedule.lunes.exercises[1].completedSets[0],
   true,
   'La serie 1 debe quedar marcada como completada'
 );
+assert.ok(
+  doc.getElementById('kpi-done-kg').textContent.includes('240 kg'),
+  'El tonelaje movido debe actualizarse a 240 kg (1 serie x 12 reps x 20 kg)'
+);
 
-// 5. Verificar excepción: Mover un día al Domingo
+// 6. Verificar registro de sesión en el historial
+app.logCurrentWorkoutSession();
+assert.equal(app.getState().history.length, 1, 'Debe guardar la sesión en el historial');
+
+// 7. Verificar excepción: Mover un día al Domingo
 assert.equal(app.getState().schedule.domingo.exercises.length, 0, 'Domingo inicia libre');
 app.moveDayToSunday('miercoles');
 assert.equal(
@@ -100,7 +125,7 @@ assert.equal(
   'Domingo recibe los 6 ejercicios del Miércoles'
 );
 
-// 6. Verificar restaurar semana original y recorrer días al Domingo
+// 8. Verificar restaurar semana original y recorrer días al Domingo
 app.restoreOriginalSchedule();
 assert.equal(app.getState().schedule.domingo.exercises.length, 0);
 app.shiftChainToSunday('jueves');
@@ -112,4 +137,4 @@ assert.equal(
 );
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas de rutinas, cargas (kg/Nivel), series 4x12 y excepciones al Domingo pasaron con éxito.');
+console.log('PASS: Todas las pruebas de ilustraciones SVG, mapa anatómico, gráficos estadísticos, cargas (kg/Nivel), series 4x12 y excepciones al Domingo pasaron con éxito.');

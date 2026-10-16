@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = 'gym_rutinas_pro_state_v1';
   const GYM_DATA = window.GYM_DATA;
+  const GYM_VISUALS = window.GYM_VISUALS;
   if (!GYM_DATA) {
     throw new Error('GYM_DATA no cargado. Asegúrate de incluir routines-data.js antes de app.js');
   }
@@ -23,15 +24,17 @@
       }));
     }
     return {
-      version: 1,
+      version: 2,
       selectedDay: detectDefaultDay(),
       searchQuery: '',
+      animationsPaused: false,
+      history: [],
       schedule
     };
   }
 
   function detectDefaultDay() {
-    const jsDay = new Date().getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+    const jsDay = new Date().getDay();
     const map = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
     return map[jsDay] || 'lunes';
   }
@@ -60,6 +63,9 @@
       if (!DAYS_ORDER.includes(parsed.selectedDay)) {
         parsed.selectedDay = 'lunes';
       }
+      if (!Array.isArray(parsed.history)) {
+        parsed.history = [];
+      }
       parsed.searchQuery = '';
       return parsed;
     } catch (_) {
@@ -69,13 +75,45 @@
 
   let state = loadState();
   let restTimerInterval = null;
+  let restTotalSeconds = 75;
   let restRemainingSeconds = 0;
 
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (_) {
-      // Ignore storage quota errors in restricted environments
+      // Ignore storage quota errors
+    }
+  }
+
+  function showCelebrationToast(message) {
+    const toast = document.getElementById('celebration-toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.hidden = false;
+    setTimeout(() => {
+      toast.hidden = true;
+    }, 3200);
+  }
+
+  function playCompletionTone() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } catch (_) {
+      // Audio context blocked or unavailable in headless test
     }
   }
 
@@ -148,8 +186,51 @@
     renderAll();
 
     if (newState) {
+      const doneInEx = ex.completedSets.filter(Boolean).length;
+      if (doneInEx === (Number(ex.sets) || 4)) {
+        showCelebrationToast(`🔥 ¡4 series de ${ex.name} completadas!`);
+        playCompletionTone();
+      }
       startRestTimer(ex.restSeconds || 75, `${ex.name} (Serie ${setIndex + 1}/${ex.sets})`);
     }
+  }
+
+  function logCurrentWorkoutSession() {
+    const day = state.schedule[state.selectedDay];
+    if (!day || day.exercises.length === 0) return false;
+
+    const analytics = GYM_VISUALS
+      ? GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER)
+      : null;
+    const dayStat = analytics
+      ? analytics.perDay.find(d => d.id === state.selectedDay)
+      : null;
+
+    const totalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+    const doneSets = day.exercises.reduce(
+      (acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length,
+      0
+    );
+
+    const record = {
+      id: `session-${Date.now()}`,
+      dateISO: new Date().toISOString(),
+      dayName: day.dayName,
+      title: day.title,
+      setsDone: doneSets || totalSets,
+      setsPlanned: totalSets,
+      volumeKg: dayStat ? (dayStat.doneKg || dayStat.plannedKg) : 0
+    };
+
+    state.history.unshift(record);
+    if (state.history.length > 30) {
+      state.history.length = 30;
+    }
+    saveState();
+    renderAll();
+    showCelebrationToast(`🏆 Sesión de ${day.dayName} registrada en tu historial`);
+    playCompletionTone();
+    return true;
   }
 
   // Exception / Rescheduling Logic (Monday-Saturday -> Sunday)
@@ -162,7 +243,6 @@
     const movedExercises = deepClone(sourceDay.exercises);
 
     if (sunday.status === 'reprogrammed' && sunday.exercises.length > 0) {
-      // Combine if Sunday already had reprogrammed exercises
       const existingIds = new Set(sunday.exercises.map(e => e.id));
       for (const ex of movedExercises) {
         const clonedId = existingIds.has(ex.id) ? `${ex.id}-dom` : ex.id;
@@ -200,9 +280,8 @@
 
   function shiftChainToSunday(startDayId) {
     const startIdx = DAYS_ORDER.indexOf(startDayId);
-    if (startIdx < 0 || startIdx >= 6) return false; // Only Lunes(0) to Sábado(5)
+    if (startIdx < 0 || startIdx >= 6) return false;
 
-    // Shift workouts from Saturday down to startDayId forward by 1 day into Sunday
     for (let i = 6; i > startIdx; i--) {
       const targetKey = DAYS_ORDER[i];
       const prevKey = DAYS_ORDER[i - 1];
@@ -296,7 +375,7 @@
     renderAll();
   }
 
-  // Rest Timer
+  // Rest Timer with SVG Ring Progress
   function startRestTimer(seconds, labelText) {
     const bar = document.getElementById('rest-timer-bar');
     const countdownEl = document.getElementById('timer-countdown');
@@ -304,7 +383,8 @@
     if (!bar || !countdownEl || !labelEl) return;
 
     if (restTimerInterval) clearInterval(restTimerInterval);
-    restRemainingSeconds = Math.max(5, Number(seconds) || 75);
+    restTotalSeconds = Math.max(5, Number(seconds) || 75);
+    restRemainingSeconds = restTotalSeconds;
     labelEl.textContent = labelText || 'Descanso entre series';
     bar.hidden = false;
     updateTimerDisplay();
@@ -317,6 +397,7 @@
         clearInterval(restTimerInterval);
         restTimerInterval = null;
         labelEl.textContent = '¡Descanso terminado! Lista la siguiente serie 💪';
+        playCompletionTone();
         return;
       }
       updateTimerDisplay();
@@ -325,10 +406,18 @@
 
   function updateTimerDisplay() {
     const countdownEl = document.getElementById('timer-countdown');
-    if (!countdownEl) return;
-    const mins = Math.floor(restRemainingSeconds / 60);
-    const secs = restRemainingSeconds % 60;
-    countdownEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    const ringEl = document.getElementById('timer-ring-circle');
+    if (countdownEl) {
+      const mins = Math.floor(restRemainingSeconds / 60);
+      const secs = restRemainingSeconds % 60;
+      countdownEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    if (ringEl) {
+      const circumference = 100.5;
+      const ratio = restTotalSeconds > 0 ? Math.max(0, restRemainingSeconds / restTotalSeconds) : 0;
+      const offset = circumference * (1 - ratio);
+      ringEl.setAttribute('stroke-dashoffset', offset.toFixed(1));
+    }
   }
 
   function stopRestTimer() {
@@ -358,17 +447,25 @@
 
     const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
     const sundayActive = state.schedule.domingo.exercises.length > 0;
-    return { totalSets, doneSets, pct, skippedCount, sundayActive };
+    const analytics = GYM_VISUALS
+      ? GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER)
+      : null;
+
+    return { totalSets, doneSets, pct, skippedCount, sundayActive, analytics };
   }
 
   function renderWeeklySummary() {
     const stats = calculateWeeklyStats();
     const setsEl = document.getElementById('metric-sets-done');
+    const volEl = document.getElementById('metric-volume-kg');
     const daysEl = document.getElementById('metric-days-status');
     const progBar = document.getElementById('weekly-progress-bar');
     const progText = document.getElementById('weekly-progress-text');
 
     if (setsEl) setsEl.textContent = `${stats.doneSets} / ${stats.totalSets}`;
+    if (volEl && stats.analytics) {
+      volEl.textContent = `${stats.analytics.completedWeeklyVolumeKg} / ${stats.analytics.totalWeeklyVolumeKg} kg`;
+    }
     if (daysEl) {
       daysEl.textContent = stats.sundayActive
         ? 'Domingo Activo (Reprogramado)'
@@ -454,8 +551,10 @@
     const subtitleEl = document.getElementById('day-subtitle');
     const setsCounterEl = document.getElementById('day-sets-counter');
     const durationEl = document.getElementById('day-duration-pill');
+    const volumePillEl = document.getElementById('day-volume-pill');
     const exceptionBtn = document.getElementById('btn-open-exception');
     const exceptionLabel = document.getElementById('btn-exception-label');
+    const anatomyPanel = document.getElementById('day-anatomy-panel');
 
     if (heroCard) {
       heroCard.style.setProperty('--day-hue', String(day.accentHue || 160));
@@ -501,6 +600,18 @@
       durationEl.textContent = day.estimatedMinutes > 0 ? `~${day.estimatedMinutes} min` : 'Descanso';
     }
 
+    if (volumePillEl && GYM_VISUALS) {
+      const analytics = GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER);
+      const dayStat = analytics.perDay.find(d => d.id === state.selectedDay);
+      if (dayStat) {
+        volumePillEl.textContent = `${dayStat.doneKg} / ${dayStat.plannedKg} kg est.`;
+      }
+    }
+
+    if (anatomyPanel && GYM_VISUALS) {
+      anatomyPanel.innerHTML = GYM_VISUALS.renderAnatomyMapSVG(day);
+    }
+
     if (exceptionBtn && exceptionLabel) {
       if (state.selectedDay === 'domingo') {
         exceptionBtn.hidden = true;
@@ -524,6 +635,18 @@
     if (doneCount === totalSets && totalSets > 0) {
       li.classList.add('is-all-done');
     }
+
+    const visualLayout = document.createElement('div');
+    visualLayout.className = 'exercise-visual-layout';
+
+    const illustrationWrap = document.createElement('div');
+    illustrationWrap.className = 'exercise-illustration-wrap';
+    if (GYM_VISUALS) {
+      illustrationWrap.innerHTML = GYM_VISUALS.renderExerciseIllustrationSVG(ex);
+    }
+
+    const contentCol = document.createElement('div');
+    contentCol.className = 'exercise-content-col';
 
     const topRow = document.createElement('div');
     topRow.className = 'exercise-top';
@@ -555,7 +678,6 @@
 
     titleGroup.appendChild(metaRow);
 
-    // Load widget (- | Value + Unit toggle | +)
     const loadBox = document.createElement('div');
     loadBox.className = 'load-control-box';
 
@@ -589,9 +711,8 @@
 
     loadBox.append(btnMinus, btnUnit, btnPlus);
     topRow.append(titleGroup, loadBox);
-    li.appendChild(topRow);
+    contentCol.appendChild(topRow);
 
-    // Sets tracker row (4 series x 12 reps)
     const setsRow = document.createElement('div');
     setsRow.className = 'sets-tracker-row';
 
@@ -614,9 +735,8 @@
       setBtn.addEventListener('click', () => toggleSetCompletion(dayId, ex.id, s));
       setsRow.appendChild(setBtn);
     }
-    li.appendChild(setsRow);
+    contentCol.appendChild(setsRow);
 
-    // Footer with native <details> note and Edit button
     const footer = document.createElement('div');
     footer.className = 'exercise-card-footer';
 
@@ -636,7 +756,10 @@
     btnEdit.addEventListener('click', () => openExerciseDialog(ex));
 
     footer.append(details, btnEdit);
-    li.appendChild(footer);
+    contentCol.appendChild(footer);
+
+    visualLayout.append(illustrationWrap, contentCol);
+    li.appendChild(visualLayout);
 
     return li;
   }
@@ -745,6 +868,148 @@
     }
   }
 
+  function renderAnalyticsDashboard() {
+    if (!GYM_VISUALS) return;
+    const data = GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER);
+
+    const kpiDoneKg = document.getElementById('kpi-done-kg');
+    const kpiPlannedKg = document.getElementById('kpi-planned-kg');
+    const kpiDoneReps = document.getElementById('kpi-done-reps');
+    const kpiPlannedReps = document.getElementById('kpi-planned-reps');
+    const kpiKcal = document.getElementById('kpi-kcal');
+    const kpiSessions = document.getElementById('kpi-sessions-count');
+
+    if (kpiDoneKg) kpiDoneKg.textContent = `${data.completedWeeklyVolumeKg} kg`;
+    if (kpiPlannedKg) kpiPlannedKg.textContent = `de ${data.totalWeeklyVolumeKg} kg programados`;
+    if (kpiDoneReps) kpiDoneReps.textContent = String(data.totalRepsDone);
+    if (kpiPlannedReps) kpiPlannedReps.textContent = `de ${data.totalRepsPlanned} reps (4×12)`;
+    if (kpiKcal) kpiKcal.textContent = `${data.estimatedKcal} kcal`;
+    if (kpiSessions) kpiSessions.textContent = String((state.history || []).length);
+
+    // 1. Renderizar Gráfico de Barras Diario
+    const barsChart = document.getElementById('daily-bars-chart');
+    if (barsChart) {
+      barsChart.innerHTML = '';
+      for (const dayInfo of data.perDay) {
+        const col = document.createElement('div');
+        col.className = 'bar-col';
+        if (dayInfo.doneSets === 0 && dayInfo.plannedSets > 0) {
+          col.classList.add('is-planned-only');
+        }
+
+        const pct =
+          dayInfo.plannedSets > 0
+            ? dayInfo.doneSets > 0
+              ? Math.round((dayInfo.doneSets / dayInfo.plannedSets) * 100)
+              : 18
+            : 0;
+
+        const valSpan = document.createElement('span');
+        valSpan.className = 'bar-val';
+        valSpan.textContent = `${dayInfo.doneSets}/${dayInfo.plannedSets}`;
+
+        const track = document.createElement('div');
+        track.className = 'bar-track';
+
+        const fill = document.createElement('div');
+        fill.className = 'bar-fill';
+        fill.style.setProperty('--bar-pct', `${pct}%`);
+        track.appendChild(fill);
+
+        const daySpan = document.createElement('span');
+        daySpan.className = 'bar-day';
+        daySpan.textContent = dayInfo.shortName;
+
+        col.append(valSpan, track, daySpan);
+        col.addEventListener('click', () => {
+          state.selectedDay = dayInfo.id;
+          saveState();
+          renderAll();
+        });
+        barsChart.appendChild(col);
+      }
+    }
+
+    // 2. Renderizar Donut Chart (conic-gradient) + Tabla Semántica Accesible
+    const donutEl = document.getElementById('muscle-donut-chart');
+    const centerTotalEl = document.getElementById('donut-center-total');
+    const tbodyEl = document.getElementById('muscle-stats-tbody');
+
+    const entries = Object.entries(data.muscleMap);
+    const totalPlannedSets = entries.reduce((acc, [, item]) => acc + item.sets, 0) || 1;
+
+    if (centerTotalEl) {
+      centerTotalEl.textContent = String(totalPlannedSets);
+    }
+
+    if (donutEl) {
+      let accPct = 0;
+      const stops = [];
+      for (const [, item] of entries) {
+        const slicePct = (item.sets / totalPlannedSets) * 100;
+        const start = accPct.toFixed(1);
+        accPct += slicePct;
+        const end = accPct.toFixed(1);
+        stops.push(`${item.color} ${start}% ${end}%`);
+      }
+      donutEl.style.background = `conic-gradient(${stops.join(', ')})`;
+    }
+
+    if (tbodyEl) {
+      tbodyEl.innerHTML = '';
+      for (const [groupName, item] of entries) {
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        const dot = document.createElement('span');
+        dot.className = 'swatch-dot';
+        dot.style.setProperty('--swatch-color', item.color);
+        tdName.append(dot, document.createTextNode(groupName));
+
+        const tdDone = document.createElement('td');
+        tdDone.textContent = `${item.completedSets}`;
+
+        const tdTarget = document.createElement('td');
+        tdTarget.textContent = `${item.sets} series`;
+
+        tr.append(tdName, tdDone, tdTarget);
+        tbodyEl.appendChild(tr);
+      }
+    }
+
+    // 3. Renderizar Historial de Entrenamientos
+    const historyList = document.getElementById('workout-history-list');
+    if (historyList) {
+      historyList.innerHTML = '';
+      if (!state.history || state.history.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.className = 'history-item';
+        emptyLi.textContent = 'Aún no has guardado sesiones. Pulsa "🏆 Registrar Sesión" al finalizar tu día.';
+        historyList.appendChild(emptyLi);
+      } else {
+        for (const item of state.history) {
+          const li = document.createElement('li');
+          li.className = 'history-item';
+          const dateStr = new Date(item.dateISO).toLocaleDateString('es-PE', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          li.innerHTML = `
+            <div>
+              <strong>${item.dayName}: ${item.title}</strong>
+              <div><small>${dateStr}</small></div>
+            </div>
+            <div>
+              <strong>${item.setsDone}/${item.setsPlanned} series</strong> · <span>${item.volumeKg} kg</span>
+            </div>
+          `;
+          historyList.appendChild(li);
+        }
+      }
+    }
+  }
+
   function renderWeeklyMatrix() {
     const grid = document.getElementById('weekly-matrix-grid');
     if (!grid) return;
@@ -800,10 +1065,18 @@
   }
 
   function renderAll() {
+    document.body.classList.toggle('animations-paused', Boolean(state.animationsPaused));
+    const btnAnim = document.getElementById('btn-toggle-animations');
+    if (btnAnim) {
+      btnAnim.setAttribute('aria-pressed', state.animationsPaused ? 'false' : 'true');
+      btnAnim.textContent = state.animationsPaused ? '▶️ Reanudar Anim.' : '⏸️ Pausar Anim.';
+    }
+
     renderWeeklySummary();
     renderDayTabs();
     renderDayHero();
     renderExercisesList();
+    renderAnalyticsDashboard();
     renderWeeklyMatrix();
   }
 
@@ -876,6 +1149,20 @@
   }
 
   function bindEvents() {
+    const btnToggleAnim = document.getElementById('btn-toggle-animations');
+    if (btnToggleAnim) {
+      btnToggleAnim.addEventListener('click', () => {
+        state.animationsPaused = !state.animationsPaused;
+        saveState();
+        renderAll();
+      });
+    }
+
+    const btnLogWorkout = document.getElementById('btn-log-workout');
+    if (btnLogWorkout) {
+      btnLogWorkout.addEventListener('click', logCurrentWorkoutSession);
+    }
+
     const btnException = document.getElementById('btn-open-exception');
     if (btnException) {
       btnException.addEventListener('click', openExceptionDialog);
@@ -994,7 +1281,6 @@
       btnRestoreSchedule.addEventListener('click', restoreOriginalSchedule);
     }
 
-    // Search
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('exercise-search-input');
     const btnClearSearch = document.getElementById('btn-clear-search');
@@ -1017,18 +1303,17 @@
       });
     }
 
-    // Rest Timer Controls
     document.getElementById('btn-timer-minus')?.addEventListener('click', () => {
       restRemainingSeconds = Math.max(0, restRemainingSeconds - 15);
       updateTimerDisplay();
     });
     document.getElementById('btn-timer-plus')?.addEventListener('click', () => {
       restRemainingSeconds += 15;
+      restTotalSeconds = Math.max(restTotalSeconds, restRemainingSeconds);
       updateTimerDisplay();
     });
     document.getElementById('btn-timer-skip')?.addEventListener('click', stopRestTimer);
 
-    // JSON Backup Export / Import
     document.getElementById('btn-export-json')?.addEventListener('click', () => {
       const dataStr = JSON.stringify(state, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1067,14 +1352,12 @@
     }
   }
 
-  // Register Service Worker for offline Android/PWA support
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
   }
 
-  // Expose API for automated testing and debugging
   window.GymApp = {
     getState: () => state,
     selectDay: dayId => {
@@ -1090,7 +1373,8 @@
     restoreOriginalSchedule,
     toggleExerciseLoadUnit,
     adjustExerciseLoad,
-    toggleSetCompletion
+    toggleSetCompletion,
+    logCurrentWorkoutSession
   };
 
   bindEvents();

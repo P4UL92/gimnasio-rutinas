@@ -15,6 +15,7 @@ const webFiles = [
   'index.html',
   'styles.css',
   'routines-data.js',
+  'visual-engine.js',
   'app.js',
   'manifest.json',
   'sw.js'

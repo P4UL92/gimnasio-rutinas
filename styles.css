@@ -1,4 +1,18 @@
+@property --animation-reduced {
+  syntax: "*";
+  inherits: false;
+  initial-value: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: var(--animation-reduced) !important;
+  }
+}
+
 :root {
+  --in-oklab: ;
+  --in-oklch: ;
   --bg-base: #090d16;
   --bg-surface: #111827;
   --bg-card: #161f33;
@@ -19,6 +33,13 @@
   --radius-md: 14px;
   --radius-lg: 18px;
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --in-oklab: in oklab;
+    --in-oklch: in oklch;
+  }
 }
 
 *,
@@ -42,7 +63,11 @@ body {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 84px;
+  padding-bottom: 92px;
+}
+
+body.animations-paused * {
+  animation-play-state: paused !important;
 }
 
 .sr-only {
@@ -69,7 +94,7 @@ body {
 }
 
 .brand-row {
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto 10px;
   display: flex;
   align-items: center;
@@ -111,12 +136,13 @@ body {
 
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 /* Weekly Summary Bar */
 .weekly-summary-bar {
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto 10px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -126,7 +152,7 @@ body {
 
 .summary-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -140,12 +166,12 @@ body {
 
 .metric-label {
   display: block;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   color: var(--text-secondary);
 }
 
 .metric-chip strong {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-primary);
 }
 
@@ -170,7 +196,7 @@ body {
 
 /* Day Tabs */
 .day-tabs-nav {
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto;
 }
 
@@ -224,7 +250,7 @@ body {
 }
 
 .day-tab-btn[aria-current="page"] {
-  background: linear-gradient(160deg, rgba(16, 185, 129, 0.24), rgba(16, 185, 129, 0.08));
+  background: linear-gradient(160deg var(--in-oklab), rgba(16, 185, 129, 0.28), rgba(16, 185, 129, 0.08));
   border-color: var(--accent-emerald);
   color: var(--text-primary);
   transform: translateY(-1px);
@@ -249,16 +275,16 @@ body {
 /* Main Content */
 .app-main {
   width: 100%;
-  max-width: 780px;
+  max-width: 820px;
   margin: 0 auto;
   padding: 14px 16px 28px;
   flex: 1;
 }
 
-/* Day Hero Card */
+/* Day Hero Card + Anatomy Panel */
 .day-hero-card {
   background: linear-gradient(
-    145deg,
+    145deg var(--in-oklab),
     hsla(var(--day-hue, 160), 65%, 18%, 0.72),
     rgba(22, 31, 51, 0.95)
   );
@@ -268,12 +294,11 @@ body {
   margin-bottom: 14px;
 }
 
-.day-hero-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-wrap: wrap;
+.day-hero-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 16px;
+  align-items: center;
 }
 
 .day-badges {
@@ -318,24 +343,25 @@ body {
 }
 
 .day-subtitle {
-  margin: 0;
+  margin: 0 0 10px;
   font-size: 0.86rem;
   color: var(--text-secondary);
 }
 
 .day-hero-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
 
 .day-sets-pill,
 .day-time-pill {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   border: 1px solid var(--border-subtle);
 }
 
@@ -346,6 +372,152 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Anatomical Muscle Map */
+.day-anatomy-panel {
+  background: rgba(9, 13, 22, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.anatomy-figures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.anatomy-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.anatomy-figure figcaption {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.anatomy-figure svg {
+  width: 100%;
+  max-width: 118px;
+  height: auto;
+}
+
+.body-base {
+  fill: #1e293b;
+  stroke: #334155;
+  stroke-width: 1;
+}
+
+.muscle-zone {
+  fill: #26334d;
+  stroke: #3b4c6b;
+  stroke-width: 1;
+  transition: fill 0.3s ease, opacity 0.3s ease;
+}
+
+.muscle-zone.is-active {
+  fill: hsl(var(--day-hue, 160) 82% 52%);
+  stroke: #ecfdf5;
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 6px hsla(var(--day-hue, 160), 90%, 55%, 0.65));
+  animation: pulseMuscle 2.2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+/* Compositor-friendly SVG Exercise Animations */
+@keyframes pulseMuscle {
+  0%, 100% {
+    opacity: 0.68;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes pullHorizontal {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes pushHorizontal {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(12px);
+  }
+}
+
+@keyframes verticalPullMove {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+@keyframes weightStackLift {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes curlForearmMove {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(18deg);
+  }
+}
+
+.anim-pull-arm {
+  animation: pullHorizontal 2.2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+.anim-push-arm {
+  animation: pushHorizontal 2.2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+.anim-vertical-pull {
+  animation: verticalPullMove 2.2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+.anim-weight-stack {
+  animation: weightStackLift 2.2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+.anim-curl-forearm {
+  transform-origin: 108px 62px;
+  animation: curlForearmMove 2s ease-in-out infinite;
+  --animation-reduced: none;
+}
+
+.anim-muscle-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulseMuscle 1.8s ease-in-out infinite;
+  --animation-reduced: none;
 }
 
 /* Search Bar */
@@ -395,7 +567,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* Exercises List */
+/* Exercises List & Visual Cards */
 .exercises-list {
   list-style: none;
   margin: 0;
@@ -410,12 +582,34 @@ body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 14px;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .exercise-card.is-all-done {
   border-color: var(--border-highlight);
-  background: linear-gradient(160deg, rgba(16, 185, 129, 0.1), var(--bg-card));
+  background: linear-gradient(160deg var(--in-oklab), rgba(16, 185, 129, 0.12), var(--bg-card));
+}
+
+.exercise-visual-layout {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.exercise-illustration-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b1120;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.ex-anim-svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .exercise-top {
@@ -530,7 +724,11 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-set-check:active {
+  transform: scale(0.96);
 }
 
 .btn-set-check .set-num {
@@ -604,9 +802,218 @@ body {
   flex-shrink: 0;
 }
 
-.btn-edit-ex:hover {
+/* Statistics & Interactive Charts Section */
+.analytics-dashboard-section {
+  margin-top: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.kpi-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--accent-emerald);
+}
+
+.kpi-sub {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 14px;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.chart-card h3 {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--text-primary);
-  border-color: var(--text-secondary);
+}
+
+/* Bar Chart (Lun a Dom) */
+.daily-bars-chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  align-items: end;
+  height: 150px;
+  padding-top: 14px;
+}
+
+.bar-col {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.bar-val {
+  font-size: 0.64rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.bar-track {
+  width: 100%;
+  max-width: 28px;
+  height: 100px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.bar-fill {
+  width: 100%;
+  height: var(--bar-pct, 0%);
+  background: linear-gradient(to top var(--in-oklab), #059669, #34d399);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.35s ease;
+}
+
+.bar-col.is-planned-only .bar-fill {
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.bar-day {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+/* Conic-Gradient Donut Chart + Accessible Table */
+.muscle-donut-layout {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.muscle-donut-chart {
+  width: 112px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(
+    #10b981 0% 25%,
+    #06b6d4 0% 50%,
+    #3b82f6 0% 72%,
+    #f59e0b 0% 90%,
+    #a855f7 0% 100%
+  );
+}
+
+.donut-hole {
+  width: 68px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+
+.donut-hole strong {
+  font-size: 0.96rem;
+  color: var(--text-primary);
+}
+
+.donut-hole span {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+}
+
+.muscle-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.muscle-stats-table th,
+.muscle-stats-table td {
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.muscle-stats-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.swatch-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: var(--swatch-color, #10b981);
+}
+
+/* Workout History List */
+.workout-history-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
 }
 
 /* Empty / Exception Day State */
@@ -638,7 +1045,7 @@ body {
 
 /* Weekly Overview Accordion */
 .weekly-overview-section {
-  margin-top: 22px;
+  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -738,7 +1145,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
 .btn-primary {
@@ -803,7 +1210,7 @@ body {
   gap: 10px;
 }
 
-/* Floating Rest Timer Bar */
+/* Floating Rest Timer Bar with Ring SVG */
 .rest-timer-bar {
   position: fixed;
   bottom: 14px;
@@ -827,30 +1234,42 @@ body {
   display: none;
 }
 
-.timer-info {
+.timer-ring-svg {
+  transform: rotate(-90deg);
+  flex-shrink: 0;
+}
+
+.timer-top-line {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.timer-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
 .timer-badge {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
   color: var(--accent-emerald);
   background: var(--accent-emerald-glow);
-  padding: 3px 7px;
+  padding: 2px 6px;
   border-radius: 6px;
 }
 
 .timer-digits {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
   color: #fff;
 }
 
 .timer-ex-name {
-  font-size: 0.76rem;
+  display: block;
+  font-size: 0.74rem;
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -884,7 +1303,23 @@ body {
   border: none;
 }
 
-/* Native Dialog Modals */
+/* Celebration Toast */
+.celebration-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg var(--in-oklab), #059669, #10b981);
+  color: #042f2e;
+  font-weight: 800;
+  font-size: 0.88rem;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  z-index: 60;
+}
+
+/* Native Dialog Modals with Discrete Top-Layer Transitions */
 .gym-dialog {
   width: calc(100% - 28px);
   max-width: 480px;
@@ -894,6 +1329,25 @@ body {
   border-radius: var(--radius-lg);
   padding: 0;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out,
+    display 0.2s allow-discrete,
+    overlay 0.2s allow-discrete;
+}
+
+.gym-dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  .gym-dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
 }
 
 .gym-dialog::backdrop {
@@ -1042,8 +1496,23 @@ body {
   border-top: 1px solid var(--border-subtle);
 }
 
-@media (max-width: 480px) {
-  .day-hero-top {
+@media (max-width: 680px) {
+  .summary-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .day-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .exercise-visual-layout {
+    grid-template-columns: 1fr;
+  }
+  .kpi-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .muscle-donut-layout {
     flex-direction: column;
   }
   .exercise-top {
