@@ -3,6 +3,8 @@ name: Compilación Automática de APK Android (Gym Rutinas Pro)
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -60,14 +62,17 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: "Gym Rutinas Pro v1.0.0 (APK Android)"
+          name: "Gym Rutinas Pro ${{ github.ref_name }} (APK Android)"
           files: android/app/build/outputs/apk/debug/app-debug.apk
           body: |
-            ## 🏋️‍♂️ Gym Rutinas Pro — Lanzamiento Oficial v1.0.0
+            ## 🏋️‍♂️ Gym Rutinas Pro — ${{ github.ref_name }}
             - Rutinas completas de Lunes a Sábado con división por grupos musculares.
             - Sistema inteligente de excepciones y reprogramación al día Domingo.
             - Soporte dual de cargas: Peso en kilogramos (`kg`) y Niveles de polea (`Nivel`).
-            - Temporizador de descanso, seguimiento de 4 series × 12 repeticiones e historial local.
+            - Cronómetro de sesión con registro de vueltas y duración guardada en el historial.
+            - Cronómetro de serie (TUT - Tiempo bajo tensión) interactivo con avance automático de serie.
+            - Barra flotante dual para alternar descanso y cronómetro en cualquier momento.
+            - Ilustraciones biomecánicas animadas SVG y mapa anatómico corporal frontal/posterior.
+            - Gráficos interactivos de volumen, tonelaje movido y repeticiones.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
