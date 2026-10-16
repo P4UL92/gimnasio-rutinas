@@ -1,0 +1,34 @@
+{
+  "name": "gimnasio-rutinas",
+  "version": "1.0.0",
+  "description": "Aplicación Android de rutinas de gimnasio de Lunes a Sábado con reprogramación al Domingo, soporte de pesos en kg y niveles de polea",
+  "main": "app.js",
+  "scripts": {
+    "build": "node tools/build_web_dist.cjs",
+    "start": "node tools/serve.cjs",
+    "test": "node tools/test_app.cjs",
+    "test:android-prepare": "node tools/test_android_prepare.cjs",
+    "android:prepare": "node tools/prepare_android.cjs",
+    "android:doctor": "node tools/android_toolchain.cjs --check",
+    "android:build": "node tools/android_toolchain.cjs",
+    "cap:sync": "node tools/prepare_android.cjs",
+    "cap:open": "npx cap open android"
+  },
+  "keywords": [
+    "gym",
+    "gimnasio",
+    "rutinas",
+    "fitness",
+    "android",
+    "capacitor",
+    "pwa"
+  ],
+  "author": "Eder Larico (P4UL92)",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
+    "jsdom": "^26.0.0"
+  }
+}

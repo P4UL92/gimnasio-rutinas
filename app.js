@@ -1,0 +1,1098 @@
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'gym_rutinas_pro_state_v1';
+  const GYM_DATA = window.GYM_DATA;
+  if (!GYM_DATA) {
+    throw new Error('GYM_DATA no cargado. Asegúrate de incluir routines-data.js antes de app.js');
+  }
+
+  const DAYS_ORDER = GYM_DATA.DAYS_ORDER;
+
+  function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function createInitialState() {
+    const schedule = deepClone(GYM_DATA.INITIAL_SCHEDULE);
+    for (const dayKey of DAYS_ORDER) {
+      const day = schedule[dayKey];
+      day.exercises = (day.exercises || []).map(ex => ({
+        ...ex,
+        completedSets: Array.from({ length: ex.sets || 4 }, () => false)
+      }));
+    }
+    return {
+      version: 1,
+      selectedDay: detectDefaultDay(),
+      searchQuery: '',
+      schedule
+    };
+  }
+
+  function detectDefaultDay() {
+    const jsDay = new Date().getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+    const map = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    return map[jsDay] || 'lunes';
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return createInitialState();
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.schedule || !parsed.schedule.lunes) {
+        return createInitialState();
+      }
+      for (const dayKey of DAYS_ORDER) {
+        if (!parsed.schedule[dayKey]) {
+          parsed.schedule[dayKey] = deepClone(GYM_DATA.INITIAL_SCHEDULE[dayKey]);
+        }
+        for (const ex of parsed.schedule[dayKey].exercises) {
+          const targetSets = Number(ex.sets) || 4;
+          if (!Array.isArray(ex.completedSets) || ex.completedSets.length !== targetSets) {
+            ex.completedSets = Array.from({ length: targetSets }, (_, idx) =>
+              Boolean(ex.completedSets && ex.completedSets[idx])
+            );
+          }
+        }
+      }
+      if (!DAYS_ORDER.includes(parsed.selectedDay)) {
+        parsed.selectedDay = 'lunes';
+      }
+      parsed.searchQuery = '';
+      return parsed;
+    } catch (_) {
+      return createInitialState();
+    }
+  }
+
+  let state = loadState();
+  let restTimerInterval = null;
+  let restRemainingSeconds = 0;
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (_) {
+      // Ignore storage quota errors in restricted environments
+    }
+  }
+
+  function formatLoadBadge(ex) {
+    if (ex.loadType === 'nivel') {
+      return {
+        main: `Nivel ${ex.loadValue}`,
+        sub: 'Placa / Polea (sin kg)',
+        cssClass: 'unit-nivel'
+      };
+    }
+    if (ex.loadType === 'corporal') {
+      return {
+        main: ex.loadValue > 0 ? `Corporal +${ex.loadValue}kg` : 'Peso Corporal',
+        sub: 'Calistenia / Asistido',
+        cssClass: 'unit-corporal'
+      };
+    }
+    return {
+      main: `${ex.loadValue} kg`,
+      sub: 'Peso en kilogramos',
+      cssClass: 'unit-kg'
+    };
+  }
+
+  function toggleExerciseLoadUnit(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(item => item.id === exerciseId);
+    if (!ex) return;
+
+    if (ex.loadType === 'kg') {
+      ex.savedKgValue = ex.loadValue;
+      ex.loadType = 'nivel';
+      ex.loadValue = ex.savedNivelValue || Math.max(1, Math.round(ex.loadValue / 3.5));
+    } else if (ex.loadType === 'nivel') {
+      ex.savedNivelValue = ex.loadValue;
+      ex.loadType = 'kg';
+      ex.loadValue = ex.savedKgValue || ex.loadValue * 3.5;
+    } else {
+      ex.loadType = 'kg';
+      ex.loadValue = ex.savedKgValue || 10;
+    }
+    saveState();
+    renderAll();
+  }
+
+  function adjustExerciseLoad(dayId, exerciseId, deltaDirection) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(item => item.id === exerciseId);
+    if (!ex) return;
+
+    const step = ex.loadType === 'nivel' ? 1 : 2.5;
+    const nextVal = Math.max(0, Number((Number(ex.loadValue) + deltaDirection * step).toFixed(1)));
+    ex.loadValue = nextVal;
+    saveState();
+    renderAll();
+  }
+
+  function toggleSetCompletion(dayId, exerciseId, setIndex) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(item => item.id === exerciseId);
+    if (!ex || !Array.isArray(ex.completedSets)) return;
+
+    const newState = !ex.completedSets[setIndex];
+    ex.completedSets[setIndex] = newState;
+    saveState();
+    renderAll();
+
+    if (newState) {
+      startRestTimer(ex.restSeconds || 75, `${ex.name} (Serie ${setIndex + 1}/${ex.sets})`);
+    }
+  }
+
+  // Exception / Rescheduling Logic (Monday-Saturday -> Sunday)
+  function moveDayToSunday(sourceDayId) {
+    if (sourceDayId === 'domingo' || !state.schedule[sourceDayId]) return false;
+    const sourceDay = state.schedule[sourceDayId];
+    if (!sourceDay.exercises || sourceDay.exercises.length === 0) return false;
+
+    const sunday = state.schedule.domingo;
+    const movedExercises = deepClone(sourceDay.exercises);
+
+    if (sunday.status === 'reprogrammed' && sunday.exercises.length > 0) {
+      // Combine if Sunday already had reprogrammed exercises
+      const existingIds = new Set(sunday.exercises.map(e => e.id));
+      for (const ex of movedExercises) {
+        const clonedId = existingIds.has(ex.id) ? `${ex.id}-dom` : ex.id;
+        sunday.exercises.push({ ...ex, id: clonedId });
+      }
+      sunday.title = `${sunday.title} + ${sourceDay.title}`;
+      sunday.muscleGroup = `${sunday.muscleGroup} · ${sourceDay.muscleGroup}`;
+      sunday.estimatedMinutes = (sunday.estimatedMinutes || 45) + (sourceDay.estimatedMinutes || 45);
+    } else {
+      sunday.title = `${sourceDay.title} (De ${sourceDay.dayName})`;
+      sunday.subtitle = `Reprogramado por excepción del ${sourceDay.dayName} — ${sourceDay.subtitle}`;
+      sunday.muscleGroup = sourceDay.muscleGroup;
+      sunday.accentHue = sourceDay.accentHue;
+      sunday.estimatedMinutes = sourceDay.estimatedMinutes || 55;
+      sunday.exercises = movedExercises;
+      sunday.status = 'reprogrammed';
+      sunday.originalSourceDay = sourceDayId;
+    }
+
+    sourceDay.backupSnapshot = {
+      title: sourceDay.title,
+      subtitle: sourceDay.subtitle,
+      muscleGroup: sourceDay.muscleGroup,
+      estimatedMinutes: sourceDay.estimatedMinutes,
+      exercises: deepClone(sourceDay.exercises)
+    };
+    sourceDay.status = 'skipped_to_sunday';
+    sourceDay.exercises = [];
+    sourceDay.estimatedMinutes = 0;
+
+    saveState();
+    renderAll();
+    return true;
+  }
+
+  function shiftChainToSunday(startDayId) {
+    const startIdx = DAYS_ORDER.indexOf(startDayId);
+    if (startIdx < 0 || startIdx >= 6) return false; // Only Lunes(0) to Sábado(5)
+
+    // Shift workouts from Saturday down to startDayId forward by 1 day into Sunday
+    for (let i = 6; i > startIdx; i--) {
+      const targetKey = DAYS_ORDER[i];
+      const prevKey = DAYS_ORDER[i - 1];
+      const prevDay = state.schedule[prevKey];
+      const targetDay = state.schedule[targetKey];
+
+      targetDay.title = `${prevDay.title} (Recorrido de ${prevDay.dayName})`;
+      targetDay.subtitle = prevDay.subtitle;
+      targetDay.muscleGroup = prevDay.muscleGroup;
+      targetDay.accentHue = prevDay.accentHue;
+      targetDay.estimatedMinutes = prevDay.estimatedMinutes;
+      targetDay.exercises = deepClone(prevDay.exercises);
+      targetDay.status = targetKey === 'domingo' ? 'reprogrammed' : 'shifted';
+      targetDay.originalSourceDay = prevKey;
+    }
+
+    const skippedDay = state.schedule[startDayId];
+    skippedDay.status = 'skipped_to_sunday';
+    skippedDay.title = 'Descanso por Excepción';
+    skippedDay.subtitle = 'Los entrenamientos siguientes se recorrieron hasta el Domingo';
+    skippedDay.muscleGroup = 'Descanso';
+    skippedDay.estimatedMinutes = 0;
+    skippedDay.exercises = [];
+
+    saveState();
+    renderAll();
+    return true;
+  }
+
+  function swapDays(dayAId, dayBId) {
+    if (!state.schedule[dayAId] || !state.schedule[dayBId] || dayAId === dayBId) return false;
+    const a = state.schedule[dayAId];
+    const b = state.schedule[dayBId];
+
+    const fields = ['title', 'subtitle', 'muscleGroup', 'accentHue', 'estimatedMinutes', 'exercises', 'status'];
+    for (const f of fields) {
+      const temp = deepClone(a[f]);
+      a[f] = deepClone(b[f]);
+      b[f] = temp;
+    }
+
+    if (dayBId === 'domingo' && b.exercises.length > 0) {
+      b.status = 'reprogrammed';
+    }
+    if (dayAId === 'domingo' && a.exercises.length > 0) {
+      a.status = 'reprogrammed';
+    }
+
+    saveState();
+    renderAll();
+    return true;
+  }
+
+  function revertSkippedDay(dayId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    if (day.backupSnapshot) {
+      day.title = day.backupSnapshot.title;
+      day.subtitle = day.backupSnapshot.subtitle;
+      day.muscleGroup = day.backupSnapshot.muscleGroup;
+      day.estimatedMinutes = day.backupSnapshot.estimatedMinutes;
+      day.exercises = deepClone(day.backupSnapshot.exercises);
+      day.status = 'normal';
+      delete day.backupSnapshot;
+
+      const sunday = state.schedule.domingo;
+      if (sunday.originalSourceDay === dayId) {
+        state.schedule.domingo = deepClone(GYM_DATA.INITIAL_SCHEDULE.domingo);
+      }
+      saveState();
+      renderAll();
+    } else {
+      restoreOriginalSchedule();
+    }
+  }
+
+  function restoreOriginalSchedule() {
+    const fresh = createInitialState();
+    state.schedule = fresh.schedule;
+    saveState();
+    renderAll();
+  }
+
+  function resetWeeklySeriesProgress() {
+    for (const dayKey of DAYS_ORDER) {
+      for (const ex of state.schedule[dayKey].exercises) {
+        ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => false);
+      }
+    }
+    saveState();
+    renderAll();
+  }
+
+  // Rest Timer
+  function startRestTimer(seconds, labelText) {
+    const bar = document.getElementById('rest-timer-bar');
+    const countdownEl = document.getElementById('timer-countdown');
+    const labelEl = document.getElementById('timer-exercise-label');
+    if (!bar || !countdownEl || !labelEl) return;
+
+    if (restTimerInterval) clearInterval(restTimerInterval);
+    restRemainingSeconds = Math.max(5, Number(seconds) || 75);
+    labelEl.textContent = labelText || 'Descanso entre series';
+    bar.hidden = false;
+    updateTimerDisplay();
+
+    restTimerInterval = setInterval(() => {
+      restRemainingSeconds -= 1;
+      if (restRemainingSeconds <= 0) {
+        restRemainingSeconds = 0;
+        updateTimerDisplay();
+        clearInterval(restTimerInterval);
+        restTimerInterval = null;
+        labelEl.textContent = '¡Descanso terminado! Lista la siguiente serie 💪';
+        return;
+      }
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const countdownEl = document.getElementById('timer-countdown');
+    if (!countdownEl) return;
+    const mins = Math.floor(restRemainingSeconds / 60);
+    const secs = restRemainingSeconds % 60;
+    countdownEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  function stopRestTimer() {
+    if (restTimerInterval) {
+      clearInterval(restTimerInterval);
+      restTimerInterval = null;
+    }
+    const bar = document.getElementById('rest-timer-bar');
+    if (bar) bar.hidden = true;
+  }
+
+  // Rendering Functions
+  function calculateWeeklyStats() {
+    let totalSets = 0;
+    let doneSets = 0;
+    let skippedCount = 0;
+
+    for (const dayKey of DAYS_ORDER) {
+      const day = state.schedule[dayKey];
+      if (day.status === 'skipped_to_sunday') skippedCount += 1;
+      for (const ex of day.exercises) {
+        const setsCount = Number(ex.sets) || 4;
+        totalSets += setsCount;
+        doneSets += (ex.completedSets || []).filter(Boolean).length;
+      }
+    }
+
+    const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+    const sundayActive = state.schedule.domingo.exercises.length > 0;
+    return { totalSets, doneSets, pct, skippedCount, sundayActive };
+  }
+
+  function renderWeeklySummary() {
+    const stats = calculateWeeklyStats();
+    const setsEl = document.getElementById('metric-sets-done');
+    const daysEl = document.getElementById('metric-days-status');
+    const progBar = document.getElementById('weekly-progress-bar');
+    const progText = document.getElementById('weekly-progress-text');
+
+    if (setsEl) setsEl.textContent = `${stats.doneSets} / ${stats.totalSets}`;
+    if (daysEl) {
+      daysEl.textContent = stats.sundayActive
+        ? 'Domingo Activo (Reprogramado)'
+        : 'Lun–Sáb (Dom libre)';
+    }
+    if (progBar) {
+      progBar.value = stats.pct;
+      progBar.style.setProperty('--progress-hue', String(140 + Math.round(stats.pct * 0.2)));
+    }
+    if (progText) {
+      progText.textContent = `${stats.pct}% completado (${stats.doneSets} series)`;
+    }
+  }
+
+  function renderDayTabs() {
+    const listEl = document.getElementById('day-tabs-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    for (const dayKey of DAYS_ORDER) {
+      const day = state.schedule[dayKey];
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'day-tab-btn';
+      btn.dataset.day = dayKey;
+
+      if (state.selectedDay === dayKey) {
+        btn.setAttribute('aria-current', 'page');
+      }
+      if (day.status === 'skipped_to_sunday') {
+        btn.classList.add('is-skipped');
+      }
+      if (dayKey === 'domingo' && day.exercises.length > 0) {
+        btn.classList.add('is-sunday-active');
+      }
+
+      const dayTotalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+      const dayDoneSets = day.exercises.reduce(
+        (acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length,
+        0
+      );
+      if (dayTotalSets > 0 && dayDoneSets === dayTotalSets) {
+        btn.classList.add('is-completed');
+      }
+
+      const shortSpan = document.createElement('span');
+      shortSpan.className = 'tab-short';
+      shortSpan.textContent = day.shortName;
+
+      const groupSpan = document.createElement('span');
+      groupSpan.className = 'tab-group';
+      groupSpan.textContent =
+        day.status === 'skipped_to_sunday'
+          ? '→ DOM'
+          : dayKey === 'domingo' && day.exercises.length === 0
+            ? 'Libre'
+            : day.muscleGroup.split('·')[0].trim();
+
+      const dotSpan = document.createElement('span');
+      dotSpan.className = 'tab-dot';
+      dotSpan.setAttribute('aria-hidden', 'true');
+
+      btn.append(shortSpan, groupSpan, dotSpan);
+      btn.addEventListener('click', () => {
+        state.selectedDay = dayKey;
+        saveState();
+        renderAll();
+      });
+
+      li.appendChild(btn);
+      listEl.appendChild(li);
+    }
+  }
+
+  function renderDayHero() {
+    const day = state.schedule[state.selectedDay];
+    if (!day) return;
+
+    const heroCard = document.getElementById('day-hero-card');
+    const badgesEl = document.getElementById('day-badges');
+    const titleEl = document.getElementById('day-title');
+    const subtitleEl = document.getElementById('day-subtitle');
+    const setsCounterEl = document.getElementById('day-sets-counter');
+    const durationEl = document.getElementById('day-duration-pill');
+    const exceptionBtn = document.getElementById('btn-open-exception');
+    const exceptionLabel = document.getElementById('btn-exception-label');
+
+    if (heroCard) {
+      heroCard.style.setProperty('--day-hue', String(day.accentHue || 160));
+    }
+
+    if (badgesEl) {
+      badgesEl.innerHTML = '';
+      const muscleBadge = document.createElement('span');
+      muscleBadge.className = 'badge badge-muscle';
+      muscleBadge.textContent = day.muscleGroup;
+      badgesEl.appendChild(muscleBadge);
+
+      if (day.status === 'skipped_to_sunday') {
+        const excBadge = document.createElement('span');
+        excBadge.className = 'badge badge-exception';
+        excBadge.textContent = 'Reprogramado al Domingo';
+        badgesEl.appendChild(excBadge);
+      } else if (day.status === 'reprogrammed' || day.status === 'shifted') {
+        const repBadge = document.createElement('span');
+        repBadge.className = 'badge badge-exception';
+        repBadge.textContent = 'Entrenamiento Reprogramado';
+        badgesEl.appendChild(repBadge);
+      }
+    }
+
+    if (titleEl) {
+      titleEl.textContent = `${day.dayName}: ${day.title}`;
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = day.subtitle;
+    }
+
+    const totalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+    const doneSets = day.exercises.reduce(
+      (acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length,
+      0
+    );
+
+    if (setsCounterEl) {
+      setsCounterEl.textContent = `${doneSets} / ${totalSets} series`;
+    }
+    if (durationEl) {
+      durationEl.textContent = day.estimatedMinutes > 0 ? `~${day.estimatedMinutes} min` : 'Descanso';
+    }
+
+    if (exceptionBtn && exceptionLabel) {
+      if (state.selectedDay === 'domingo') {
+        exceptionBtn.hidden = true;
+      } else if (day.status === 'skipped_to_sunday') {
+        exceptionBtn.hidden = false;
+        exceptionLabel.textContent = 'Revertir excepción y entrenar hoy';
+      } else {
+        exceptionBtn.hidden = false;
+        exceptionLabel.textContent = 'No entrenaré hoy → Mover al Domingo';
+      }
+    }
+  }
+
+  function createExerciseCard(dayId, ex) {
+    const li = document.createElement('li');
+    li.className = 'exercise-card';
+    li.dataset.exerciseId = ex.id;
+
+    const doneCount = (ex.completedSets || []).filter(Boolean).length;
+    const totalSets = Number(ex.sets) || 4;
+    if (doneCount === totalSets && totalSets > 0) {
+      li.classList.add('is-all-done');
+    }
+
+    const topRow = document.createElement('div');
+    topRow.className = 'exercise-top';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'exercise-title-group';
+
+    const h3 = document.createElement('h3');
+    h3.textContent = ex.name;
+    titleGroup.appendChild(h3);
+
+    const metaRow = document.createElement('div');
+    metaRow.className = 'exercise-meta';
+
+    const muscleSpan = document.createElement('span');
+    muscleSpan.textContent = `🎯 ${ex.muscle}`;
+    metaRow.appendChild(muscleSpan);
+
+    const equipSpan = document.createElement('span');
+    equipSpan.textContent = `⚙️ ${ex.equipment}`;
+    metaRow.appendChild(equipSpan);
+
+    if (ex.userBase) {
+      const baseBadge = document.createElement('span');
+      baseBadge.className = 'badge badge-user-base';
+      baseBadge.textContent = '★ Marca actual configurada';
+      metaRow.appendChild(baseBadge);
+    }
+
+    titleGroup.appendChild(metaRow);
+
+    // Load widget (- | Value + Unit toggle | +)
+    const loadBox = document.createElement('div');
+    loadBox.className = 'load-control-box';
+
+    const btnMinus = document.createElement('button');
+    btnMinus.type = 'button';
+    btnMinus.className = 'btn-step-load';
+    btnMinus.setAttribute('aria-label', `Disminuir carga en ${ex.name}`);
+    btnMinus.textContent = '−';
+    btnMinus.addEventListener('click', () => adjustExerciseLoad(dayId, ex.id, -1));
+
+    const badgeInfo = formatLoadBadge(ex);
+    const btnUnit = document.createElement('button');
+    btnUnit.type = 'button';
+    btnUnit.className = `btn-toggle-unit ${badgeInfo.cssClass}`;
+    btnUnit.title = 'Toca para alternar entre kg y Nivel de polea';
+
+    const unitMain = document.createElement('span');
+    unitMain.textContent = badgeInfo.main;
+    const unitSub = document.createElement('span');
+    unitSub.className = 'unit-subtext';
+    unitSub.textContent = badgeInfo.sub;
+    btnUnit.append(unitMain, unitSub);
+    btnUnit.addEventListener('click', () => toggleExerciseLoadUnit(dayId, ex.id));
+
+    const btnPlus = document.createElement('button');
+    btnPlus.type = 'button';
+    btnPlus.className = 'btn-step-load';
+    btnPlus.setAttribute('aria-label', `Aumentar carga en ${ex.name}`);
+    btnPlus.textContent = '+';
+    btnPlus.addEventListener('click', () => adjustExerciseLoad(dayId, ex.id, 1));
+
+    loadBox.append(btnMinus, btnUnit, btnPlus);
+    topRow.append(titleGroup, loadBox);
+    li.appendChild(topRow);
+
+    // Sets tracker row (4 series x 12 reps)
+    const setsRow = document.createElement('div');
+    setsRow.className = 'sets-tracker-row';
+
+    for (let s = 0; s < totalSets; s++) {
+      const isDone = Boolean(ex.completedSets && ex.completedSets[s]);
+      const setBtn = document.createElement('button');
+      setBtn.type = 'button';
+      setBtn.className = 'btn-set-check';
+      setBtn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+
+      const sNum = document.createElement('span');
+      sNum.className = 'set-num';
+      sNum.textContent = isDone ? `✓ Serie ${s + 1}` : `Serie ${s + 1}`;
+
+      const sReps = document.createElement('span');
+      sReps.className = 'set-reps';
+      sReps.textContent = `${ex.reps} reps`;
+
+      setBtn.append(sNum, sReps);
+      setBtn.addEventListener('click', () => toggleSetCompletion(dayId, ex.id, s));
+      setsRow.appendChild(setBtn);
+    }
+    li.appendChild(setsRow);
+
+    // Footer with native <details> note and Edit button
+    const footer = document.createElement('div');
+    footer.className = 'exercise-card-footer';
+
+    const details = document.createElement('details');
+    details.className = 'exercise-note-details';
+    const summary = document.createElement('summary');
+    summary.textContent = `Técnica y referencia (Descanso ${ex.restSeconds || 75}s)`;
+    const noteP = document.createElement('p');
+    noteP.className = 'exercise-note-body';
+    noteP.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
+    details.append(summary, noteP);
+
+    const btnEdit = document.createElement('button');
+    btnEdit.type = 'button';
+    btnEdit.className = 'btn-edit-ex';
+    btnEdit.textContent = 'Editar';
+    btnEdit.addEventListener('click', () => openExerciseDialog(ex));
+
+    footer.append(details, btnEdit);
+    li.appendChild(footer);
+
+    return li;
+  }
+
+  function renderExercisesList() {
+    const listEl = document.getElementById('exercises-list');
+    const headingEl = document.getElementById('exercises-heading');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const query = (state.searchQuery || '').trim().toLowerCase();
+
+    if (query) {
+      if (headingEl) {
+        headingEl.textContent = `Resultados de búsqueda para "${state.searchQuery}"`;
+      }
+      let matches = 0;
+      for (const dayKey of DAYS_ORDER) {
+        const day = state.schedule[dayKey];
+        for (const ex of day.exercises) {
+          const haystack = `${day.dayName} ${ex.name} ${ex.muscle} ${ex.equipment} ${ex.note}`.toLowerCase();
+          if (haystack.includes(query)) {
+            matches += 1;
+            const card = createExerciseCard(dayKey, ex);
+            listEl.appendChild(card);
+          }
+        }
+      }
+      if (matches === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.className = 'empty-day-box';
+        emptyLi.innerHTML = '<h3>Sin coincidencias</h3><p>No se encontraron ejercicios con ese término.</p>';
+        listEl.appendChild(emptyLi);
+      }
+      return;
+    }
+
+    const currentDay = state.schedule[state.selectedDay];
+    if (!currentDay) return;
+
+    if (headingEl) {
+      headingEl.textContent = `Ejercicios de ${currentDay.dayName} (Estándar 4 series × 12 reps)`;
+    }
+
+    if (currentDay.exercises.length === 0) {
+      const emptyLi = document.createElement('li');
+      emptyLi.className = 'empty-day-box';
+
+      if (currentDay.status === 'skipped_to_sunday') {
+        const h3 = document.createElement('h3');
+        h3.textContent = `📅 Día reprogramado al Domingo`;
+        const p = document.createElement('p');
+        p.textContent = `Marcaste que el ${currentDay.dayName} no se entrenará. Tu rutina completa te espera en la pestaña del Domingo.`;
+
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'quick-import-days';
+
+        const btnGoSun = document.createElement('button');
+        btnGoSun.type = 'button';
+        btnGoSun.className = 'btn-primary';
+        btnGoSun.textContent = 'Ir a la rutina en Domingo →';
+        btnGoSun.addEventListener('click', () => {
+          state.selectedDay = 'domingo';
+          saveState();
+          renderAll();
+        });
+
+        const btnRevert = document.createElement('button');
+        btnRevert.type = 'button';
+        btnRevert.className = 'btn-secondary';
+        btnRevert.textContent = 'Revertir y entrenar hoy';
+        btnRevert.addEventListener('click', () => revertSkippedDay(state.selectedDay));
+
+        actionsDiv.append(btnGoSun, btnRevert);
+        emptyLi.append(h3, p, actionsDiv);
+      } else {
+        const h3 = document.createElement('h3');
+        h3.textContent = '🌿 Domingo Libre / Día Comodín de Recuperación';
+        const p = document.createElement('p');
+        p.textContent =
+          'Si algún día de Lunes a Sábado no pudiste entrenar, puedes trasladar su rutina aquí al Domingo con un toque:';
+
+        const quickWrap = document.createElement('div');
+        quickWrap.className = 'quick-import-days';
+
+        for (const dayKey of DAYS_ORDER.slice(0, 6)) {
+          const d = state.schedule[dayKey];
+          if (d.exercises.length > 0) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn-secondary';
+            btn.textContent = `Traer ${d.dayName} (${d.title})`;
+            btn.addEventListener('click', () => moveDayToSunday(dayKey));
+            quickWrap.appendChild(btn);
+          }
+        }
+        emptyLi.append(h3, p, quickWrap);
+      }
+
+      listEl.appendChild(emptyLi);
+      return;
+    }
+
+    for (const ex of currentDay.exercises) {
+      listEl.appendChild(createExerciseCard(state.selectedDay, ex));
+    }
+  }
+
+  function renderWeeklyMatrix() {
+    const grid = document.getElementById('weekly-matrix-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    for (const dayKey of DAYS_ORDER) {
+      const day = state.schedule[dayKey];
+      const card = document.createElement('div');
+      card.className = 'matrix-day-card';
+
+      const header = document.createElement('div');
+      header.className = 'matrix-day-header';
+
+      const strong = document.createElement('strong');
+      strong.textContent = day.dayName;
+
+      const statusSpan = document.createElement('span');
+      statusSpan.className = 'matrix-day-status';
+      statusSpan.textContent =
+        day.status === 'skipped_to_sunday'
+          ? 'Movido a Dom'
+          : day.exercises.length === 0
+            ? 'Descanso'
+            : `${day.exercises.length} ejercicios`;
+
+      header.append(strong, statusSpan);
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'matrix-day-title';
+      titleDiv.textContent = day.title;
+
+      const countDiv = document.createElement('div');
+      countDiv.className = 'matrix-day-ex-count';
+      if (day.exercises.length > 0) {
+        const previewNames = day.exercises
+          .slice(0, 2)
+          .map(e => e.name)
+          .join(' · ');
+        countDiv.textContent = previewNames;
+      } else {
+        countDiv.textContent = 'Disponible para excepciones';
+      }
+
+      card.append(header, titleDiv, countDiv);
+      card.addEventListener('click', () => {
+        state.selectedDay = dayKey;
+        saveState();
+        renderAll();
+      });
+
+      grid.appendChild(card);
+    }
+  }
+
+  function renderAll() {
+    renderWeeklySummary();
+    renderDayTabs();
+    renderDayHero();
+    renderExercisesList();
+    renderWeeklyMatrix();
+  }
+
+  // Dialog Modal Controllers
+  function openExceptionDialog() {
+    const currentDay = state.schedule[state.selectedDay];
+    if (!currentDay) return;
+
+    if (currentDay.status === 'skipped_to_sunday') {
+      revertSkippedDay(state.selectedDay);
+      return;
+    }
+
+    const dialog = document.getElementById('exception-dialog');
+    const descEl = document.getElementById('exception-dialog-desc');
+    if (descEl) {
+      descEl.innerHTML = `Configura qué hacer con la rutina de <strong>${currentDay.dayName} (${currentDay.title})</strong> si hoy no se entrenará:`;
+    }
+    if (dialog && typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
+  }
+
+  function openExerciseDialog(exerciseToEdit = null) {
+    const dialog = document.getElementById('exercise-dialog');
+    const titleEl = document.getElementById('exercise-dialog-title');
+    const idInput = document.getElementById('edit-exercise-id');
+    const nameInput = document.getElementById('edit-exercise-name');
+    const muscleInput = document.getElementById('edit-exercise-muscle');
+    const equipInput = document.getElementById('edit-exercise-equipment');
+    const loadTypeSelect = document.getElementById('edit-load-type');
+    const loadValInput = document.getElementById('edit-load-value');
+    const setsInput = document.getElementById('edit-sets');
+    const repsInput = document.getElementById('edit-reps');
+    const restInput = document.getElementById('edit-rest');
+    const noteInput = document.getElementById('edit-note');
+    const btnDelete = document.getElementById('btn-delete-exercise');
+
+    if (exerciseToEdit) {
+      titleEl.textContent = 'Editar Ejercicio y Carga';
+      idInput.value = exerciseToEdit.id;
+      nameInput.value = exerciseToEdit.name;
+      muscleInput.value = exerciseToEdit.muscle || '';
+      equipInput.value = exerciseToEdit.equipment || '';
+      loadTypeSelect.value = exerciseToEdit.loadType || 'kg';
+      loadValInput.value = exerciseToEdit.loadValue ?? 10;
+      setsInput.value = exerciseToEdit.sets || 4;
+      repsInput.value = exerciseToEdit.reps || 12;
+      restInput.value = exerciseToEdit.restSeconds || 75;
+      noteInput.value = exerciseToEdit.note || '';
+      btnDelete.hidden = false;
+    } else {
+      titleEl.textContent = 'Nuevo Ejercicio (4 × 12)';
+      idInput.value = '';
+      nameInput.value = '';
+      muscleInput.value = state.schedule[state.selectedDay].muscleGroup;
+      equipInput.value = 'Polea / Máquina';
+      loadTypeSelect.value = 'kg';
+      loadValInput.value = 15;
+      setsInput.value = 4;
+      repsInput.value = 12;
+      restInput.value = 75;
+      noteInput.value = '';
+      btnDelete.hidden = true;
+    }
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
+  }
+
+  function bindEvents() {
+    const btnException = document.getElementById('btn-open-exception');
+    if (btnException) {
+      btnException.addEventListener('click', openExceptionDialog);
+    }
+
+    const exceptionRadios = document.querySelectorAll('input[name="exceptionMode"]');
+    const swapWrap = document.getElementById('swap-day-selector-wrap');
+    exceptionRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (swapWrap) {
+          swapWrap.hidden = radio.value !== 'swap_with_day' || !radio.checked;
+        }
+      });
+    });
+
+    const exceptionDialog = document.getElementById('exception-dialog');
+    if (exceptionDialog) {
+      exceptionDialog.addEventListener('close', () => {
+        if (exceptionDialog.returnValue !== 'apply') return;
+        const selectedMode = document.querySelector('input[name="exceptionMode"]:checked')?.value;
+        if (selectedMode === 'move_to_sunday') {
+          moveDayToSunday(state.selectedDay);
+        } else if (selectedMode === 'shift_chain_to_sunday') {
+          shiftChainToSunday(state.selectedDay);
+        } else if (selectedMode === 'swap_with_day') {
+          const targetDay = document.getElementById('swap-target-day')?.value || 'domingo';
+          swapDays(state.selectedDay, targetDay);
+        }
+      });
+    }
+
+    const btnAddEx = document.getElementById('btn-add-exercise');
+    if (btnAddEx) {
+      btnAddEx.addEventListener('click', () => openExerciseDialog(null));
+    }
+
+    const exerciseDialog = document.getElementById('exercise-dialog');
+    if (exerciseDialog) {
+      exerciseDialog.addEventListener('close', () => {
+        if (exerciseDialog.returnValue !== 'save') return;
+        const idVal = document.getElementById('edit-exercise-id').value;
+        const nameVal = document.getElementById('edit-exercise-name').value.trim();
+        if (!nameVal) return;
+
+        const muscleVal = document.getElementById('edit-exercise-muscle').value.trim() || 'General';
+        const equipVal = document.getElementById('edit-exercise-equipment').value.trim() || 'Máquina / Polea';
+        const loadTypeVal = document.getElementById('edit-load-type').value;
+        const loadVal = Number(document.getElementById('edit-load-value').value) || 0;
+        const setsVal = Math.max(1, Math.min(10, Number(document.getElementById('edit-sets').value) || 4));
+        const repsVal = Math.max(1, Math.min(50, Number(document.getElementById('edit-reps').value) || 12));
+        const restVal = Math.max(15, Number(document.getElementById('edit-rest').value) || 75);
+        const noteVal = document.getElementById('edit-note').value.trim();
+
+        const day = state.schedule[state.selectedDay];
+        if (idVal) {
+          const existing = day.exercises.find(e => e.id === idVal);
+          if (existing) {
+            existing.name = nameVal;
+            existing.muscle = muscleVal;
+            existing.equipment = equipVal;
+            existing.loadType = loadTypeVal;
+            existing.loadValue = loadVal;
+            existing.sets = setsVal;
+            existing.reps = repsVal;
+            existing.restSeconds = restVal;
+            existing.note = noteVal;
+            existing.completedSets = Array.from(
+              { length: setsVal },
+              (_, idx) => Boolean(existing.completedSets && existing.completedSets[idx])
+            );
+          }
+        } else {
+          day.exercises.push({
+            id: `${state.selectedDay}-custom-${Date.now()}`,
+            name: nameVal,
+            muscle: muscleVal,
+            equipment: equipVal,
+            loadType: loadTypeVal,
+            loadValue: loadVal,
+            sets: setsVal,
+            reps: repsVal,
+            restSeconds: restVal,
+            userBase: false,
+            note: noteVal,
+            completedSets: Array.from({ length: setsVal }, () => false)
+          });
+          if (state.selectedDay === 'domingo') {
+            day.status = 'reprogrammed';
+          }
+        }
+        saveState();
+        renderAll();
+      });
+    }
+
+    const btnDeleteEx = document.getElementById('btn-delete-exercise');
+    if (btnDeleteEx && exerciseDialog) {
+      btnDeleteEx.addEventListener('click', () => {
+        const idVal = document.getElementById('edit-exercise-id').value;
+        if (!idVal) return;
+        const day = state.schedule[state.selectedDay];
+        day.exercises = day.exercises.filter(e => e.id !== idVal);
+        exerciseDialog.close('deleted');
+        saveState();
+        renderAll();
+      });
+    }
+
+    const btnResetProgress = document.getElementById('btn-reset-week-progress');
+    if (btnResetProgress) {
+      btnResetProgress.addEventListener('click', resetWeeklySeriesProgress);
+    }
+
+    const btnRestoreSchedule = document.getElementById('btn-restore-schedule');
+    if (btnRestoreSchedule) {
+      btnRestoreSchedule.addEventListener('click', restoreOriginalSchedule);
+    }
+
+    // Search
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('exercise-search-input');
+    const btnClearSearch = document.getElementById('btn-clear-search');
+    if (searchForm) {
+      searchForm.addEventListener('submit', e => e.preventDefault());
+    }
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        state.searchQuery = searchInput.value;
+        if (btnClearSearch) btnClearSearch.hidden = !state.searchQuery;
+        renderExercisesList();
+      });
+    }
+    if (btnClearSearch && searchInput) {
+      btnClearSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        state.searchQuery = '';
+        btnClearSearch.hidden = true;
+        renderExercisesList();
+      });
+    }
+
+    // Rest Timer Controls
+    document.getElementById('btn-timer-minus')?.addEventListener('click', () => {
+      restRemainingSeconds = Math.max(0, restRemainingSeconds - 15);
+      updateTimerDisplay();
+    });
+    document.getElementById('btn-timer-plus')?.addEventListener('click', () => {
+      restRemainingSeconds += 15;
+      updateTimerDisplay();
+    });
+    document.getElementById('btn-timer-skip')?.addEventListener('click', stopRestTimer);
+
+    // JSON Backup Export / Import
+    document.getElementById('btn-export-json')?.addEventListener('click', () => {
+      const dataStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gym-rutinas-pro-backup.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    const importTrigger = document.getElementById('btn-import-json-trigger');
+    const importInput = document.getElementById('input-import-json');
+    if (importTrigger && importInput) {
+      importTrigger.addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', e => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const imported = JSON.parse(String(ev.target?.result || ''));
+            if (imported && imported.schedule && imported.schedule.lunes) {
+              state = imported;
+              saveState();
+              renderAll();
+            }
+          } catch (_) {
+            // Invalid JSON ignored
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+  }
+
+  // Register Service Worker for offline Android/PWA support
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+
+  // Expose API for automated testing and debugging
+  window.GymApp = {
+    getState: () => state,
+    selectDay: dayId => {
+      if (DAYS_ORDER.includes(dayId)) {
+        state.selectedDay = dayId;
+        saveState();
+        renderAll();
+      }
+    },
+    moveDayToSunday,
+    shiftChainToSunday,
+    swapDays,
+    restoreOriginalSchedule,
+    toggleExerciseLoadUnit,
+    adjustExerciseLoad,
+    toggleSetCompletion
+  };
+
+  bindEvents();
+  renderAll();
+})();

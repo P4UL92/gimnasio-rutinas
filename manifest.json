@@ -1,0 +1,19 @@
+{
+  "name": "Gym Rutinas Pro — Planificador Semanal",
+  "short_name": "Gym Rutinas",
+  "description": "Rutinas de gimnasio de Lunes a Sábado con reprogramación al Domingo, seguimiento de series, pesos en kg y niveles de polea.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f17",
+  "theme_color": "#10b981",
+  "lang": "es-PE",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

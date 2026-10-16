@@ -1,0 +1,73 @@
+name: Compilación Automática de APK Android (Gym Rutinas Pro)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Compilar APK Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar Repositorio
+        uses: actions/checkout@v4
+
+      - name: ☕ Configurar Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Instalar Dependencias de Capacitor
+        run: |
+          npm install
+
+      - name: 🧪 Ejecutar Pruebas de Integridad
+        run: |
+          npm test
+
+      - name: 🏗️ Construir Carpeta Web (www)
+        run: |
+          node tools/build_web_dist.cjs
+
+      - name: 🤖 Inicializar y Preparar Plataforma Android
+        run: |
+          node tools/prepare_android.cjs
+
+      - name: 🔑 Dar Permisos de Ejecución a Gradlew
+        run: |
+          chmod +x android/gradlew
+
+      - name: 🚀 Compilar APK Android (Debug)
+        run: |
+          cd android && ./gradlew assembleDebug
+
+      - name: 📤 Subir Archivo APK Compilado (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: GymRutinasPro-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+      - name: 🏆 Publicar Release en GitHub con APK Adjunto
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "Gym Rutinas Pro v1.0.0 (APK Android)"
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          body: |
+            ## 🏋️‍♂️ Gym Rutinas Pro — Lanzamiento Oficial v1.0.0
+            - Rutinas completas de Lunes a Sábado con división por grupos musculares.
+            - Sistema inteligente de excepciones y reprogramación al día Domingo.
+            - Soporte dual de cargas: Peso en kilogramos (`kg`) y Niveles de polea (`Nivel`).
+            - Temporizador de descanso, seguimiento de 4 series × 12 repeticiones e historial local.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

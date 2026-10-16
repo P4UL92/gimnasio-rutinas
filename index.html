@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f17">
+  <title>Gym Rutinas Pro — Planificador Lunes a Sábado + Domingo</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand-row">
+      <div class="brand-identity">
+        <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <path fill="currentColor" d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/>
+        </svg>
+        <div>
+          <span class="eyebrow">ANDROID WORKOUT PLANNER</span>
+          <h1>Gym Rutinas Pro</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="btn-reset-week-progress" class="btn-ghost" title="Reiniciar series marcadas de la semana">
+          Reiniciar Series
+        </button>
+        <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar orden original Lunes a Sábado">
+          Restaurar Días
+        </button>
+      </div>
+    </div>
+
+    <section class="weekly-summary-bar" aria-label="Progreso semanal">
+      <div class="summary-metrics">
+        <div class="metric-chip">
+          <span class="metric-label">Series Completadas</span>
+          <strong id="metric-sets-done">0 / 144</strong>
+        </div>
+        <div class="metric-chip">
+          <span class="metric-label">Días Activos</span>
+          <strong id="metric-days-status">Lun–Sáb (Dom libre)</strong>
+        </div>
+        <div class="metric-chip">
+          <span class="metric-label">Estándar Base</span>
+          <strong>4 × 12 reps</strong>
+        </div>
+      </div>
+      <div class="progress-track" role="region" aria-label="Porcentaje de entrenamiento semanal">
+        <progress id="weekly-progress-bar" class="workout-progress" value="0" max="100" style="--progress-hue: 160;"></progress>
+        <span id="weekly-progress-text" class="progress-caption">0% de la semana completado</span>
+      </div>
+    </section>
+
+    <nav class="day-tabs-nav" aria-label="Días de la semana">
+      <ul id="day-tabs-list" class="day-tabs-list">
+        <!-- Generado dinámicamente por app.js -->
+      </ul>
+    </nav>
+  </header>
+
+  <main class="app-main" id="main-content">
+    <section class="day-hero-card" id="day-hero-card" style="--day-hue: 160;">
+      <div class="day-hero-top">
+        <div>
+          <div class="day-badges" id="day-badges"></div>
+          <h2 id="day-title">Lunes: Espalda y Bíceps</h2>
+          <p id="day-subtitle" class="day-subtitle">Tracción / Pull — Poleas y Máquinas</p>
+        </div>
+        <div class="day-hero-stats">
+          <span id="day-sets-counter" class="day-sets-pill">0 / 24 series</span>
+          <span id="day-duration-pill" class="day-time-pill">~55 min</span>
+        </div>
+      </div>
+
+      <div class="day-action-bar" id="day-action-bar">
+        <button type="button" id="btn-open-exception" class="btn-warning-outline">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          </svg>
+          <span id="btn-exception-label">No entrenaré hoy → Mover al Domingo</span>
+        </button>
+        <button type="button" id="btn-add-exercise" class="btn-primary-outline">
+          + Agregar Ejercicio
+        </button>
+      </div>
+    </section>
+
+    <search class="exercise-search-bar" aria-label="Filtrar ejercicios del día o de la semana">
+      <form id="search-form" class="search-form">
+        <label for="exercise-search-input" class="sr-only">Buscar ejercicio o músculo</label>
+        <input
+          type="search"
+          id="exercise-search-input"
+          name="q"
+          placeholder="Buscar ejercicio (ej. espalda, polea, bíceps, pierna...)"
+          autocomplete="off"
+        >
+        <button type="button" id="btn-clear-search" class="btn-clear-search" hidden>Limpiar</button>
+      </form>
+    </search>
+
+    <section aria-labelledby="exercises-heading" class="exercises-section">
+      <div class="section-header-row">
+        <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
+        <span class="unit-legend">Toca <strong>kg / Nivel</strong> para alternar unidad</span>
+      </div>
+
+      <ul id="exercises-list" class="exercises-list">
+        <!-- Tarjetas de ejercicios renderizadas por app.js -->
+      </ul>
+    </section>
+
+    <section class="weekly-overview-section" aria-labelledby="overview-heading">
+      <details class="overview-accordion" name="gym-info" open>
+        <summary>
+          <span id="overview-heading" class="summary-title">📅 Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Planificación estructurada con tus marcas actuales configuradas (<strong>Espalda polea estrecha Nivel 6</strong>, <strong>Espalda agarre amplio 20 kg</strong>, <strong>Bíceps en polea 10 kg</strong>, <strong>4 series × 12 repeticiones</strong>). Si algún día no puedes asistir, muévelo al <strong>Domingo</strong> con un toque.
+          </p>
+          <div id="weekly-matrix-grid" class="weekly-matrix-grid">
+            <!-- Resumen de los 7 días -->
+          </div>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info">
+        <summary>
+          <span class="summary-title">💾 Respaldo de Datos (Exportar / Importar JSON)</span>
+        </summary>
+        <div class="overview-content backup-controls">
+          <p class="overview-intro">
+            Tus pesos, niveles de polea, excepciones de domingo y series completadas se guardan automáticamente en tu dispositivo Android.
+          </p>
+          <div class="backup-buttons-row">
+            <button type="button" id="btn-export-json" class="btn-secondary">Exportar Rutina (.json)</button>
+            <button type="button" id="btn-import-json-trigger" class="btn-secondary">Importar Rutina</button>
+            <input type="file" id="input-import-json" accept="application/json" hidden>
+          </div>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <aside id="rest-timer-bar" class="rest-timer-bar" aria-live="polite" hidden>
+    <div class="timer-info">
+      <span class="timer-badge">⏱️ DESCANSO</span>
+      <strong id="timer-countdown" class="timer-digits">01:15</strong>
+      <span id="timer-exercise-label" class="timer-ex-name">Serie completada</span>
+    </div>
+    <div class="timer-controls">
+      <button type="button" id="btn-timer-minus" class="btn-timer-step">-15s</button>
+      <button type="button" id="btn-timer-plus" class="btn-timer-step">+15s</button>
+      <button type="button" id="btn-timer-skip" class="btn-timer-close">Listo</button>
+    </div>
+  </aside>
+
+  <!-- Modal Nativo: Excepción de Día / Mover al Domingo -->
+  <dialog id="exception-dialog" class="gym-dialog" closedby="any" aria-labelledby="exception-dialog-title">
+    <form method="dialog" id="exception-form" class="dialog-form">
+      <header class="dialog-header">
+        <h2 id="exception-dialog-title">Reprogramar Día de Entrenamiento</h2>
+        <button type="submit" value="cancel" class="btn-icon-close" aria-label="Cerrar ventana">✕</button>
+      </header>
+      <div class="dialog-body">
+        <p id="exception-dialog-desc" class="dialog-lead">
+          ¿No podrás entrenar este día? Elige cómo reorganizar tu semana incluyendo el <strong>Domingo</strong>:
+        </p>
+
+        <div class="exception-options">
+          <label class="radio-card">
+            <input type="radio" name="exceptionMode" value="move_to_sunday" checked>
+            <span class="radio-card-body">
+              <strong>Pasar este entrenamiento al Domingo (Recomendado)</strong>
+              <small>Marca este día como descanso por excepción y traslada sus ejercicios íntegros al día Domingo.</small>
+            </span>
+          </label>
+
+          <label class="radio-card">
+            <input type="radio" name="exceptionMode" value="shift_chain_to_sunday">
+            <span class="radio-card-body">
+              <strong>Recorrer todos los días siguientes (+1 día hasta el Domingo)</strong>
+              <small>Este día queda libre y la fila de entrenamientos pendientes se desplaza un día hacia adelante hasta ocupar el Domingo.</small>
+            </span>
+          </label>
+
+          <label class="radio-card">
+            <input type="radio" name="exceptionMode" value="swap_with_day">
+            <span class="radio-card-body">
+              <strong>Intercambiar con otro día de la semana</strong>
+              <small>Cambia el entrenamiento de hoy con cualquier otro día (Lunes a Domingo).</small>
+            </span>
+          </label>
+        </div>
+
+        <div id="swap-day-selector-wrap" class="form-field" hidden>
+          <label for="swap-target-day">Selecciona el día con el que deseas intercambiar:</label>
+          <select id="swap-target-day" name="swapTargetDay">
+            <option value="domingo">Domingo</option>
+            <option value="lunes">Lunes</option>
+            <option value="martes">Martes</option>
+            <option value="miercoles">Miércoles</option>
+            <option value="jueves">Jueves</option>
+            <option value="viernes">Viernes</option>
+            <option value="sabado">Sábado</option>
+          </select>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button type="submit" value="cancel" class="btn-ghost">Cancelar</button>
+        <button type="submit" value="apply" id="btn-confirm-exception" class="btn-primary">Aplicar Reprogramación</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Modal Nativo: Editar o Agregar Ejercicio -->
+  <dialog id="exercise-dialog" class="gym-dialog" closedby="any" aria-labelledby="exercise-dialog-title">
+    <form method="dialog" id="exercise-form" class="dialog-form">
+      <header class="dialog-header">
+        <h2 id="exercise-dialog-title">Configurar Ejercicio y Carga</h2>
+        <button type="submit" value="cancel" class="btn-icon-close" aria-label="Cerrar ventana">✕</button>
+      </header>
+      <div class="dialog-body">
+        <input type="hidden" id="edit-exercise-id">
+
+        <div class="form-field">
+          <label for="edit-exercise-name">Nombre del ejercicio *</label>
+          <input type="text" id="edit-exercise-name" required placeholder="Ej. Espalda en polea agarre estrecho">
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="edit-exercise-muscle">Músculo objetivo</label>
+            <input type="text" id="edit-exercise-muscle" placeholder="Ej. Dorsal ancho / Bíceps">
+          </div>
+          <div class="form-field">
+            <label for="edit-exercise-equipment">Máquina / Equipo</label>
+            <input type="text" id="edit-exercise-equipment" placeholder="Ej. Polea alta / Máquina">
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="edit-load-type">Modo de carga (Peso o Nivel)</label>
+            <select id="edit-load-type">
+              <option value="kg">Kilogramos (kg)</option>
+              <option value="nivel">Nivel / Placa (sin peso visible)</option>
+              <option value="corporal">Peso Corporal</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="edit-load-value">Valor (kg o Nivel)</label>
+            <input type="number" id="edit-load-value" step="0.5" min="0" max="500" inputmode="decimal" required>
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-field">
+            <label for="edit-sets">Series</label>
+            <input type="number" id="edit-sets" min="1" max="10" inputmode="numeric" value="4" required>
+          </div>
+          <div class="form-field">
+            <label for="edit-reps">Repeticiones</label>
+            <input type="number" id="edit-reps" min="1" max="50" inputmode="numeric" value="12" required>
+          </div>
+          <div class="form-field">
+            <label for="edit-rest">Descanso (seg)</label>
+            <input type="number" id="edit-rest" min="15" max="300" step="5" inputmode="numeric" value="75" required>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="edit-note">Nota técnica o referencia de máquina</label>
+          <textarea id="edit-note" rows="2" placeholder="Ej. En nivel 6 porque no se ve el peso en placas..."></textarea>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button type="button" id="btn-delete-exercise" class="btn-danger-ghost" hidden>Eliminar</button>
+        <div class="dialog-footer-right">
+          <button type="submit" value="cancel" class="btn-ghost">Cancelar</button>
+          <button type="submit" value="save" id="btn-save-exercise" class="btn-primary">Guardar Cambios</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <footer class="app-footer">
+    <p>Gym Rutinas Pro v1.0 · Optimizado para Android (Capacitor 7) · Lunes a Sábado + Excepción Domingo</p>
+  </footer>
+
+  <script src="routines-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
