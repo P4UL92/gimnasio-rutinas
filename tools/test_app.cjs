@@ -167,6 +167,7 @@ const timingBtn = doc.querySelector(`.btn-tut-stopwatch[data-exercise-id="${firs
 assert.ok(timingBtn.classList.contains('is-timing'), 'El botón debe activarse en modo cronometraje');
 
 app.stopTutStopwatch();
+app.stopRestTimer();
 const afterDoneSets = (firstEx.completedSets || []).filter(Boolean).length;
 assert.equal(afterDoneSets, initialDoneSets + 1, 'Al finalizar TUT debe marcar la serie como completada');
 
@@ -186,6 +187,8 @@ const lastHistory = app.getState().history[0];
 assert.ok(typeof lastHistory.durationMs === 'number', 'El historial debe registrar durationMs');
 assert.ok(typeof lastHistory.durationText === 'string', 'El historial debe registrar durationText');
 app.resetSessionStopwatch();
+app.stopRestTimer();
 
 app.restoreOriginalSchedule();
 console.log('PASS: Todas las pruebas de ilustraciones SVG, mapa anatómico, gráficos estadísticos, cargas (kg/Nivel), series 4x12, excepciones al Domingo y cronómetro (Sesión + TUT + Flotante dual) pasaron con éxito.');
+process.exit(0);

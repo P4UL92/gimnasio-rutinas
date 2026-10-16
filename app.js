@@ -1671,7 +1671,9 @@
     getStopwatchElapsedMs,
     startTutStopwatch,
     stopTutStopwatch,
-    switchFloatingTimerMode
+    switchFloatingTimerMode,
+    startRestTimer,
+    stopRestTimer
   };
 
   bindEvents();
