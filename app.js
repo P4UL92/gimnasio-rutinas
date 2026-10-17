@@ -2786,13 +2786,21 @@
       const loadText = ex.loadType === 'nivel' ? `Nivel ${ex.loadValue}` : `${ex.loadValue} kg`;
       const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
       spriteStage.innerHTML = `
-        <div class="focus-sprite-box ${spriteInfo.cssClass} ${rowClass}" data-anim-type="${spriteInfo.typeKey}">
+        <div class="focus-sprite-box ${spriteInfo.cssClass || ''} ${rowClass}" data-anim-type="${spriteInfo.typeKey || ''}">
           <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}');"></div>
           <div class="sprite-overlay-badge">
-            <span class="sprite-badge-tag">🎬 ${spriteInfo.label} (3 Fases)</span>
+            <span class="sprite-badge-tag" title="${spriteInfo.label}">🎬 ${spriteInfo.label}</span>
             <span class="sprite-badge-load">${loadText}</span>
           </div>
-          <span class="sprite-zoom-hint">🔍 Ampliar 3 Fases</span>
+          <div class="sprite-overlay-bottom">
+            <span class="sprite-phase-pills" aria-hidden="true">
+              <span class="phase-pill-dot dot-1"></span>
+              <span class="phase-pill-dot dot-2"></span>
+              <span class="phase-pill-dot dot-3"></span>
+              <span class="phase-pill-text">3 FASES</span>
+            </span>
+            <span class="sprite-zoom-hint">🔍 Ampliar 3 Fases</span>
+          </div>
         </div>
       `;
     }

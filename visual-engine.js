@@ -270,10 +270,18 @@
     return `
       <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="button" tabindex="0" title="Toca para abrir el Visor Técnico de 3 Fases" aria-label="Demostración visual del ejercicio ${exercise.name}. Toca para ampliar las 3 fases">
         <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
-        <span class="sprite-zoom-hint" aria-hidden="true">🔍 3 Fases</span>
         <div class="sprite-overlay-badge">
-          <span class="sprite-badge-tag">${info.label}</span>
+          <span class="sprite-badge-tag" title="${info.label}">${info.label}</span>
           <span class="sprite-badge-load">${loadLabel}</span>
+        </div>
+        <div class="sprite-overlay-bottom">
+          <span class="sprite-phase-pills" aria-hidden="true">
+            <span class="phase-pill-dot dot-1"></span>
+            <span class="phase-pill-dot dot-2"></span>
+            <span class="phase-pill-dot dot-3"></span>
+            <span class="phase-pill-text">3 FASES</span>
+          </span>
+          <span class="sprite-zoom-hint" aria-hidden="true">🔍 3 Fases</span>
         </div>
       </div>
     `.trim();

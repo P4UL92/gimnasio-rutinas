@@ -509,7 +509,6 @@ body.animations-paused * {
   height: 100%;
   background-size: 300% 200%;
   background-repeat: no-repeat;
-  animation: playSpriteSteps 2.4s steps(2) infinite alternate;
   will-change: background-position;
   filter: contrast(1.05) brightness(1.02);
   transition: transform 0.2s ease;
@@ -519,44 +518,130 @@ body.animations-paused * {
   transform: scale(1.03);
 }
 
-/* Row 1 (Fila superior de cualquier spritesheet) */
+/* Animación robusta de 3 fases biomecánicas (Fila Superior) */
+@keyframes playSpriteTop {
+  0%, 32.99% {
+    background-position: 0% 8%;
+  }
+  33%, 65.99% {
+    background-position: 50% 8%;
+  }
+  66%, 100% {
+    background-position: 100% 8%;
+  }
+}
+
+/* Animación robusta de 3 fases biomecánicas (Fila Inferior) */
+@keyframes playSpriteBottom {
+  0%, 32.99% {
+    background-position: 0% 92%;
+  }
+  33%, 65.99% {
+    background-position: 50% 92%;
+  }
+  66%, 100% {
+    background-position: 100% 92%;
+  }
+}
+
+/* Diálogo de Visor Técnico (Full Strip y Modal 3 Fases) */
+@keyframes spritePhaseCycle {
+  0%, 32.99% {
+    background-position: 0% 4%;
+  }
+  33%, 65.99% {
+    background-position: 50% 4%;
+  }
+  66%, 100% {
+    background-position: 100% 4%;
+  }
+}
+
+@keyframes spritePhaseCycleBottom {
+  0%, 32.99% {
+    background-position: 0% 98%;
+  }
+  33%, 65.99% {
+    background-position: 50% 98%;
+  }
+  66%, 100% {
+    background-position: 100% 98%;
+  }
+}
+
+@keyframes phaseDotCycle1 {
+  0%, 32.99% {
+    background: #34d399;
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
+  }
+  33%, 100% {
+    background: #475569;
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes phaseDotCycle2 {
+  0%, 32.99% {
+    background: #475569;
+    transform: scale(1);
+    box-shadow: none;
+  }
+  33%, 65.99% {
+    background: #38bdf8;
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.8);
+  }
+  66%, 100% {
+    background: #475569;
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+
+@keyframes phaseDotCycle3 {
+  0%, 65.99% {
+    background: #475569;
+    transform: scale(1);
+    box-shadow: none;
+  }
+  66%, 100% {
+    background: #fbbf24;
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+  }
+}
+
+/* Compatibilidad con selectors de fila superior e inferior */
 .sprite-row-top .exercise-sprite-frame,
 .sprite-pulley-narrow .exercise-sprite-frame,
 .sprite-machine-wide .exercise-sprite-frame,
 .sprite-chest-press .exercise-sprite-frame,
-.sprite-leg-press .exercise-sprite-frame {
-  background-position-y: 8%;
+.sprite-leg-press .exercise-sprite-frame,
+.sprite-row-top .focus-sprite-frame {
+  background-position: 0% 8%;
+  animation: playSpriteTop 2.5s linear infinite alternate;
 }
 
-/* Row 2 (Fila inferior de cualquier spritesheet) */
 .sprite-row-bottom .exercise-sprite-frame,
 .sprite-cable-bicep .exercise-sprite-frame,
 .sprite-tricep-pushdown .exercise-sprite-frame,
-.sprite-shoulder-press .exercise-sprite-frame {
-  background-position-y: 92%;
-}
-
-@keyframes playSpriteSteps {
-  0% {
-    background-position-x: 0%;
-  }
-  100% {
-    background-position-x: 100%;
-  }
+.sprite-shoulder-press .exercise-sprite-frame,
+.sprite-row-bottom .focus-sprite-frame {
+  background-position: 0% 92%;
+  animation: playSpriteBottom 2.5s linear infinite alternate;
 }
 
 /* Control de pausa y accesibilidad para animaciones */
-body.animations-paused .exercise-sprite-frame {
+body.animations-paused .exercise-sprite-frame,
+body.animations-paused .focus-sprite-frame,
+body.animations-paused .sprite-viewer-frame,
+body.animations-paused .phase-pill-dot {
   animation-play-state: paused !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .exercise-sprite-frame {
-    animation: none !important;
-    background-position-x: 50% !important;
-  }
-}
-
+/* Capa superior de badges (Nombre de Ejercicio y Carga) */
 .sprite-overlay-badge {
   position: absolute;
   top: 6px;
@@ -565,31 +650,116 @@ body.animations-paused .exercise-sprite-frame {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 6px;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
 }
 
 .sprite-badge-tag {
-  font-size: 0.62rem;
+  font-size: clamp(0.52rem, 1.9vw, 0.65rem);
   font-weight: 800;
   color: #34d399;
-  background: rgba(11, 15, 25, 0.88);
+  background: rgba(11, 15, 25, 0.9);
   border: 1px solid rgba(16, 185, 129, 0.35);
   padding: 2px 6px;
   border-radius: 4px;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   backdrop-filter: blur(4px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+  line-height: 1.25;
 }
 
 .sprite-badge-load {
-  font-size: 0.64rem;
+  font-size: clamp(0.52rem, 1.9vw, 0.65rem);
   font-weight: 800;
   color: #fbbf24;
-  background: rgba(11, 15, 25, 0.88);
+  background: rgba(11, 15, 25, 0.9);
   border: 1px solid rgba(245, 158, 11, 0.35);
   padding: 2px 6px;
   border-radius: 4px;
   backdrop-filter: blur(4px);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.25;
+}
+
+/* Capa inferior de badges (Indicador de Fase 1-2-3 y Botón Ampliar) */
+.sprite-overlay-bottom {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.sprite-phase-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(11, 15, 25, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  padding: 2px 5px;
+  backdrop-filter: blur(4px);
+}
+
+.phase-pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #64748b;
+  display: inline-block;
+}
+
+.sprite-row-top .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-1,
+.sprite-row-bottom .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-1,
+.sprite-row-top .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-1,
+.sprite-row-bottom .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-1 {
+  animation: phaseDotCycle1 2.5s linear infinite alternate;
+}
+
+.sprite-row-top .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-2,
+.sprite-row-bottom .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-2,
+.sprite-row-top .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-2,
+.sprite-row-bottom .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-2 {
+  animation: phaseDotCycle2 2.5s linear infinite alternate;
+}
+
+.sprite-row-top .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-3,
+.sprite-row-bottom .exercise-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-3,
+.sprite-row-top .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-3,
+.sprite-row-bottom .focus-sprite-frame ~ .sprite-overlay-bottom .phase-pill-dot.dot-3 {
+  animation: phaseDotCycle3 2.5s linear infinite alternate;
+}
+
+.phase-pill-text {
+  font-size: clamp(0.48rem, 1.6vw, 0.58rem);
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.sprite-zoom-hint {
+  font-size: clamp(0.5rem, 1.8vw, 0.62rem);
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(11, 15, 25, 0.88);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1.25;
 }
 
 /* Search Bar */
@@ -1573,6 +1743,10 @@ body.animations-paused .exercise-sprite-frame {
   .exercise-visual-layout {
     grid-template-columns: 1fr;
   }
+  .exercise-sprite-box {
+    min-height: 160px;
+    max-height: 220px;
+  }
   .kpi-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1945,21 +2119,6 @@ body.animations-paused .exercise-sprite-frame {
 /* Sprite Zoom Hint Badge */
 .exercise-sprite-box {
   cursor: pointer;
-}
-
-.sprite-zoom-hint {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(11, 15, 25, 0.82);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  backdrop-filter: blur(4px);
-  pointer-events: none;
 }
 
 /* Interactive 5-Minute Warmup Checklist Card */
@@ -3269,17 +3428,18 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   height: 100%;
   background-size: 300% 200%;
   background-repeat: no-repeat;
-  animation: playSpriteSteps 2.4s steps(2) infinite alternate;
   will-change: background-position;
   filter: contrast(1.05) brightness(1.02);
 }
 
 .sprite-row-top .focus-sprite-frame {
-  background-position-y: 8%;
+  background-position: 0% 8%;
+  animation: playSpriteTop 2.5s linear infinite alternate;
 }
 
 .sprite-row-bottom .focus-sprite-frame {
-  background-position-y: 92%;
+  background-position: 0% 92%;
+  animation: playSpriteBottom 2.5s linear infinite alternate;
 }
 
 body.animations-paused .focus-sprite-frame {
