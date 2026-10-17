@@ -242,6 +242,64 @@ assert.ok(typeof lastHistory.durationText === 'string', 'El historial debe regis
 app.resetSessionStopwatch();
 app.stopRestTimer();
 
+// 16. Verificar Módulo Élite 1: Calculadora de Discos / Placas / 1RM y Registro Corporal Antropométrico
+const calcResult = app.renderCalculatorModal();
+assert.ok(calcResult && calcResult.breakdown, 'La calculadora de discos debe retornar el desglose por lado');
+app.openCalculatorDialog(100, 10);
+const platePills = doc.querySelectorAll('#calc-plates-visual .plate-pill');
+assert.ok(platePills.length > 0, 'Debe renderizar píldoras visuales de discos olímpicos por lado (ej. para 100kg con barra de 20kg -> 40kg por lado)');
+const zonesRows = doc.querySelectorAll('#calc-1rm-tbody tr');
+assert.equal(zonesRows.length, 5, 'La tabla de zonas de 1RM debe mostrar los 5 rangos porcentuales (100% a 60%)');
+
+const bodyEntry = app.recordBodyMetrics({
+  weightKg: 75.2,
+  fatPct: 14.5,
+  bicepsCm: 38.2,
+  chestCm: 105.0,
+  waistCm: 79.5
+});
+assert.equal(bodyEntry.weightKg, 75.2, 'Debe registrar el peso corporal en kg');
+assert.equal(app.getState().bodyMetrics.length, 1, 'El historial antropométrico debe tener 1 registro');
+assert.ok(doc.getElementById('body-metrics-history-list').textContent.includes('38.2 cm'), 'Debe renderizar la medida de bíceps en la lista');
+
+// 17. Verificar Módulo Élite 2: Modo Avanzado por Serie (Dropsets, Superseries, Rest-Pause) y Selector RIR
+const nextMode1 = app.cycleExerciseSetMode('lunes', 'lun-espalda-polea-estrecho');
+assert.equal(nextMode1, 'dropset', 'El modo de serie debe ciclar de normal a dropset');
+const nextMode2 = app.cycleExerciseSetMode('lunes', 'lun-espalda-polea-estrecho');
+assert.equal(nextMode2, 'superserie', 'El modo de serie debe ciclar de dropset a superserie');
+const nextRir = app.cycleExerciseRir('lunes', 'lun-espalda-polea-estrecho');
+assert.equal(nextRir, 'RIR 1', 'El selector de RIR debe avanzar de RIR 2 a RIR 1');
+
+// 18. Verificar Módulo Élite 3: Entrenador de Voz (TTS) y Metrónomo de Cadencia (3-1-1) en TUT
+app.toggleVoiceCoach(true);
+assert.equal(app.getState().voiceCoachEnabled, true, 'El entrenador de voz debe activarse');
+const cadSec0 = app.getCadencePhaseForSecond(0);
+assert.ok(cadSec0.text.includes('Excéntrica'), 'El segundo 0 del ciclo 3-1-1 debe corresponder a la Fase Excéntrica');
+const cadSec3 = app.getCadencePhaseForSecond(3);
+assert.ok(cadSec3.text.includes('Isométrica'), 'El segundo 3 del ciclo 3-1-1 debe corresponder a la Pausa Isométrica');
+const cadSec4 = app.getCadencePhaseForSecond(4);
+assert.ok(cadSec4.text.includes('Concéntrica'), 'El segundo 4 del ciclo 3-1-1 debe corresponder a la Subida Concéntrica');
+app.toggleVoiceCoach(false);
+
+// 19. Verificar Módulo Élite 4: Selector de Plantillas de Rutina y Tarjeta Resumen Compartible (PNG)
+const appliedDensity = app.applyWorkoutTemplate('densidad_poleas');
+assert.equal(appliedDensity, true, 'Debe aplicar la plantilla de Alta Densidad en Poleas');
+assert.equal(app.getState().activeTemplate, 'densidad_poleas');
+// Confirmar que las 3 marcas base del usuario en Lunes jamás se alteran al cambiar de plantilla
+const lunesAfterTpl = app.getState().schedule.lunes.exercises;
+assert.equal(lunesAfterTpl.find(e => e.id === 'lun-espalda-polea-estrecho').loadValue, 6);
+assert.equal(lunesAfterTpl.find(e => e.id === 'lun-espalda-maquina-amplio').loadValue, 20);
+assert.equal(lunesAfterTpl.find(e => e.id === 'lun-biceps-press-polea').loadValue, 10);
+
+app.applyWorkoutTemplate('default_ppl');
+const cardSummary = app.renderShareableSummaryCard();
+assert.ok(cardSummary && cardSummary.dayName, 'Debe generar el resumen táctico en el canvas compartible');
+assert.ok(doc.getElementById('share-card-canvas').dataset.renderedSummary.includes('Lunes'), 'El canvas debe almacenar el payload renderizado');
+
+// Re-verificación final: 0 etiquetas <svg> tras todos los renders dinámicos
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Élite');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas (0% SVGs en DOM, 24 patrones de sprites en 3 fases, visor técnico fullscreen, mapa anatómico rasterizado, calentamiento articular, sobrecarga progresiva 1RM, WakeLock, cargas kg/Nivel, series 4x12, excepciones al Domingo y cronómetro) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.5 Élite (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas y tarjeta PNG) pasaron con éxito.');
 process.exit(0);
+

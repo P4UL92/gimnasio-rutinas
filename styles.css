@@ -2192,3 +2192,179 @@ body.animations-paused .exercise-sprite-frame {
   font-weight: 700;
 }
 
+/* v1.5 Elite: Voice Coach & Metronome Active State */
+#btn-toggle-voice-coach[aria-pressed="true"] {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.18);
+  color: #bae6fd;
+}
+
+/* v1.5 Elite: Set Mode (Dropset, Superset, Rest-Pause) & RIR/RPE Chips */
+.ex-intensity-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.btn-set-mode-chip,
+.btn-rir-chip {
+  min-height: 26px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.69rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: rgba(30, 41, 59, 0.75);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.btn-set-mode-chip.mode-dropset {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+}
+
+.btn-set-mode-chip.mode-superset {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.18);
+  color: #bae6fd;
+}
+
+.btn-set-mode-chip.mode-restpause {
+  border-color: rgba(168, 85, 247, 0.55);
+  background: rgba(168, 85, 247, 0.18);
+  color: #e9d5ff;
+}
+
+.btn-rir-chip {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+
+.tut-cadence-banner {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* v1.5 Elite: Body Metrics & Anthropometric Form */
+.body-metrics-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.body-metrics-btn-wrap button {
+  width: 100%;
+}
+
+/* v1.5 Elite: Workout Templates Selector & Shareable PNG Card */
+.templates-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.btn-template-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: all 0.15s ease;
+}
+
+.btn-template-select strong {
+  font-size: 0.84rem;
+  color: #fff;
+}
+
+.btn-template-select small {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+}
+
+.btn-template-select.is-active {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.share-card-preview-box {
+  background: rgba(11, 15, 25, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.share-card-canvas {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: #0b0f19;
+}
+
+/* v1.5 Elite: Plate & 1RM Calculator Modal */
+.calc-dialog {
+  max-width: 540px;
+}
+
+.calc-plates-box,
+.calc-1rm-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.calc-plates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.calc-plates-visual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 36px;
+}
+
+.plate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  background: var(--bg-card);
+  border: 2px solid var(--plate-color, #10b981);
+  color: #fff;
+}
+

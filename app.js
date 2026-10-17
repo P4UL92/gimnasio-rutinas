@@ -20,17 +20,22 @@
       const day = schedule[dayKey];
       day.exercises = (day.exercises || []).map(ex => ({
         ...ex,
+        setMode: ex.setMode || 'normal',
+        targetRir: ex.targetRir || 'RIR 2',
         completedSets: Array.from({ length: ex.sets || 4 }, () => false)
       }));
     }
     return {
-      version: 2,
+      version: 3,
       selectedDay: detectDefaultDay(),
       searchQuery: '',
       animationsPaused: false,
       wakeLockEnabled: false,
+      voiceCoachEnabled: false,
+      activeTemplate: 'default_ppl',
       warmupByDay: {},
       progressionHistory: [],
+      bodyMetrics: [],
       history: [],
       schedule
     };
@@ -56,6 +61,8 @@
         }
         for (const ex of parsed.schedule[dayKey].exercises) {
           const targetSets = Number(ex.sets) || 4;
+          if (!ex.setMode) ex.setMode = 'normal';
+          if (!ex.targetRir) ex.targetRir = 'RIR 2';
           if (!Array.isArray(ex.completedSets) || ex.completedSets.length !== targetSets) {
             ex.completedSets = Array.from({ length: targetSets }, (_, idx) =>
               Boolean(ex.completedSets && ex.completedSets[idx])
@@ -72,8 +79,14 @@
       if (!Array.isArray(parsed.progressionHistory)) {
         parsed.progressionHistory = [];
       }
+      if (!Array.isArray(parsed.bodyMetrics)) {
+        parsed.bodyMetrics = [];
+      }
       if (!parsed.warmupByDay || typeof parsed.warmupByDay !== 'object') {
         parsed.warmupByDay = {};
+      }
+      if (!parsed.activeTemplate) {
+        parsed.activeTemplate = 'default_ppl';
       }
       parsed.searchQuery = '';
       return parsed;
@@ -110,10 +123,43 @@
     activeExerciseId: null,
     startTime: 0,
     intervalId: null,
-    elapsedSeconds: 0
+    elapsedSeconds: 0,
+    lastSpokenSecond: -1
   };
 
   let currentFloatingTimerMode = 'rest'; // 'rest' | 'stopwatch'
+
+  function speakCoachMessage(text) {
+    if (!state.voiceCoachEnabled) return;
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function') {
+        window.speechSynthesis.cancel();
+        const utter = new window.SpeechSynthesisUtterance(text);
+        utter.lang = 'es-ES';
+        utter.rate = 1.08;
+        window.speechSynthesis.speak(utter);
+      }
+    } catch (_) {
+      // Ignore TTS errors in headless or unsupported environments
+    }
+  }
+
+  function toggleVoiceCoach(forceState) {
+    const nextState = typeof forceState === 'boolean' ? forceState : !state.voiceCoachEnabled;
+    state.voiceCoachEnabled = nextState;
+    saveState();
+
+    const btnVoice = document.getElementById('btn-toggle-voice-coach');
+    if (btnVoice) {
+      btnVoice.setAttribute('aria-pressed', state.voiceCoachEnabled ? 'true' : 'false');
+      btnVoice.textContent = state.voiceCoachEnabled ? '🔊 Coach Activo (3-1-1)' : '🔊 Coach Voz / Cadencia';
+    }
+    if (state.voiceCoachEnabled) {
+      speakCoachMessage('Entrenador de voz y metrónomo de cadencia activados.');
+      showCelebrationToast('🔊 Coach de Voz y Cadencia 3-1-1 activados');
+    }
+    return state.voiceCoachEnabled;
+  }
 
   function formatStopwatchTime(totalMs) {
     const totalSec = Math.floor(totalMs / 1000);
@@ -264,6 +310,21 @@
     }
   }
 
+  function getCadencePhaseForSecond(elapsedSec) {
+    const repNum = Math.min(12, Math.floor(elapsedSec / 5) + 1);
+    const phaseSec = elapsedSec % 5;
+    if (phaseSec < 3) {
+      const label = `Fase Excéntrica (${3 - phaseSec}s)`;
+      return { repNum, phaseLabel: label, text: label, phaseClass: 'phase-eccentric', shortCue: 'Controla bajada' };
+    }
+    if (phaseSec === 3) {
+      const label = 'Contracción Isométrica (1s)';
+      return { repNum, phaseLabel: label, text: label, phaseClass: 'phase-isometric', shortCue: 'Aprieta' };
+    }
+    const label = 'Subida Concéntrica (1s)';
+    return { repNum, phaseLabel: label, text: label, phaseClass: 'phase-concentric', shortCue: 'Sube potente' };
+  }
+
   function startTutStopwatch(dayId, exerciseId) {
     if (tutState.intervalId) {
       clearInterval(tutState.intervalId);
@@ -272,9 +333,16 @@
     tutState.activeExerciseId = exerciseId;
     tutState.startTime = Date.now();
     tutState.elapsedSeconds = 0;
+    tutState.lastSpokenSecond = -1;
 
     if (!stopwatchState.running) {
       startSessionStopwatch();
+    }
+
+    const day = state.schedule[dayId];
+    const ex = day?.exercises?.find(e => e.id === exerciseId);
+    if (ex) {
+      speakCoachMessage(`Iniciando serie de ${ex.name}. Doce repeticiones, cadencia tres, uno, uno.`);
     }
 
     tutState.intervalId = setInterval(() => {
@@ -283,7 +351,7 @@
     }, 250);
 
     renderExercisesList();
-    showCelebrationToast('⏱️ Serie iniciada. Ejecuta tus 12 repeticiones');
+    showCelebrationToast('⏱️ Serie iniciada. Ejecuta tus 12 repeticiones (Cadencia 3-1-1)');
   }
 
   function stopTutStopwatch() {
@@ -311,6 +379,7 @@
         renderAll();
         showCelebrationToast(`✅ Serie ${setNumToComplete + 1} completada (${finalSeconds}s bajo tensión)`);
         playCompletionTone();
+        speakCoachMessage(`Serie ${setNumToComplete + 1} completada en ${finalSeconds} segundos. Inicia descanso.`);
         startRestTimer(ex.restSeconds || 75, `${ex.name} (Serie ${setNumToComplete + 1}/${ex.sets} · TUT: ${finalSeconds}s)`);
         return;
       }
@@ -326,6 +395,13 @@
       const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
       btn.classList.add('is-timing');
       btn.innerHTML = `<span class="tut-icon">⏹️</span> Finalizar Serie (${timeStr})`;
+
+      const statusSpan = btn.parentElement?.querySelector('.tut-status-text');
+      if (statusSpan) {
+        const cad = getCadencePhaseForSecond(tutState.elapsedSeconds);
+        statusSpan.className = 'tut-status-text tut-cadence-banner';
+        statusSpan.textContent = `🎵 Rep ~${cad.repNum}/12 · ${cad.phaseLabel}`;
+      }
     }
   }
 
@@ -421,6 +497,7 @@
       state.progressionHistory.length = 40;
     }
     triggerHaptic([50, 40, 90]);
+    speakCoachMessage(`Nuevo récord personal en ${ex.name}. ${unitLabel}.`);
     showCelebrationToast(`📈 ¡Sobrecarga Progresiva en ${ex.name}! ${prevLabel} → ${unitLabel} (1RM Est: ${e1rm} kg)`);
     return entry;
   }
@@ -1062,6 +1139,46 @@
     topRow.append(titleGroup, loadBox);
     contentCol.appendChild(topRow);
 
+    // Fila de Modo de Serie (Normal, Dropset, Superserie, Rest-Pause), RIR y Calculadora Rápida
+    const intensityRow = document.createElement('div');
+    intensityRow.className = 'ex-intensity-row';
+
+    const setModeKey = ex.setMode || 'normal';
+    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
+    const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
+
+    const btnModeChip = document.createElement('button');
+    btnModeChip.type = 'button';
+    btnModeChip.className = `btn-set-mode-chip mode-${setModeKey}`;
+    btnModeChip.dataset.exerciseId = ex.id;
+    btnModeChip.title = `${modeMeta.desc}. Toca para alternar técnica (Normal → Dropset → Superserie → Rest-Pause).`;
+    btnModeChip.textContent = modeMeta.badge;
+    btnModeChip.addEventListener('click', () => cycleExerciseSetMode(dayId, ex.id));
+
+    const rirLabel = ex.targetRir || 'RIR 2';
+    const btnRirChip = document.createElement('button');
+    btnRirChip.type = 'button';
+    btnRirChip.className = 'btn-rir-chip';
+    btnRirChip.dataset.exerciseId = ex.id;
+    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para alternar.';
+    btnRirChip.textContent = `🎯 ${rirLabel}`;
+    btnRirChip.addEventListener('click', () => cycleExerciseRir(dayId, ex.id));
+
+    const btnCalcChip = document.createElement('button');
+    btnCalcChip.type = 'button';
+    btnCalcChip.className = 'btn-rir-chip';
+    btnCalcChip.title = 'Abrir calculadora de discos olímpicos y 1RM con la carga de este ejercicio';
+    btnCalcChip.textContent = '🧮 Discos / 1RM';
+    btnCalcChip.addEventListener('click', () => {
+      const effKg = GYM_VISUALS && typeof GYM_VISUALS.resolveEffectiveLoadKg === 'function'
+        ? GYM_VISUALS.resolveEffectiveLoadKg(ex)
+        : Number(ex.loadValue) || 20;
+      openCalculatorDialog(effKg, ex.reps || 12);
+    });
+
+    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip);
+    contentCol.appendChild(intensityRow);
+
     const setsRow = document.createElement('div');
     setsRow.className = 'sets-tracker-row';
 
@@ -1113,7 +1230,12 @@
 
     const tutInfo = document.createElement('span');
     tutInfo.className = 'tut-status-text';
-    tutInfo.textContent = 'Mide tiempo bajo tensión (TUT) y avanza serie';
+    if (isTimingThis) {
+      const cad = getCadencePhaseForSecond(tutState.elapsedSeconds);
+      tutInfo.innerHTML = `<span class="tut-cadence-banner ${cad.phaseClass}">${cad.text} · Rep ~${cad.repNum}/${ex.reps || 12}</span>`;
+    } else {
+      tutInfo.textContent = 'Mide tiempo bajo tensión (TUT 3-1-1) y avanza serie';
+    }
 
     tutRow.append(tutBtn, tutInfo);
     contentCol.appendChild(tutRow);
@@ -1143,6 +1265,368 @@
     li.appendChild(visualLayout);
 
     return li;
+  }
+
+  function cycleExerciseSetMode(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    const modesOrder = ['normal', 'dropset', 'superserie', 'restpause'];
+    const currentIdx = modesOrder.indexOf(ex.setMode || 'normal');
+    const nextMode = modesOrder[(currentIdx + 1) % modesOrder.length];
+    ex.setMode = nextMode;
+
+    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
+    const meta = modeCatalog[nextMode];
+    if (meta && meta.restFactor) {
+      const baseRest = 75;
+      ex.restSeconds = Math.max(20, Math.round(baseRest * meta.restFactor));
+    }
+    triggerHaptic([35]);
+    saveState();
+    renderExercisesList();
+    return nextMode;
+  }
+
+  function cycleExerciseRir(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    const rirOrder = (GYM_VISUALS && GYM_VISUALS.RIR_ORDER) || ['RIR 3', 'RIR 2', 'RIR 1', 'RIR 0 (Fallo)'];
+    const currentIdx = rirOrder.indexOf(ex.targetRir || 'RIR 2');
+    const nextRir = rirOrder[(currentIdx + 1) % rirOrder.length];
+    ex.targetRir = nextRir;
+
+    triggerHaptic([30]);
+    saveState();
+    renderExercisesList();
+    return nextRir;
+  }
+
+  function recordBodyMetrics(customMetrics) {
+    const weightInput = document.getElementById('body-weight-kg');
+    const fatInput = document.getElementById('body-fat-pct');
+    const bicepsInput = document.getElementById('body-biceps-cm');
+    const chestInput = document.getElementById('body-chest-cm');
+    const waistInput = document.getElementById('body-waist-cm');
+
+    const weightKg = customMetrics?.weightKg ?? (Number(weightInput?.value) || 74.5);
+    const fatPct = customMetrics?.fatPct ?? (Number(fatInput?.value) || 15.0);
+    const bicepsCm = customMetrics?.bicepsCm ?? (Number(bicepsInput?.value) || 37.5);
+    const chestCm = customMetrics?.chestCm ?? (Number(chestInput?.value) || 104.0);
+    const waistCm = customMetrics?.waistCm ?? (Number(waistInput?.value) || 80.0);
+
+    if (!Array.isArray(state.bodyMetrics)) {
+      state.bodyMetrics = [];
+    }
+
+    const prev = state.bodyMetrics[0] || null;
+    const deltaWeight = prev ? Math.round((weightKg - prev.weightKg) * 10) / 10 : 0;
+    const deltaBiceps = prev ? Math.round((bicepsCm - prev.bicepsCm) * 10) / 10 : 0;
+
+    const entry = {
+      id: `bm-${Date.now()}`,
+      dateISO: new Date().toISOString(),
+      weightKg,
+      fatPct,
+      bicepsCm,
+      chestCm,
+      waistCm,
+      deltaWeight,
+      deltaBiceps
+    };
+
+    state.bodyMetrics.unshift(entry);
+    state.bodyMetrics = state.bodyMetrics.slice(0, 24);
+    triggerHaptic([50, 40]);
+    saveState();
+    renderBodyMetricsHistory();
+    showCelebrationToast(`⚖️ Medida corporal registrada: ${weightKg} kg · Bíceps ${bicepsCm} cm`);
+    return entry;
+  }
+
+  function renderBodyMetricsHistory() {
+    const listEl = document.getElementById('body-metrics-history-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const records = Array.isArray(state.bodyMetrics) ? state.bodyMetrics : [];
+    if (records.length === 0) {
+      const emptyLi = document.createElement('li');
+      emptyLi.className = 'history-item';
+      emptyLi.innerHTML = `
+        <div>
+          <strong>Sin registros antropométricos aún</strong>
+          <div><small>Guarda tu peso y perímetros semanales para medir hipertrofia real junto a tus cargas.</small></div>
+        </div>
+        <div><span>Meta: Control Semanal</span></div>
+      `;
+      listEl.appendChild(emptyLi);
+      return;
+    }
+
+    for (const item of records) {
+      const li = document.createElement('li');
+      li.className = 'history-item';
+      const dateStr = new Date(item.dateISO).toLocaleDateString('es-PE', {
+        day: '2-digit',
+        month: 'short'
+      });
+      const wSign = item.deltaWeight > 0 ? `+${item.deltaWeight}` : `${item.deltaWeight}`;
+      const bSign = item.deltaBiceps > 0 ? `+${item.deltaBiceps}` : `${item.deltaBiceps}`;
+      li.innerHTML = `
+        <div>
+          <strong>⚖️ ${item.weightKg} kg (${item.fatPct}% grasa) · ${dateStr}</strong>
+          <div><small>💪 Bíceps: ${item.bicepsCm} cm (${bSign} cm) · 🦍 Torso: ${item.chestCm} cm · Cintura: ${item.waistCm} cm</small></div>
+        </div>
+        <div>
+          <strong>Δ Peso: ${wSign} kg</strong>
+        </div>
+      `;
+      listEl.appendChild(li);
+    }
+  }
+
+  function applyWorkoutTemplate(templateKey) {
+    if (!GYM_VISUALS || !GYM_VISUALS.WORKOUT_TEMPLATES || !GYM_VISUALS.WORKOUT_TEMPLATES[templateKey]) {
+      return false;
+    }
+    const tpl = GYM_VISUALS.WORKOUT_TEMPLATES[templateKey];
+    state.activeTemplate = templateKey;
+
+    // Reiniciar con el horario base intacto (preservando siempre las 3 marcas base del usuario en Lunes)
+    const freshSchedule = deepClone(GYM_DATA.INITIAL_SCHEDULE);
+    for (const dayKey of DAYS_ORDER) {
+      const day = freshSchedule[dayKey];
+      const override = tpl.dayOverrides && tpl.dayOverrides[dayKey];
+      if (override) {
+        if (override.title) day.title = override.title;
+        if (override.subtitle) day.subtitle = override.subtitle;
+      }
+      day.exercises = (day.exercises || []).map(ex => ({
+        ...ex,
+        setMode: ex.userBase ? 'normal' : (override?.defaultSetMode || 'normal'),
+        targetRir: ex.userBase ? 'RIR 2' : (override?.defaultRir || 'RIR 2'),
+        completedSets: Array.from({ length: ex.sets || 4 }, () => false)
+      }));
+    }
+
+    state.schedule = freshSchedule;
+    saveState();
+    renderAll();
+
+    document.querySelectorAll('.btn-template-select').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.template === templateKey);
+    });
+
+    showCelebrationToast(`🧩 Plantilla aplicada: ${tpl.name} (Marcas base de Lunes preservadas)`);
+    return true;
+  }
+
+  function renderShareableSummaryCard() {
+    const canvas = document.getElementById('share-card-canvas');
+    if (!canvas || !GYM_VISUALS) return null;
+
+    const analytics = GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER);
+    const currentDay = state.schedule[state.selectedDay] || state.schedule.lunes;
+    const prCount = (state.progressionHistory || []).length;
+
+    const summaryPayload = {
+      dayName: currentDay.dayName,
+      title: currentDay.title,
+      weeklyVolumeKg: analytics.completedWeeklyVolumeKg || analytics.totalWeeklyVolumeKg,
+      completedSets: analytics.completedSetsCount,
+      plannedSets: analytics.plannedSetsCount,
+      prCount,
+      template: state.activeTemplate || 'default_ppl'
+    };
+    canvas.dataset.renderedSummary = JSON.stringify(summaryPayload);
+
+    try {
+      const isJsDom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
+      const ctx = !isJsDom && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
+      if (ctx) {
+        const w = canvas.width || 720;
+        const h = canvas.height || 400;
+
+        // Fondo Oscuro Táctico
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#070b14');
+        grad.addColorStop(1, '#111c33');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Borde Esmeralda
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(12, 12, w - 24, h - 24);
+
+        // Cabecera
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('GYM RUTINAS PRO · REPORTE TÁCTICO ANDROID', 36, 56);
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText(`${currentDay.dayName}: ${currentDay.title}`, 36, 102);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '18px sans-serif';
+        ctx.fillText(`Estándar: 4 series × 12 reps · Marcas Base: Nivel 6 | 20 kg | 10 kg`, 36, 138);
+
+        // Bloques de KPIs
+        const boxes = [
+          { label: 'VOLUMEN SEMANAL', val: `${analytics.completedWeeklyVolumeKg} / ${analytics.totalWeeklyVolumeKg} kg`, color: '#10b981' },
+          { label: 'SERIES COMPLETADAS', val: `${analytics.completedSetsCount} / ${analytics.plannedSetsCount}`, color: '#38bdf8' },
+          { label: 'RÉCORDS / PRs', val: `${prCount} progresiones`, color: '#f59e0b' }
+        ];
+
+        boxes.forEach((b, idx) => {
+          const bx = 36 + idx * 218;
+          const by = 175;
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+          ctx.fillRect(bx, by, 202, 110);
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx, by, 202, 110);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = 'bold 13px sans-serif';
+          ctx.fillText(b.label, bx + 14, by + 34);
+
+          ctx.fillStyle = '#f8fafc';
+          ctx.font = 'bold 21px sans-serif';
+          ctx.fillText(b.val, bx + 14, by + 74);
+        });
+
+        // Pie de tarjeta
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '16px sans-serif';
+        const dateNow = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+        ctx.fillText(`Generado el ${dateNow} · 100% Sprites Rasterizados · 0% SVGs`, 36, 345);
+      }
+    } catch (_) {
+      // En entornos headless sin soporte nativo de canvas 2D se conserva dataset.renderedSummary
+    }
+
+    return summaryPayload;
+  }
+
+  function downloadShareableSummaryCard() {
+    renderShareableSummaryCard();
+    const canvas = document.getElementById('share-card-canvas');
+    if (!canvas) return;
+    try {
+      const dataUrl = typeof canvas.toDataURL === 'function' ? canvas.toDataURL('image/png') : '';
+      if (dataUrl && dataUrl.startsWith('data:image')) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `gym-rutinas-pro-${state.selectedDay}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    } catch (_) {
+      // Ignore canvas export restrictions in headless tests
+    }
+    showCelebrationToast('📸 Tarjeta resumen generada lista para compartir');
+  }
+
+  function renderCalculatorModal() {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.calculatePlateBreakdown !== 'function') return null;
+    const targetInput = document.getElementById('calc-target-kg');
+    const barSelect = document.getElementById('calc-bar-kg');
+    const repsInput = document.getElementById('calc-reps-done');
+    const platesVisual = document.getElementById('calc-plates-visual');
+    const summaryLine = document.getElementById('calc-plate-summary-line');
+    const tbody1rm = document.getElementById('calc-1rm-tbody');
+
+    const targetKg = Number(targetInput?.value) || 60;
+    const barKg = Number(barSelect?.value ?? 20);
+    const repsDone = Number(repsInput?.value) || 12;
+
+    const breakdown = GYM_VISUALS.calculatePlateBreakdown(targetKg, barKg);
+    const e1rm = GYM_VISUALS.calculateE1RM('kg', targetKg, repsDone);
+    const zones = GYM_VISUALS.calculate1RMZones(e1rm);
+
+    if (platesVisual) {
+      platesVisual.innerHTML = '';
+      if (barKg === 0) {
+        const pill = document.createElement('span');
+        pill.className = 'plate-pill';
+        pill.style.background = '#d97706';
+        pill.textContent = `Torre de Polea: Nivel ${breakdown.pulleyEquivalentLevel} (~${targetKg} kg)`;
+        platesVisual.appendChild(pill);
+      } else if (breakdown.platesPerSide.length === 0) {
+        const pill = document.createElement('span');
+        pill.className = 'plate-pill';
+        pill.style.background = '#475569';
+        pill.textContent = `Solo barra / soporte (${barKg} kg sin discos adicionales)`;
+        platesVisual.appendChild(pill);
+      } else {
+        const colors = {
+          25: '#ef4444',
+          20: '#3b82f6',
+          15: '#eab308',
+          10: '#10b981',
+          5: '#6366f1',
+          2.5: '#ec4899',
+          1.25: '#64748b'
+        };
+        for (const p of breakdown.platesPerSide) {
+          const pill = document.createElement('span');
+          pill.className = 'plate-pill';
+          pill.style.background = colors[p.weight] || '#10b981';
+          pill.textContent = `${p.count} × ${p.weight} kg`;
+          platesVisual.appendChild(pill);
+        }
+      }
+    }
+
+    if (summaryLine) {
+      summaryLine.textContent =
+        barKg === 0
+          ? `Equivalencia en polea: Nivel ${breakdown.pulleyEquivalentLevel} · 1RM Estimado: ${e1rm} kg`
+          : `Carga por lado: ${breakdown.perSideKg} kg + Barra (${barKg} kg) = ${breakdown.achievedTotalKg} kg · 1RM Est.: ${e1rm} kg (Equiv. Polea Nivel ${breakdown.pulleyEquivalentLevel})`;
+    }
+
+    if (tbody1rm) {
+      tbody1rm.innerHTML = '';
+      for (const z of zones) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${z.pct}%</strong></td>
+          <td><strong>${z.weightKg} kg</strong></td>
+          <td>${z.repsRange}</td>
+          <td>${z.zone}</td>
+        `;
+        tbody1rm.appendChild(tr);
+      }
+    }
+
+    return { breakdown, e1rm, zones };
+  }
+
+  function openCalculatorDialog(initialKg = 60, initialReps = 12) {
+    const dialog = document.getElementById('calc-dialog');
+    const targetInput = document.getElementById('calc-target-kg');
+    const repsInput = document.getElementById('calc-reps-done');
+
+    if (targetInput && typeof initialKg === 'number') {
+      targetInput.value = String(initialKg);
+    }
+    if (repsInput && typeof initialReps === 'number') {
+      repsInput.value = String(initialReps);
+    }
+
+    renderCalculatorModal();
+    if (dialog && typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
   }
 
   function toggleWarmupStep(dayId, stepId) {
@@ -1592,6 +2076,16 @@
       btnWake.textContent = state.wakeLockEnabled ? '🔆 Pantalla Fija' : '🔆 Pantalla Activa';
     }
 
+    const btnVoice = document.getElementById('btn-toggle-voice-coach');
+    if (btnVoice) {
+      btnVoice.setAttribute('aria-pressed', state.voiceCoachEnabled ? 'true' : 'false');
+      btnVoice.textContent = state.voiceCoachEnabled ? '🔊 Coach Activo (3-1-1)' : '🔊 Coach Voz / Cadencia';
+    }
+
+    document.querySelectorAll('.btn-template-select').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.template === (state.activeTemplate || 'default_ppl'));
+    });
+
     renderWeeklySummary();
     renderDayTabs();
     renderDayHero();
@@ -1599,6 +2093,9 @@
     renderExercisesList();
     renderAnalyticsDashboard();
     renderProgressionHistory();
+    renderBodyMetricsHistory();
+    renderCalculatorModal();
+    renderShareableSummaryCard();
     renderWeeklyMatrix();
   }
 
@@ -1716,6 +2213,8 @@
     const setsInput = document.getElementById('edit-sets');
     const repsInput = document.getElementById('edit-reps');
     const restInput = document.getElementById('edit-rest');
+    const setModeSelect = document.getElementById('edit-set-mode');
+    const rirSelect = document.getElementById('edit-rir');
     const spriteTypeSelect = document.getElementById('edit-sprite-type');
     const noteInput = document.getElementById('edit-note');
     const btnDelete = document.getElementById('btn-delete-exercise');
@@ -1731,6 +2230,8 @@
       setsInput.value = exerciseToEdit.sets || 4;
       repsInput.value = exerciseToEdit.reps || 12;
       restInput.value = exerciseToEdit.restSeconds || 75;
+      if (setModeSelect) setModeSelect.value = exerciseToEdit.setMode || 'normal';
+      if (rirSelect) rirSelect.value = exerciseToEdit.targetRir || 'RIR 2';
       if (spriteTypeSelect) spriteTypeSelect.value = exerciseToEdit.spriteType || 'auto';
       noteInput.value = exerciseToEdit.note || '';
       btnDelete.hidden = false;
@@ -1745,6 +2246,8 @@
       setsInput.value = 4;
       repsInput.value = 12;
       restInput.value = 75;
+      if (setModeSelect) setModeSelect.value = 'normal';
+      if (rirSelect) rirSelect.value = 'RIR 2';
       if (spriteTypeSelect) spriteTypeSelect.value = 'auto';
       noteInput.value = '';
       btnDelete.hidden = true;
@@ -1762,6 +2265,49 @@
         toggleWakeLock();
       });
     }
+
+    const btnVoice = document.getElementById('btn-toggle-voice-coach');
+    if (btnVoice) {
+      btnVoice.addEventListener('click', () => {
+        toggleVoiceCoach();
+      });
+    }
+
+    const btnOpenCalc = document.getElementById('btn-open-calc-dialog');
+    if (btnOpenCalc) {
+      btnOpenCalc.addEventListener('click', () => {
+        openCalculatorDialog(60, 12);
+      });
+    }
+
+    ['calc-target-kg', 'calc-bar-kg', 'calc-reps-done'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', renderCalculatorModal);
+        el.addEventListener('change', renderCalculatorModal);
+      }
+    });
+
+    document.getElementById('btn-save-body-metrics')?.addEventListener('click', () => {
+      recordBodyMetrics();
+    });
+
+    document.querySelectorAll('.btn-template-select').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.template) {
+          applyWorkoutTemplate(btn.dataset.template);
+        }
+      });
+    });
+
+    document.getElementById('btn-generate-share-card')?.addEventListener('click', () => {
+      renderShareableSummaryCard();
+      showCelebrationToast('🎨 Tarjeta resumen actualizada en el lienzo');
+    });
+
+    document.getElementById('btn-download-share-card')?.addEventListener('click', () => {
+      downloadShareableSummaryCard();
+    });
 
     const btnToggleAnim = document.getElementById('btn-toggle-animations');
     if (btnToggleAnim) {
@@ -1849,6 +2395,8 @@
         const setsVal = Math.max(1, Math.min(10, Number(document.getElementById('edit-sets').value) || 4));
         const repsVal = Math.max(1, Math.min(50, Number(document.getElementById('edit-reps').value) || 12));
         const restVal = Math.max(15, Number(document.getElementById('edit-rest').value) || 75);
+        const setModeVal = document.getElementById('edit-set-mode')?.value || 'normal';
+        const rirVal = document.getElementById('edit-rir')?.value || 'RIR 2';
         const spriteTypeVal = document.getElementById('edit-sprite-type')?.value || 'auto';
         const noteVal = document.getElementById('edit-note').value.trim();
 
@@ -1866,6 +2414,8 @@
             existing.sets = setsVal;
             existing.reps = repsVal;
             existing.restSeconds = restVal;
+            existing.setMode = setModeVal;
+            existing.targetRir = rirVal;
             existing.spriteType = spriteTypeVal;
             existing.note = noteVal;
             existing.completedSets = Array.from(
@@ -1887,6 +2437,8 @@
             sets: setsVal,
             reps: repsVal,
             restSeconds: restVal,
+            setMode: setModeVal,
+            targetRir: rirVal,
             spriteType: spriteTypeVal,
             userBase: false,
             note: noteVal,
@@ -2045,13 +2597,24 @@
     switchFloatingTimerMode,
     startRestTimer,
     stopRestTimer,
-    // Nuevas APIs Pro (Visor Técnico 3 Fases, Calentamiento, Sobrecarga Progresiva y WakeLock)
+    // APIs Pro v1.4 (Visor Técnico 3 Fases, Calentamiento, Sobrecarga Progresiva y WakeLock)
     openSpriteViewerDialog,
     setSpriteViewerPhase,
     setSpriteViewerSpeed,
     toggleWarmupStep,
     completeAllWarmupSteps,
-    toggleWakeLock
+    toggleWakeLock,
+    // APIs Élite v1.5 (Calculadora Discos/1RM, Medidas Corporales, Modos Serie/RIR, Coach Voz/Cadencia y Plantillas/PNG)
+    openCalculatorDialog,
+    renderCalculatorModal,
+    recordBodyMetrics,
+    cycleExerciseSetMode,
+    cycleExerciseRir,
+    toggleVoiceCoach,
+    getCadencePhaseForSecond,
+    applyWorkoutTemplate,
+    renderShareableSummaryCard,
+    downloadShareableSummaryCard
   };
 
   bindEvents();

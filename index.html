@@ -20,6 +20,12 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
+          🧮 Calc. Discos / 1RM
+        </button>
+        <button type="button" id="btn-toggle-voice-coach" class="btn-ghost" aria-pressed="false" title="Activar Entrenador de Voz (TTS) y Metrónomo de Cadencia 3-1-1 en series TUT">
+          🔊 Coach Voz / Cadencia
+        </button>
         <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
           🔆 Pantalla Activa
         </button>
@@ -268,6 +274,79 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
+          <span class="summary-title">⚖️ Registro Corporal y Medidas Antropométricas</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Registra tu evolución física semanal (peso corporal, porcentaje graso estimado y perímetros musculares en centímetros).
+          </p>
+          <div class="body-metrics-form-grid">
+            <div class="form-field">
+              <label for="body-weight-kg">Peso Corporal (kg)</label>
+              <input type="number" id="body-weight-kg" step="0.1" min="30" max="250" value="74.5">
+            </div>
+            <div class="form-field">
+              <label for="body-fat-pct">% Grasa Est.</label>
+              <input type="number" id="body-fat-pct" step="0.5" min="4" max="50" value="16.5">
+            </div>
+            <div class="form-field">
+              <label for="body-biceps-cm">Bíceps / Brazo (cm)</label>
+              <input type="number" id="body-biceps-cm" step="0.5" min="20" max="65" value="37.0">
+            </div>
+            <div class="form-field">
+              <label for="body-chest-cm">Pecho / Espalda (cm)</label>
+              <input type="number" id="body-chest-cm" step="0.5" min="60" max="160" value="104.0">
+            </div>
+            <div class="form-field">
+              <label for="body-waist-cm">Cintura (cm)</label>
+              <input type="number" id="body-waist-cm" step="0.5" min="50" max="150" value="81.0">
+            </div>
+            <div class="form-field body-metrics-btn-wrap">
+              <label>&nbsp;</label>
+              <button type="button" id="btn-save-body-metrics" class="btn-primary">➕ Guardar Medición</button>
+            </div>
+          </div>
+          <ul id="body-metrics-history-list" class="workout-history-list" style="margin-top: 12px;">
+            <!-- Historial antropométrico -->
+          </ul>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info">
+        <summary>
+          <span class="summary-title">🧩 Plantillas de Rutina y Tarjeta Resumen Compartible (PNG)</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Alterna el enfoque táctico de tu semana (conservando intactas tus marcas base de Lunes: <strong>Nivel 6, 20 kg y 10 kg</strong>) o genera una tarjeta gráfica PNG de tu progreso para compartir.
+          </p>
+          <div class="templates-selector-grid" id="templates-selector-grid">
+            <button type="button" class="btn-template-select is-active" data-template="default_ppl">
+              <strong>PPL × 2 Clásico (Lun–Sáb)</strong>
+              <small>Tracción / Empuje / Pierna estándar 4×12</small>
+            </button>
+            <button type="button" class="btn-template-select" data-template="torso_pierna">
+              <strong>Torso / Pierna + Brazos</strong>
+              <small>Frecuencia 2 con énfasis en Espalda y Bíceps</small>
+            </button>
+            <button type="button" class="btn-template-select" data-template="densidad_poleas">
+              <strong>Alta Densidad (Dropsets & Superseries)</strong>
+              <small>Activa biseries, dropsets y RIR 1 en poleas</small>
+            </button>
+          </div>
+
+          <div class="share-card-preview-box">
+            <canvas id="share-card-canvas" width="760" height="420" class="share-card-canvas" aria-label="Tarjeta gráfica de resumen semanal"></canvas>
+            <div class="backup-buttons-row" style="margin-top: 10px;">
+              <button type="button" id="btn-generate-share-card" class="btn-secondary">🔄 Actualizar Tarjeta</button>
+              <button type="button" id="btn-download-share-card" class="btn-primary">📥 Descargar Tarjeta PNG</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info">
+        <summary>
           <span class="summary-title">🏆 Historial de Entrenamientos Registrados</span>
         </summary>
         <div class="overview-content">
@@ -456,6 +535,26 @@
           </div>
         </div>
 
+        <div class="form-row-2">
+          <div class="form-field">
+            <label for="edit-set-mode">Método de Intensidad (Modo de Serie)</label>
+            <select id="edit-set-mode">
+              <option value="normal">🎯 Estándar Normal (4 × 12)</option>
+              <option value="dropset">🔥 Dropset Final (-25% peso al fallo)</option>
+              <option value="superset">⚡ Superserie / Biserie sin descanso</option>
+              <option value="restpause">⏸️ Rest-Pause (+15s pausa +4 reps)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="edit-rir">Esfuerzo Objetivo (RIR / RPE)</label>
+            <select id="edit-rir">
+              <option value="RIR 2">RIR 2 (A 2 reps del fallo · RPE 8)</option>
+              <option value="RIR 1">RIR 1 (A 1 rep del fallo · RPE 9)</option>
+              <option value="RIR 0 (Fallo)">RIR 0 (Fallo muscular controlado · RPE 10)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="form-field">
           <label for="edit-sprite-type">Animación Visual / Sprite del Ejercicio (3 Fases)</label>
           <select id="edit-sprite-type">
@@ -558,8 +657,73 @@
     </form>
   </dialog>
 
+  <!-- Modal Nativo: Calculadora de Discos por Lado, Placas de Polea y Zonas 1RM -->
+  <dialog id="calc-dialog" class="gym-dialog calc-dialog" closedby="any" aria-labelledby="calc-dialog-title">
+    <form method="dialog" class="dialog-form">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">HERRAMIENTA DE CARGA Y FUERZA</span>
+          <h2 id="calc-dialog-title">🧮 Calculadora de Discos, Poleas y 1RM</h2>
+        </div>
+        <button type="submit" value="close" class="btn-icon-close" aria-label="Cerrar calculadora">✕</button>
+      </header>
+      <div class="dialog-body">
+        <div class="form-row-3">
+          <div class="form-field">
+            <label for="calc-target-kg">Peso Total (kg)</label>
+            <input type="number" id="calc-target-kg" step="2.5" min="0" max="500" value="60">
+          </div>
+          <div class="form-field">
+            <label for="calc-bar-kg">Barra / Soporte</label>
+            <select id="calc-bar-kg">
+              <option value="20">Barra Olímpica (20 kg)</option>
+              <option value="10">Barra Z / Corta (10 kg)</option>
+              <option value="0">Prensa / Máquina (0 kg)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="calc-reps-done">Reps p/ 1RM</label>
+            <input type="number" id="calc-reps-done" min="1" max="30" value="12">
+          </div>
+        </div>
+
+        <div class="calc-plates-box">
+          <div class="calc-plates-header">
+            <strong id="calc-per-side-text">20 kg por cada lado</strong>
+            <span id="calc-pulley-equiv" class="badge badge-user-base">≈ Nivel 17 en Polea</span>
+          </div>
+          <div id="calc-plates-visual" class="calc-plates-visual" aria-label="Discos a cargar por lado">
+            <!-- Discos renderizados por app.js -->
+          </div>
+        </div>
+
+        <div class="calc-1rm-box">
+          <div class="calc-plates-header">
+            <strong>Tabla de Zonas de Fuerza e Hipertrofia</strong>
+            <span id="calc-e1rm-badge" class="badge badge-muscle">1RM Est: 84 kg</span>
+          </div>
+          <table class="muscle-stats-table" aria-label="Tabla de porcentajes de 1RM">
+            <thead>
+              <tr>
+                <th scope="col">% 1RM</th>
+                <th scope="col">Peso Sugerido</th>
+                <th scope="col">Rango / Zona</th>
+              </tr>
+            </thead>
+            <tbody id="calc-1rm-tbody">
+              <!-- Filas generadas por app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button type="submit" value="close" class="btn-primary" style="width: 100%;">Listo</button>
+      </footer>
+    </form>
+  </dialog>
+
   <footer class="app-footer">
-    <p>Gym Rutinas Pro v2.1 · Sprites Rasterizados 3 Fases, Visor Técnico, Sobrecarga Progresiva y Modo Nativo · Android (Capacitor 7)</p>
+    <p>Gym Rutinas Pro v2.5 Élite · Sprites 3 Fases, Visor Técnico, Coach de Voz, Calculadora 1RM, Registro Corporal y Modo Nativo · Android (Capacitor 7)</p>
   </footer>
 
   <script src="routines-data.js"></script>

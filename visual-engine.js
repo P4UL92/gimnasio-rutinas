@@ -493,6 +493,81 @@
     };
   }
 
+  // Calculadora de Discos por lado (Estándar Olímpico / Gimnasio)
+  function calculatePlateBreakdown(targetWeightKg, barWeightKg = 20) {
+    const total = Math.max(0, Number(targetWeightKg) || 0);
+    const bar = Math.max(0, Number(barWeightKg) || 0);
+    const netLoad = Math.max(0, total - bar);
+    let remainingPerSide = netLoad / 2;
+
+    const standardPlates = [
+      { weight: 25, color: '#ef4444', label: '25 kg' },
+      { weight: 20, color: '#3b82f6', label: '20 kg' },
+      { weight: 15, color: '#eab308', label: '15 kg' },
+      { weight: 10, color: '#10b981', label: '10 kg' },
+      { weight: 5, color: '#f8fafc', label: '5 kg' },
+      { weight: 2.5, color: '#a855f7', label: '2.5 kg' },
+      { weight: 1.25, color: '#64748b', label: '1.25 kg' }
+    ];
+
+    const platesPerSide = [];
+    for (const p of standardPlates) {
+      const count = Math.floor((remainingPerSide + 0.001) / p.weight);
+      if (count > 0) {
+        platesPerSide.push({ ...p, count });
+        remainingPerSide = Number((remainingPerSide - count * p.weight).toFixed(2));
+      }
+    }
+
+    return {
+      totalKg: total,
+      barKg: bar,
+      perSideKg: Number((netLoad / 2).toFixed(2)),
+      platesPerSide,
+      remainderKg: remainingPerSide
+    };
+  }
+
+  // Zonas de porcentaje sobre el 1RM para hipertrofia y fuerza
+  function calculate1RMZones(e1rmKg) {
+    const base = Math.max(1, Number(e1rmKg) || 40);
+    return [
+      { pct: 100, reps: '1 rep (Máximo)', weightKg: Math.round(base * 10) / 10, zone: 'Fuerza Máxima' },
+      { pct: 85, reps: '5–6 reps', weightKg: Math.round(base * 0.85 * 10) / 10, zone: 'Fuerza / Tensión' },
+      { pct: 75, reps: '8–10 reps', weightKg: Math.round(base * 0.75 * 10) / 10, zone: 'Hipertrofia Pesada' },
+      { pct: 70, reps: '12 reps (Tu Estándar)', weightKg: Math.round(base * 0.70 * 10) / 10, zone: 'Hipertrofia Óptima 4×12' },
+      { pct: 60, reps: '15–18 reps', weightKg: Math.round(base * 0.60 * 10) / 10, zone: 'Bombeo / Resistencia' }
+    ];
+  }
+
+  // Modos Avanzados de Serie (Normal, Dropset, Superserie, Rest-Pause) y RIR
+  const SET_MODE_CATALOG = {
+    normal: { id: 'normal', label: 'Estándar 4×12', badge: '🎯 Serie Normal', css: 'mode-normal' },
+    dropset: { id: 'dropset', label: 'Dropset en última serie (-25% peso al fallo)', badge: '🔥 Dropset Final', css: 'mode-dropset' },
+    superset: { id: 'superset', label: 'Superserie / Biserie sin descanso intermedio', badge: '⚡ Superserie', css: 'mode-superset' },
+    restpause: { id: 'restpause', label: 'Rest-Pause (12 reps + 15s + 4 reps extra)', badge: '⏸️ Rest-Pause', css: 'mode-restpause' }
+  };
+
+  const RIR_ORDER = ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)'];
+
+  const WORKOUT_TEMPLATES = {
+    default_ppl: {
+      id: 'default_ppl',
+      name: 'PPL × 2 Clásico (Tracción / Empuje / Pierna)',
+      description: 'Distribución original Lunes a Sábado con tus marcas base intactas en Lunes (Nivel 6, 20 kg, 10 kg, 4×12).'
+    },
+    torso_pierna: {
+      id: 'torso_pierna',
+      name: 'Torso / Pierna + Especialización Espalda y Brazos',
+      description: 'Agrupa Torso y Pierna de Lunes a Jueves, dejando Viernes y Sábado para énfasis intensivo en Espalda, Bíceps, Hombros y Core.'
+    },
+    densidad_poleas: {
+      id: 'densidad_poleas',
+      name: 'Alta Densidad en Poleas y Máquinas (Superseries & Dropsets)',
+      description: 'Activa automáticamente biseries, dropsets en polea y RIR 1–2 en los ejercicios clave de la semana para máxima hipertrofia en menos tiempo.'
+    }
+  };
+
   return {
     EXERCISE_SPRITE_CATALOG,
     detectExerciseAnimationType,
@@ -502,6 +577,11 @@
     renderAnatomyMapSVG,
     calculateE1RM,
     getWarmupProtocolForDay,
+    calculatePlateBreakdown,
+    calculate1RMZones,
+    SET_MODE_CATALOG,
+    RIR_ORDER,
+    WORKOUT_TEMPLATES,
     computeAnalytics
   };
 });
