@@ -18,265 +18,447 @@
           <img src="assets/icons/icon-192.png" alt="" class="brand-logo-img" width="36" height="36">
         </span>
         <div>
-          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.7 LEGEND</span>
+          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.8 FOCUS UI</span>
           <h1>Gym Rutinas Pro</h1>
         </div>
       </div>
-      <div class="header-actions">
-        <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
-          🧮 Calc. Discos / 1RM
+
+      <div class="header-quick-actions">
+        <button type="button" id="btn-header-start-day" class="btn-primary btn-header-start" title="Abrir pantalla de entrenamiento activo del día">
+          ▶ Entrenar
         </button>
-        <button type="button" id="btn-toggle-voice-coach" class="btn-ghost" aria-pressed="false" title="Activar Entrenador de Voz (TTS) y Metrónomo de Cadencia 3-1-1 en series TUT">
-          🔊 Coach Voz / Cadencia
-        </button>
-        <button type="button" id="btn-toggle-deload-mode" class="btn-ghost" aria-pressed="false" title="Activar o desactivar Semana de Descarga Articular (-20% carga sugerida y RIR 3)">
-          🛡️ Modo Descarga
-        </button>
-        <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
-          🔆 Pantalla Activa
-        </button>
-        <button type="button" id="btn-toggle-animations" class="btn-ghost" aria-pressed="true" title="Pausar o reanudar animaciones de ejercicios">
-          ⏸️ Pausar Anim.
-        </button>
-        <button type="button" id="btn-reset-week-progress" class="btn-ghost" title="Reiniciar series marcadas de la semana">
-          Reiniciar Series
-        </button>
-        <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar orden original Lunes a Sábado">
-          Restaurar Días
-        </button>
+
+        <!-- Menú Agrupado de Opciones Secundarias de Cabecera -->
+        <details id="header-tools-menu" class="header-tools-menu">
+          <summary class="btn-ghost header-tools-trigger" aria-label="Abrir menú de herramientas y ajustes">
+            ⚙️ Opciones
+          </summary>
+          <div class="header-actions header-tools-dropdown">
+            <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
+              🧮 Calc. Discos / 1RM
+            </button>
+            <button type="button" id="btn-toggle-voice-coach" class="btn-ghost" aria-pressed="false" title="Activar Entrenador de Voz (TTS) y Metrónomo de Cadencia 3-1-1 en series TUT">
+              🔊 Coach Voz / Cadencia
+            </button>
+            <button type="button" id="btn-toggle-deload-mode" class="btn-ghost" aria-pressed="false" title="Activar o desactivar Semana de Descarga Articular (-20% carga sugerida y RIR 3)">
+              🛡️ Modo Descarga
+            </button>
+            <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
+              🔆 Pantalla Activa
+            </button>
+            <button type="button" id="btn-toggle-animations" class="btn-ghost" aria-pressed="true" title="Pausar o reanudar animaciones de ejercicios">
+              ⏸️ Pausar Anim.
+            </button>
+            <button type="button" id="btn-reset-week-progress" class="btn-ghost" title="Reiniciar series marcadas de la semana">
+              🔄 Reiniciar Series
+            </button>
+            <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar orden original Lunes a Sábado">
+              🗓️ Restaurar Días
+            </button>
+          </div>
+        </details>
       </div>
     </div>
 
-    <section class="weekly-summary-bar" aria-label="Progreso semanal">
-      <div class="summary-metrics">
-        <div class="metric-chip">
-          <span class="metric-label">Series Completadas</span>
-          <strong id="metric-sets-done">0 / 144</strong>
-        </div>
-        <div class="metric-chip">
-          <span class="metric-label">Tonelaje / Volumen</span>
-          <strong id="metric-volume-kg">0 kg</strong>
-        </div>
-        <div class="metric-chip">
-          <span class="metric-label">Días Activos</span>
-          <strong id="metric-days-status">Lun–Sáb (Dom libre)</strong>
-        </div>
-        <div class="metric-chip">
-          <span class="metric-label">Estándar Base</span>
-          <strong>4 × 12 reps</strong>
-        </div>
-      </div>
-      <div class="progress-track" role="region" aria-label="Porcentaje de entrenamiento semanal">
-        <progress id="weekly-progress-bar" class="workout-progress" value="0" max="100" style="--progress-hue: 160;"></progress>
-        <span id="weekly-progress-text" class="progress-caption">0% completado</span>
-      </div>
-    </section>
-
-    <!-- Barra del Cronómetro de Entrenamiento -->
-    <section class="workout-stopwatch-bar" id="workout-stopwatch-bar" aria-label="Cronómetro de entrenamiento">
-      <div class="stopwatch-main-row">
-        <div class="stopwatch-display-group">
-          <span class="stopwatch-pulse-dot" id="stopwatch-pulse-dot" aria-hidden="true"></span>
-          <div>
-            <span class="stopwatch-title">CRONÓMETRO DE SESIÓN</span>
-            <strong id="session-stopwatch-digits" class="stopwatch-digits">00:00:00</strong>
+    <!-- Barra compacta desplegable para Cronómetro Global y Resumen Semanal (Ahorra espacio en vertical) -->
+    <details id="header-metrics-drawer" class="header-metrics-drawer">
+      <summary class="header-metrics-summary">
+        <span class="compact-stat-pill">📊 Semana: <strong id="compact-week-pct">0%</strong></span>
+        <span class="compact-stat-pill">⏱️ Sesión: <strong id="compact-stopwatch-digits">00:00:00</strong></span>
+        <span class="compact-drawer-toggle">Resumen y Cronómetro ▾</span>
+      </summary>
+      <div class="header-metrics-body">
+        <section class="weekly-summary-bar" aria-label="Progreso semanal">
+          <div class="summary-metrics">
+            <div class="metric-chip">
+              <span class="metric-label">Series Completadas</span>
+              <strong id="metric-sets-done">0 / 144</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-label">Tonelaje / Volumen</span>
+              <strong id="metric-volume-kg">0 kg</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-label">Días Activos</span>
+              <strong id="metric-days-status">Lun–Sáb (Dom libre)</strong>
+            </div>
+            <div class="metric-chip">
+              <span class="metric-label">Estándar Base</span>
+              <strong>4 × 12 reps</strong>
+            </div>
           </div>
-        </div>
-        <div class="stopwatch-controls">
-          <button type="button" id="btn-stopwatch-toggle" class="btn-stopwatch-primary">
-            ▶ Iniciar
-          </button>
-          <button type="button" id="btn-stopwatch-lap" class="btn-stopwatch-secondary" disabled title="Marcar vuelta o serie">
-            🚩 Vuelta
-          </button>
-          <button type="button" id="btn-stopwatch-reset" class="btn-stopwatch-ghost" title="Reiniciar cronómetro">
-            ↺
-          </button>
-        </div>
-      </div>
-      <div id="stopwatch-laps-drawer" class="stopwatch-laps-drawer" hidden>
-        <ol id="stopwatch-laps-list" class="stopwatch-laps-list"></ol>
-      </div>
-    </section>
+          <div class="progress-track" role="region" aria-label="Porcentaje de entrenamiento semanal">
+            <progress id="weekly-progress-bar" class="workout-progress" value="0" max="100" style="--progress-hue: 160;"></progress>
+            <span id="weekly-progress-text" class="progress-caption">0% completado</span>
+          </div>
+        </section>
 
-    <nav class="day-tabs-nav" aria-label="Días de la semana">
+        <!-- Barra del Cronómetro de Entrenamiento -->
+        <section class="workout-stopwatch-bar" id="workout-stopwatch-bar" aria-label="Cronómetro de entrenamiento">
+          <div class="stopwatch-main-row">
+            <div class="stopwatch-display-group">
+              <span class="stopwatch-pulse-dot" id="stopwatch-pulse-dot" aria-hidden="true"></span>
+              <div>
+                <span class="stopwatch-title">CRONÓMETRO DE SESIÓN</span>
+                <strong id="session-stopwatch-digits" class="stopwatch-digits">00:00:00</strong>
+              </div>
+            </div>
+            <div class="stopwatch-controls">
+              <button type="button" id="btn-stopwatch-toggle" class="btn-stopwatch-primary">
+                ▶ Iniciar
+              </button>
+              <button type="button" id="btn-stopwatch-lap" class="btn-stopwatch-secondary" disabled title="Marcar vuelta o serie">
+                🚩 Vuelta
+              </button>
+              <button type="button" id="btn-stopwatch-reset" class="btn-stopwatch-ghost" title="Reiniciar cronómetro">
+                ↺
+              </button>
+            </div>
+          </div>
+          <div id="stopwatch-laps-drawer" class="stopwatch-laps-drawer" hidden>
+            <ol id="stopwatch-laps-list" class="stopwatch-laps-list"></ol>
+          </div>
+        </section>
+      </div>
+    </details>
+
+    <nav class="day-tabs-nav" id="day-tabs-nav" aria-label="Días de la semana">
       <ul id="day-tabs-list" class="day-tabs-list">
         <!-- Generado dinámicamente por app.js -->
       </ul>
     </nav>
   </header>
 
-  <main class="app-main" id="main-content">
-    <section class="day-hero-card" id="day-hero-card" style="--day-hue: 160;">
-      <div class="day-hero-grid">
-        <div class="day-hero-info">
-          <div class="day-badges" id="day-badges"></div>
-          <h2 id="day-title">Lunes: Espalda y Bíceps</h2>
-          <p id="day-subtitle" class="day-subtitle">Tracción / Pull — Poleas y Máquinas</p>
-          <div class="day-hero-stats">
-            <span id="day-sets-counter" class="day-sets-pill">0 / 24 series</span>
-            <span id="day-duration-pill" class="day-time-pill">~55 min</span>
-            <span id="day-volume-pill" class="day-time-pill">0 kg hoy</span>
-          </div>
-
-          <div class="day-action-bar" id="day-action-bar">
-            <button type="button" id="btn-open-exception" class="btn-warning-outline">
-              <span aria-hidden="true">📅</span>
-              <span id="btn-exception-label">No entrenaré hoy → Mover al Domingo</span>
-            </button>
-            <button type="button" id="btn-add-exercise" class="btn-primary-outline">
-              + Agregar Ejercicio
-            </button>
-            <button type="button" id="btn-log-workout" class="btn-primary">
-              🏆 Registrar Sesión
-            </button>
-          </div>
-        </div>
-
-        <!-- Mapa Anatómico Corporal Interactivo (Frente y Espalda 100% Raster + CSS) -->
-        <div class="day-anatomy-panel" id="day-anatomy-panel" aria-label="Mapa anatómico de músculos trabajados hoy">
-          <!-- Renderizado por visual-engine.js -->
-        </div>
-      </div>
-    </section>
-
-    <search class="exercise-search-bar" aria-label="Filtrar ejercicios del día o de la semana">
-      <form id="search-form" class="search-form">
-        <label for="exercise-search-input" class="sr-only">Buscar ejercicio o músculo</label>
-        <input
-          type="search"
-          id="exercise-search-input"
-          name="q"
-          placeholder="Buscar ejercicio (ej. espalda, polea, bíceps, pierna...)"
-          autocomplete="off"
-        >
-        <button type="button" id="btn-clear-search" class="btn-clear-search" hidden>Limpiar</button>
-      </form>
-    </search>
-
-    <section aria-labelledby="exercises-heading" class="exercises-section">
-      <!-- Checklist Interactivo de Calentamiento Articular (5 min) -->
-      <details id="warmup-checklist-card" class="warmup-checklist-card">
-        <summary class="warmup-summary">
-          <div class="warmup-summary-left">
-            <span class="warmup-badge">🔥 CALENTAMIENTO</span>
-            <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
-          </div>
-          <span id="warmup-progress-pill" class="warmup-progress-pill">0 / 4 listos</span>
-        </summary>
-        <div class="warmup-body">
-          <ul id="warmup-steps-list" class="warmup-steps-list">
-            <!-- Pasos de calentamiento generados por app.js -->
-          </ul>
-          <div class="warmup-actions-row">
-            <button type="button" id="btn-start-warmup-timer" class="btn-secondary">⏱️ Temporizador Calentamiento (5:00)</button>
-            <button type="button" id="btn-complete-all-warmup" class="btn-ghost">✓ Marcar todos</button>
-          </div>
-        </div>
-      </details>
-
-      <div class="section-header-row">
-        <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
-        <span class="unit-legend">Toca el <strong>Sprite</strong> para 3 fases o <strong>kg / Nivel</strong> para unidad</span>
-      </div>
-
-      <ul id="exercises-list" class="exercises-list">
-        <!-- Tarjetas de ejercicios con sprites rasterizados de 3 fases renderizadas por app.js -->
-      </ul>
-    </section>
-
-    <!-- Panel de Estadísticas, Gráficos e Historial -->
-    <section class="analytics-dashboard-section" aria-labelledby="stats-heading">
-      <div class="section-header-row">
-        <h2 id="stats-heading" class="section-title">📊 Estadísticas, Gráficos de Volumen y Tonelaje</h2>
-        <span class="unit-legend">Actualización en tiempo real</span>
-      </div>
-
-      <div class="kpi-stats-grid" id="kpi-stats-grid">
-        <article class="kpi-card">
-          <span class="kpi-label">Volumen Movido</span>
-          <strong id="kpi-done-kg" class="kpi-value">0 kg</strong>
-          <small id="kpi-planned-kg" class="kpi-sub">de 0 kg programados</small>
-        </article>
-        <article class="kpi-card">
-          <span class="kpi-label">Repeticiones Hechas</span>
-          <strong id="kpi-done-reps" class="kpi-value">0</strong>
-          <small id="kpi-planned-reps" class="kpi-sub">de 1728 reps (4×12)</small>
-        </article>
-        <article class="kpi-card">
-          <span class="kpi-label">Gasto Estimado</span>
-          <strong id="kpi-kcal" class="kpi-value">0 kcal</strong>
-          <small class="kpi-sub">Tensión mecánica activa</small>
-        </article>
-        <article class="kpi-card">
-          <span class="kpi-label">Sesiones Guardadas</span>
-          <strong id="kpi-sessions-count" class="kpi-value">0</strong>
-          <small class="kpi-sub">En tu historial local</small>
-        </article>
-      </div>
-
-      <div class="charts-grid">
-        <!-- Gráfico 1: Barras de Series y Volumen por Día (Lun a Dom) -->
-        <article class="chart-card">
-          <h3>Progreso de Series por Día (Lunes a Domingo)</h3>
-          <div id="daily-bars-chart" class="daily-bars-chart" role="img" aria-label="Gráfico de barras de series completadas por día"></div>
-        </article>
-
-        <!-- Gráfico 2: Donut de Distribución Muscular + Tabla Semántica Accesible -->
-        <article class="chart-card">
-          <h3>Distribución Semanal por Grupo Muscular</h3>
-          <div class="muscle-donut-layout">
-            <div id="muscle-donut-chart" class="muscle-donut-chart" aria-hidden="true">
-              <div class="donut-hole">
-                <strong id="donut-center-total">144</strong>
-                <span>Series</span>
-              </div>
+  <main class="app-main" id="main-content" data-active-screen="plan">
+    <!-- =====================================================================
+         PANTALLA 1: PLANIFICADOR DEL DÍA (VISTA POR DEFECTO)
+         ===================================================================== -->
+    <div id="screen-plan" class="app-screen-panel is-active-screen" data-screen-panel="plan">
+      <section class="day-hero-card" id="day-hero-card" style="--day-hue: 160;">
+        <div class="day-hero-grid">
+          <div class="day-hero-info">
+            <div class="day-badges" id="day-badges"></div>
+            <h2 id="day-title">Lunes: Espalda y Bíceps</h2>
+            <p id="day-subtitle" class="day-subtitle">Tracción / Pull — Poleas y Máquinas</p>
+            <div class="day-hero-stats">
+              <span id="day-sets-counter" class="day-sets-pill">0 / 24 series</span>
+              <span id="day-duration-pill" class="day-time-pill">~55 min</span>
+              <span id="day-volume-pill" class="day-time-pill">0 kg hoy</span>
             </div>
-            <table class="muscle-stats-table" aria-label="Tabla de distribución de series por grupo muscular">
-              <thead>
-                <tr>
-                  <th scope="col">Grupo Muscular</th>
-                  <th scope="col">Hechas</th>
-                  <th scope="col">Meta</th>
-                </tr>
-              </thead>
-              <tbody id="muscle-stats-tbody">
-                <!-- Filas generadas por app.js -->
-              </tbody>
-            </table>
+
+            <!-- Botón Principal para Cambiar a la Pantalla de Entrenamiento Activo + Menú Agrupado -->
+            <div class="day-primary-cta-bar">
+              <button type="button" id="btn-start-day-workout" class="btn-start-workout-cta">
+                🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)
+              </button>
+
+              <details id="day-secondary-menu" class="day-secondary-menu">
+                <summary class="btn-secondary day-secondary-trigger">
+                  ⋯ Opciones del Día
+                </summary>
+                <div class="day-action-bar" id="day-action-bar">
+                  <button type="button" id="btn-open-exception" class="btn-warning-outline">
+                    <span aria-hidden="true">📅</span>
+                    <span id="btn-exception-label">No entrenaré hoy → Mover al Domingo</span>
+                  </button>
+                  <button type="button" id="btn-add-exercise" class="btn-primary-outline">
+                    + Agregar Ejercicio
+                  </button>
+                  <button type="button" id="btn-log-workout" class="btn-primary">
+                    🏆 Registrar Sesión
+                  </button>
+                </div>
+              </details>
+            </div>
           </div>
-        </article>
+
+          <!-- Mapa Anatómico Corporal Agrupado en Desplegable para Pantallas Verticales -->
+          <details class="anatomy-collapsible" id="anatomy-collapsible">
+            <summary class="anatomy-collapsible-summary">
+              <span>🧬 Mapa Anatómico de Músculos Trabajados Hoy</span>
+              <span class="anatomy-toggle-hint">Ver ▾</span>
+            </summary>
+            <div class="day-anatomy-panel" id="day-anatomy-panel" aria-label="Mapa anatómico de músculos trabajados hoy">
+              <!-- Renderizado por visual-engine.js -->
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <search class="exercise-search-bar" aria-label="Filtrar ejercicios del día o de la semana">
+        <form id="search-form" class="search-form">
+          <label for="exercise-search-input" class="sr-only">Buscar ejercicio o músculo</label>
+          <input
+            type="search"
+            id="exercise-search-input"
+            name="q"
+            placeholder="Buscar ejercicio (ej. espalda, polea, bíceps, pierna...)"
+            autocomplete="off"
+          >
+          <button type="button" id="btn-clear-search" class="btn-clear-search" hidden>Limpiar</button>
+        </form>
+      </search>
+
+      <section aria-labelledby="exercises-heading" class="exercises-section">
+        <!-- Checklist Interactivo de Calentamiento Articular (5 min) -->
+        <details id="warmup-checklist-card" class="warmup-checklist-card">
+          <summary class="warmup-summary">
+            <div class="warmup-summary-left">
+              <span class="warmup-badge">🔥 CALENTAMIENTO</span>
+              <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
+            </div>
+            <span id="warmup-progress-pill" class="warmup-progress-pill">0 / 4 listos</span>
+          </summary>
+          <div class="warmup-body">
+            <ul id="warmup-steps-list" class="warmup-steps-list">
+              <!-- Pasos de calentamiento generados por app.js -->
+            </ul>
+            <div class="warmup-actions-row">
+              <button type="button" id="btn-start-warmup-timer" class="btn-secondary">⏱️ Temporizador Calentamiento (5:00)</button>
+              <button type="button" id="btn-complete-all-warmup" class="btn-ghost">✓ Marcar todos</button>
+            </div>
+          </div>
+        </details>
+
+        <div class="section-header-row">
+          <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
+          <span class="unit-legend">Toca <strong>▶ Entrenar</strong> para abrir el ejercicio o <strong>⚙️ Ajustes</strong> para más opciones</span>
+        </div>
+
+        <ul id="exercises-list" class="exercises-list">
+          <!-- Tarjetas de ejercicios con sprites rasterizados de 3 fases renderizadas por app.js -->
+        </ul>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         PANTALLA 2: MODO ENTRENAMIENTO ACTIVO (CAMBIA AL INICIAR EL DÍA)
+         Muestra en primer plano: Ilustración/Sprite, Peso/Nivel, Series/Reps y Temporizador de Descanso.
+         Agrupa en un menú secundario: Máquina Ocupada, Modo Serie, RIR, TUT, Discos/1RM y Editar.
+         ===================================================================== -->
+    <section id="workout-focus-screen" class="app-screen-panel workout-focus-screen" data-screen-panel="workout" aria-labelledby="focus-ex-title" hidden>
+      <div class="focus-screen-topbar">
+        <button type="button" id="btn-exit-workout-screen" class="btn-secondary btn-back-plan">
+          ← Volver al Día
+        </button>
+        <div class="focus-live-clock" title="Cronómetro de sesión en vivo">
+          <span id="focus-clock-dot" class="stopwatch-pulse-dot"></span>
+          <strong id="focus-stopwatch-display" class="focus-clock-digits">00:00:00</strong>
+          <button type="button" id="btn-focus-clock-toggle" class="btn-focus-clock-btn" aria-label="Iniciar o pausar cronómetro de sesión">▶</button>
+        </div>
+        <span id="focus-day-progress-badge" class="day-sets-pill">0 / 24 series</span>
+      </div>
+
+      <!-- Navegador Paso a Paso de los Ejercicios del Día (1 a 6) -->
+      <div class="focus-stepper-card">
+        <div class="focus-stepper-header">
+          <button type="button" id="btn-focus-prev-ex" class="btn-secondary btn-stepper-arrow">◀ Anterior</button>
+          <div class="focus-stepper-center">
+            <span id="focus-day-name-label" class="eyebrow">LUNES · ESPALDA Y BÍCEPS</span>
+            <strong id="focus-ex-counter-label">Ejercicio 1 de 6</strong>
+          </div>
+          <button type="button" id="btn-focus-next-ex" class="btn-secondary btn-stepper-arrow">Siguiente ▶</button>
+        </div>
+        <div id="focus-stepper-pills" class="focus-stepper-pills" role="tablist" aria-label="Selector rápido de ejercicio del día">
+          <!-- Píldoras 1..6 generadas por app.js -->
+        </div>
+      </div>
+
+      <!-- Tarjeta Principal del Ejercicio en Curso (Optimizada en Vertical) -->
+      <article class="focus-exercise-card" id="focus-exercise-card">
+        <!-- 1. Ilustración / Sprite en 3 Fases Grande -->
+        <div id="focus-sprite-stage" class="focus-sprite-stage" role="button" tabindex="0" aria-label="Ampliar demostración biomecánica en 3 fases">
+          <!-- Sprite renderizado por app.js -->
+        </div>
+
+        <!-- 2. Nombre del Ejercicio y Músculo -->
+        <div class="focus-ex-header">
+          <div class="focus-ex-badges">
+            <span id="focus-ex-muscle-badge" class="badge badge-muscle">🎯 Espalda</span>
+            <span id="focus-ex-equip-badge" class="badge">⚙️ Polea</span>
+          </div>
+          <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
+        </div>
+
+        <!-- 3. Controles Esenciales: Peso / Nivel + Meta de Series y Repeticiones -->
+        <div class="focus-essential-controls">
+          <div class="focus-load-box">
+            <button type="button" id="btn-focus-load-minus" class="btn-step-load btn-focus-step" aria-label="Disminuir carga">−</button>
+            <button type="button" id="btn-focus-load-unit" class="btn-toggle-unit unit-nivel" title="Toca para alternar entre kg y Nivel de polea">
+              <span id="focus-load-main">Nivel 6</span>
+              <span id="focus-load-sub" class="unit-subtext">Torre de placas</span>
+            </button>
+            <button type="button" id="btn-focus-load-plus" class="btn-step-load btn-focus-step" aria-label="Aumentar carga">+</button>
+          </div>
+          <div class="focus-reps-summary">
+            <strong id="focus-sets-reps-label">4 series × 12 reps</strong>
+            <span id="focus-rest-target-label">⏳ Descanso sugerido: 75s</span>
+          </div>
+        </div>
+
+        <!-- 4. Botones Grandes de Series (1 a 4 × 12 reps) -->
+        <div class="focus-sets-section">
+          <span class="focus-section-caption">Toca cada serie al terminarla (inicia el descanso automáticamente):</span>
+          <div id="focus-sets-grid" class="focus-sets-grid">
+            <!-- 4 botones grandes de series generados por app.js -->
+          </div>
+        </div>
+
+        <!-- Banner de Doble Progresión 1-Toque (Aparece al completar las 4 series) -->
+        <div id="focus-overload-container"></div>
+
+        <!-- 5. Temporizador de Descanso Integrado en la Pantalla del Ejercicio -->
+        <div id="focus-rest-card" class="focus-rest-card">
+          <div class="focus-rest-info">
+            <div class="focus-rest-badge-row">
+              <span class="timer-badge">⏳ TEMPORIZADOR DE DESCANSO</span>
+              <span id="focus-rest-status-text" class="focus-rest-status">Listo para usar</span>
+            </div>
+            <strong id="focus-rest-digits" class="focus-rest-digits">01:15</strong>
+          </div>
+          <div class="focus-rest-controls">
+            <button type="button" id="btn-focus-rest-start" class="btn-primary btn-focus-rest-main">▶ Descansar</button>
+            <button type="button" id="btn-focus-rest-minus" class="btn-timer-step">-15s</button>
+            <button type="button" id="btn-focus-rest-plus" class="btn-timer-step">+15s</button>
+            <button type="button" id="btn-focus-rest-skip" class="btn-ghost">Reiniciar</button>
+          </div>
+        </div>
+
+        <!-- 6. Menú Agrupado de Opciones No Esenciales del Ejercicio -->
+        <details id="focus-secondary-menu" class="focus-secondary-menu">
+          <summary class="focus-secondary-summary">
+            <span>⚙️ Opciones Secundarias del Ejercicio</span>
+            <small>Técnica, Máquina Ocupada, TUT, 1RM y Nota ▾</small>
+          </summary>
+          <div class="focus-secondary-body">
+            <div class="focus-secondary-chips">
+              <button type="button" id="btn-focus-swap-alt" class="btn-alt-swap-chip">🔄 Máquina Ocupada</button>
+              <button type="button" id="btn-focus-set-mode" class="btn-set-mode-chip">⚡ Serie Normal</button>
+              <button type="button" id="btn-focus-rir" class="btn-rir-chip">🎯 RIR 2</button>
+              <button type="button" id="btn-focus-calc" class="btn-rir-chip">🧮 Discos / 1RM</button>
+              <button type="button" id="btn-focus-tut" class="btn-tut-stopwatch-focus">⏱️ Medir Serie (TUT 3-1-1)</button>
+              <button type="button" id="btn-focus-edit" class="btn-edit-ex">✏️ Editar Ejercicio</button>
+            </div>
+            <p id="focus-ex-note" class="exercise-note-body">Mantén técnica estricta y controla la fase excéntrica.</p>
+          </div>
+        </details>
+      </article>
+
+      <div class="focus-screen-footer">
+        <button type="button" id="btn-focus-finish-workout" class="btn-primary btn-finish-day-wide">
+          🏆 Terminar y Registrar Sesión del Día
+        </button>
       </div>
     </section>
 
-    <section class="weekly-overview-section" aria-labelledby="overview-heading">
-      <details class="overview-accordion" name="gym-info" open>
-        <summary>
-          <span id="overview-heading" class="summary-title">📅 Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
-        </summary>
-        <div class="overview-content">
-          <p class="overview-intro">
-            Planificación estructurada con tus marcas actuales configuradas (<strong>Espalda polea estrecha Nivel 6</strong>, <strong>Espalda agarre amplio 20 kg</strong>, <strong>Bíceps en polea 10 kg</strong>, <strong>4 series × 12 repeticiones</strong>). Si algún día no puedes asistir, muévelo al <strong>Domingo</strong> con un toque.
-          </p>
-          <div id="weekly-matrix-grid" class="weekly-matrix-grid">
-            <!-- Resumen de los 7 días -->
-          </div>
+    <!-- =====================================================================
+         PANTALLA 3: ESTADÍSTICAS, GRÁFICOS, MAPA SEMANAL E HISTORIAL
+         ===================================================================== -->
+    <div id="screen-stats" class="app-screen-panel" data-screen-panel="stats" hidden>
+      <!-- Panel de Estadísticas, Gráficos e Historial -->
+      <section class="analytics-dashboard-section" aria-labelledby="stats-heading">
+        <div class="section-header-row">
+          <h2 id="stats-heading" class="section-title">📊 Estadísticas, Gráficos de Volumen y Tonelaje</h2>
+          <span class="unit-legend">Actualización en tiempo real</span>
         </div>
-      </details>
 
-      <details class="overview-accordion" name="gym-info">
-        <summary>
-          <span class="summary-title">📈 Historial de Sobrecarga Progresiva y Récords (PRs / 1RM)</span>
-        </summary>
-        <div class="overview-content">
-          <p class="overview-intro">
-            Cada vez que subas el peso (kg) o el nivel de placa en tus ejercicios, se registrará automáticamente tu progreso y tu <strong>1RM Estimado (Fórmula de Epley)</strong>.
-          </p>
-          <ul id="pr-history-list" class="workout-history-list">
-            <!-- Récords personales de sobrecarga progresiva -->
-          </ul>
+        <div class="kpi-stats-grid" id="kpi-stats-grid">
+          <article class="kpi-card">
+            <span class="kpi-label">Volumen Movido</span>
+            <strong id="kpi-done-kg" class="kpi-value">0 kg</strong>
+            <small id="kpi-planned-kg" class="kpi-sub">de 0 kg programados</small>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">Repeticiones Hechas</span>
+            <strong id="kpi-done-reps" class="kpi-value">0</strong>
+            <small id="kpi-planned-reps" class="kpi-sub">de 1728 reps (4×12)</small>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">Gasto Estimado</span>
+            <strong id="kpi-kcal" class="kpi-value">0 kcal</strong>
+            <small class="kpi-sub">Tensión mecánica activa</small>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">Sesiones Guardadas</span>
+            <strong id="kpi-sessions-count" class="kpi-value">0</strong>
+            <small class="kpi-sub">En tu historial local</small>
+          </article>
         </div>
-      </details>
+
+        <div class="charts-grid">
+          <!-- Gráfico 1: Barras de Series y Volumen por Día (Lun a Dom) -->
+          <article class="chart-card">
+            <h3>Progreso de Series por Día (Lunes a Domingo)</h3>
+            <div id="daily-bars-chart" class="daily-bars-chart" role="img" aria-label="Gráfico de barras de series completadas por día"></div>
+          </article>
+
+          <!-- Gráfico 2: Donut de Distribución Muscular + Tabla Semántica Accesible -->
+          <article class="chart-card">
+            <h3>Distribución Semanal por Grupo Muscular</h3>
+            <div class="muscle-donut-layout">
+              <div id="muscle-donut-chart" class="muscle-donut-chart" aria-hidden="true">
+                <div class="donut-hole">
+                  <strong id="donut-center-total">144</strong>
+                  <span>Series</span>
+                </div>
+              </div>
+              <table class="muscle-stats-table" aria-label="Tabla de distribución de series por grupo muscular">
+                <thead>
+                  <tr>
+                    <th scope="col">Grupo Muscular</th>
+                    <th scope="col">Hechas</th>
+                    <th scope="col">Meta</th>
+                  </tr>
+                </thead>
+                <tbody id="muscle-stats-tbody">
+                  <!-- Filas generadas por app.js -->
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="weekly-overview-section" aria-labelledby="overview-heading">
+        <details class="overview-accordion" name="gym-stats-info" open>
+          <summary>
+            <span id="overview-heading" class="summary-title">📅 Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
+          </summary>
+          <div class="overview-content">
+            <p class="overview-intro">
+              Planificación estructurada con tus marcas actuales configuradas (<strong>Espalda polea estrecha Nivel 6</strong>, <strong>Espalda agarre amplio 20 kg</strong>, <strong>Bíceps en polea 10 kg</strong>, <strong>4 series × 12 repeticiones</strong>). Si algún día no puedes asistir, muévelo al <strong>Domingo</strong> con un toque.
+            </p>
+            <div id="weekly-matrix-grid" class="weekly-matrix-grid">
+              <!-- Resumen de los 7 días -->
+            </div>
+          </div>
+        </details>
+
+        <details class="overview-accordion" name="gym-stats-info">
+          <summary>
+            <span class="summary-title">📈 Historial de Sobrecarga Progresiva y Récords (PRs / 1RM)</span>
+          </summary>
+          <div class="overview-content">
+            <p class="overview-intro">
+              Cada vez que subas el peso (kg) o el nivel de placa en tus ejercicios, se registrará automáticamente tu progreso y tu <strong>1RM Estimado (Fórmula de Epley)</strong>.
+            </p>
+            <ul id="pr-history-list" class="workout-history-list">
+              <!-- Récords personales de sobrecarga progresiva -->
+            </ul>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         PANTALLA 4: MENÚ AGRUPADO DE MÓDULOS Y HERRAMIENTAS EXTRAS
+         ===================================================================== -->
+    <div id="screen-hub" class="app-screen-panel" data-screen-panel="hub" hidden>
+      <section class="weekly-overview-section" aria-label="Módulos adicionales y herramientas">
+        <div class="section-header-row">
+          <h2 class="section-title">🧰 Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
+          <span class="unit-legend">Opciones complementarias agrupadas</span>
+        </div>
 
       <details class="overview-accordion" name="gym-info">
         <summary>
@@ -541,8 +723,29 @@
           </div>
         </div>
       </details>
-    </section>
+      </section>
+    </div>
   </main>
+
+  <!-- Barra de Navegación Inferior estilo Android (Vertical Responsive) -->
+  <nav id="bottom-app-nav" class="bottom-app-nav" aria-label="Navegación principal de pantallas">
+    <button type="button" class="bottom-nav-btn is-active" data-nav-screen="plan" aria-current="page">
+      <span class="bottom-nav-icon" aria-hidden="true">📋</span>
+      <span class="bottom-nav-label">Rutina</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-nav-screen="workout">
+      <span class="bottom-nav-icon" aria-hidden="true">🔥</span>
+      <span class="bottom-nav-label">Entrenar</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-nav-screen="stats">
+      <span class="bottom-nav-icon" aria-hidden="true">📊</span>
+      <span class="bottom-nav-label">Progreso</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-nav-screen="hub">
+      <span class="bottom-nav-icon" aria-hidden="true">🧰</span>
+      <span class="bottom-nav-label">Menú / Extras</span>
+    </button>
+  </nav>
 
   <aside id="rest-timer-bar" class="rest-timer-bar" aria-live="polite" hidden>
     <div class="timer-mode-switcher">

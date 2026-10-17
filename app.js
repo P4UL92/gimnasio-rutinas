@@ -26,8 +26,10 @@
       }));
     }
     return {
-      version: 4,
+      version: 5,
       selectedDay: detectDefaultDay(),
+      activeScreen: 'plan',
+      activeExerciseIndex: 0,
       searchQuery: '',
       animationsPaused: false,
       wakeLockEnabled: false,
@@ -121,6 +123,12 @@
       }
       if (!parsed.journalNotesByDay || typeof parsed.journalNotesByDay !== 'object') {
         parsed.journalNotesByDay = {};
+      }
+      if (!['plan', 'workout', 'stats', 'hub'].includes(parsed.activeScreen)) {
+        parsed.activeScreen = 'plan';
+      }
+      if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < 0) {
+        parsed.activeExerciseIndex = 0;
       }
       parsed.searchQuery = '';
       return parsed;
@@ -225,6 +233,12 @@
     const mainDigitsEl = document.getElementById('session-stopwatch-digits');
     if (mainDigitsEl) mainDigitsEl.textContent = formatted;
 
+    const compactDigitsEl = document.getElementById('compact-stopwatch-digits');
+    if (compactDigitsEl) compactDigitsEl.textContent = formatted;
+
+    const focusDigitsEl = document.getElementById('focus-stopwatch-display');
+    if (focusDigitsEl) focusDigitsEl.textContent = formatted;
+
     const floatDigitsEl = document.getElementById('floating-stopwatch-digits');
     if (floatDigitsEl) floatDigitsEl.textContent = formatted;
 
@@ -233,10 +247,20 @@
       dotEl.classList.toggle('is-running', stopwatchState.running);
     }
 
+    const focusDotEl = document.getElementById('focus-clock-dot');
+    if (focusDotEl) {
+      focusDotEl.classList.toggle('is-running', stopwatchState.running);
+    }
+
     const toggleBtn = document.getElementById('btn-stopwatch-toggle');
     if (toggleBtn) {
       toggleBtn.textContent = stopwatchState.running ? '⏸ Pausar' : '▶ Iniciar';
       toggleBtn.classList.toggle('is-active', stopwatchState.running);
+    }
+
+    const focusClockBtn = document.getElementById('btn-focus-clock-toggle');
+    if (focusClockBtn) {
+      focusClockBtn.textContent = stopwatchState.running ? '⏸' : '▶';
     }
 
     const floatToggleBtn = document.getElementById('btn-floating-stopwatch-toggle');
@@ -867,10 +891,27 @@
   function updateTimerDisplay() {
     const countdownEl = document.getElementById('timer-countdown');
     const conicRingEl = document.getElementById('timer-ring-conic');
+    const focusRestDigitsEl = document.getElementById('focus-rest-digits');
+    const focusRestStatusEl = document.getElementById('focus-rest-status-text');
+    const focusRestCardEl = document.getElementById('focus-rest-card');
+
+    const mins = Math.floor(restRemainingSeconds / 60);
+    const secs = restRemainingSeconds % 60;
+    const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
     if (countdownEl) {
-      const mins = Math.floor(restRemainingSeconds / 60);
-      const secs = restRemainingSeconds % 60;
-      countdownEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      countdownEl.textContent = timeStr;
+    }
+    if (focusRestDigitsEl) {
+      focusRestDigitsEl.textContent = timeStr;
+    }
+    if (focusRestStatusEl) {
+      focusRestStatusEl.textContent = restTimerInterval
+        ? '🔥 En descanso activo...'
+        : (restRemainingSeconds === 0 ? '✅ ¡Listo para la siguiente serie!' : 'Listo para usar');
+    }
+    if (focusRestCardEl) {
+      focusRestCardEl.classList.toggle('is-resting', Boolean(restTimerInterval));
     }
     if (conicRingEl) {
       const ratio = restTotalSeconds > 0 ? Math.max(0, restRemainingSeconds / restTotalSeconds) : 0;
@@ -886,6 +927,10 @@
     }
     const bar = document.getElementById('rest-timer-bar');
     if (bar) bar.hidden = true;
+    const focusRestCardEl = document.getElementById('focus-rest-card');
+    if (focusRestCardEl) focusRestCardEl.classList.remove('is-resting');
+    const focusRestStatusEl = document.getElementById('focus-rest-status-text');
+    if (focusRestStatusEl) focusRestStatusEl.textContent = 'Listo para usar';
   }
 
   // Rendering Functions
@@ -920,6 +965,7 @@
     const daysEl = document.getElementById('metric-days-status');
     const progBar = document.getElementById('weekly-progress-bar');
     const progText = document.getElementById('weekly-progress-text');
+    const compactWeekPctEl = document.getElementById('compact-week-pct');
 
     if (setsEl) setsEl.textContent = `${stats.doneSets} / ${stats.totalSets}`;
     if (volEl && stats.analytics) {
@@ -936,6 +982,9 @@
     }
     if (progText) {
       progText.textContent = `${stats.pct}% completado (${stats.doneSets} series)`;
+    }
+    if (compactWeekPctEl) {
+      compactWeekPctEl.textContent = `${stats.pct}% (${stats.doneSets}/${stats.totalSets})`;
     }
   }
 
@@ -1179,56 +1228,7 @@
     topRow.append(titleGroup, loadBox);
     contentCol.appendChild(topRow);
 
-    // Fila de Modo de Serie (Normal, Dropset, Superserie, Rest-Pause), RIR y Calculadora Rápida
-    const intensityRow = document.createElement('div');
-    intensityRow.className = 'ex-intensity-row';
-
-    const setModeKey = ex.setMode || 'normal';
-    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
-    const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
-
-    const btnModeChip = document.createElement('button');
-    btnModeChip.type = 'button';
-    btnModeChip.className = `btn-set-mode-chip mode-${setModeKey}`;
-    btnModeChip.dataset.exerciseId = ex.id;
-    btnModeChip.title = `${modeMeta.desc}. Toca para alternar técnica (Normal → Dropset → Superserie → Rest-Pause).`;
-    btnModeChip.textContent = modeMeta.badge;
-    btnModeChip.addEventListener('click', () => cycleExerciseSetMode(dayId, ex.id));
-
-    const rirLabel = ex.targetRir || 'RIR 2';
-    const btnRirChip = document.createElement('button');
-    btnRirChip.type = 'button';
-    btnRirChip.className = 'btn-rir-chip';
-    btnRirChip.dataset.exerciseId = ex.id;
-    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para alternar.';
-    btnRirChip.textContent = `🎯 ${rirLabel}`;
-    btnRirChip.addEventListener('click', () => cycleExerciseRir(dayId, ex.id));
-
-    const btnCalcChip = document.createElement('button');
-    btnCalcChip.type = 'button';
-    btnCalcChip.className = 'btn-rir-chip';
-    btnCalcChip.title = 'Abrir calculadora de discos olímpicos y 1RM con la carga de este ejercicio';
-    btnCalcChip.textContent = '🧮 Discos / 1RM';
-    btnCalcChip.addEventListener('click', () => {
-      const effKg = GYM_VISUALS && typeof GYM_VISUALS.resolveEffectiveLoadKg === 'function'
-        ? GYM_VISUALS.resolveEffectiveLoadKg(ex)
-        : Number(ex.loadValue) || 20;
-      openCalculatorDialog(effKg, ex.reps || 12);
-    });
-
-    const btnAltSwapChip = document.createElement('button');
-    btnAltSwapChip.type = 'button';
-    btnAltSwapChip.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
-    btnAltSwapChip.dataset.exerciseId = ex.id;
-    btnAltSwapChip.title = ex.isSwappedAlternative
-      ? 'Volver al ejercicio titular original'
-      : '¿Máquina o polea ocupada? Toca para cambiar por su ejercicio equivalente biomecánico';
-    btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
-    btnAltSwapChip.addEventListener('click', () => swapExerciseAlternative(dayId, ex.id));
-
-    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip, btnAltSwapChip);
-    contentCol.appendChild(intensityRow);
-
+    // CONTROLES ESENCIALES EN PANTALLA: Series y Repeticiones (4 × 12)
     const setsRow = document.createElement('div');
     setsRow.className = 'sets-tracker-row';
 
@@ -1274,10 +1274,95 @@
       contentCol.appendChild(overloadBanner);
     }
 
+    // Barra Inferior Compacta: Botón "▶ Entrenar" (cambia a Pantalla de Ejercicio) + Menú Agrupado "⚙️ Ajustes y Técnica"
+    const bottomActionsRow = document.createElement('div');
+    bottomActionsRow.className = 'ex-card-compact-bar';
+
+    const btnFocusEx = document.createElement('button');
+    btnFocusEx.type = 'button';
+    btnFocusEx.className = 'btn-open-ex-focus';
+    btnFocusEx.dataset.exerciseId = ex.id;
+    btnFocusEx.title = 'Abrir este ejercicio en la pantalla dedicada de entrenamiento';
+    btnFocusEx.textContent = `▶ Entrenar (${ex.restSeconds || 75}s descanso)`;
+    btnFocusEx.addEventListener('click', () => {
+      const dayObj = state.schedule[dayId];
+      const idx = dayObj ? dayObj.exercises.findIndex(item => item.id === ex.id) : 0;
+      startDayWorkoutSession(dayId, idx >= 0 ? idx : 0);
+    });
+
+    // Menú desplegable que agrupa las opciones no esenciales para despejar la vista vertical
+    const optionsMenu = document.createElement('details');
+    optionsMenu.className = 'ex-card-options-menu';
+    const isTimingThis = tutState.activeExerciseId === ex.id;
+    if (isTimingThis) {
+      optionsMenu.open = true;
+    }
+
+    const optionsSummary = document.createElement('summary');
+    optionsSummary.className = 'ex-card-options-summary';
+    const setModeKey = ex.setMode || 'normal';
+    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
+    const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
+    const rirLabel = ex.targetRir || 'RIR 2';
+    optionsSummary.innerHTML = `<span>⚙️ Opciones y Técnica</span> <small class="ex-options-pill">${rirLabel}${ex.isSwappedAlternative ? ' · 🔄 Sustituto' : ''}</small>`;
+
+    const optionsBody = document.createElement('div');
+    optionsBody.className = 'ex-card-options-body';
+
+    // Fila de Modo de Serie (Normal, Dropset, Superserie, Rest-Pause), RIR, Calculadora y Máquina Ocupada
+    const intensityRow = document.createElement('div');
+    intensityRow.className = 'ex-intensity-row';
+
+    const btnModeChip = document.createElement('button');
+    btnModeChip.type = 'button';
+    btnModeChip.className = `btn-set-mode-chip mode-${setModeKey}`;
+    btnModeChip.dataset.exerciseId = ex.id;
+    btnModeChip.title = `${modeMeta.desc}. Toca para alternar técnica (Normal → Dropset → Superserie → Rest-Pause).`;
+    btnModeChip.textContent = modeMeta.badge;
+    btnModeChip.addEventListener('click', () => cycleExerciseSetMode(dayId, ex.id));
+
+    const btnRirChip = document.createElement('button');
+    btnRirChip.type = 'button';
+    btnRirChip.className = 'btn-rir-chip';
+    btnRirChip.dataset.exerciseId = ex.id;
+    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para alternar.';
+    btnRirChip.textContent = `🎯 ${rirLabel}`;
+    btnRirChip.addEventListener('click', () => cycleExerciseRir(dayId, ex.id));
+
+    const btnCalcChip = document.createElement('button');
+    btnCalcChip.type = 'button';
+    btnCalcChip.className = 'btn-rir-chip';
+    btnCalcChip.title = 'Abrir calculadora de discos olímpicos y 1RM con la carga de este ejercicio';
+    btnCalcChip.textContent = '🧮 Discos / 1RM';
+    btnCalcChip.addEventListener('click', () => {
+      const effKg = GYM_VISUALS && typeof GYM_VISUALS.resolveEffectiveLoadKg === 'function'
+        ? GYM_VISUALS.resolveEffectiveLoadKg(ex)
+        : Number(ex.loadValue) || 20;
+      openCalculatorDialog(effKg, ex.reps || 12);
+    });
+
+    const btnAltSwapChip = document.createElement('button');
+    btnAltSwapChip.type = 'button';
+    btnAltSwapChip.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
+    btnAltSwapChip.dataset.exerciseId = ex.id;
+    btnAltSwapChip.title = ex.isSwappedAlternative
+      ? 'Volver al ejercicio titular original'
+      : '¿Máquina o polea ocupada? Toca para cambiar por su ejercicio equivalente biomecánico';
+    btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
+    btnAltSwapChip.addEventListener('click', () => swapExerciseAlternative(dayId, ex.id));
+
+    const btnEdit = document.createElement('button');
+    btnEdit.type = 'button';
+    btnEdit.className = 'btn-edit-ex';
+    btnEdit.textContent = '✏️ Editar';
+    btnEdit.addEventListener('click', () => openExerciseDialog(ex));
+
+    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip, btnAltSwapChip, btnEdit);
+    optionsBody.appendChild(intensityRow);
+
     const tutRow = document.createElement('div');
     tutRow.className = 'set-stopwatch-row';
 
-    const isTimingThis = tutState.activeExerciseId === ex.id;
     const tutBtn = document.createElement('button');
     tutBtn.type = 'button';
     tutBtn.className = 'btn-tut-stopwatch';
@@ -1309,28 +1394,16 @@
     }
 
     tutRow.append(tutBtn, tutInfo);
-    contentCol.appendChild(tutRow);
+    optionsBody.appendChild(tutRow);
 
-    const footer = document.createElement('div');
-    footer.className = 'exercise-card-footer';
-
-    const details = document.createElement('details');
-    details.className = 'exercise-note-details';
-    const summary = document.createElement('summary');
-    summary.textContent = `Técnica y referencia (Descanso ${ex.restSeconds || 75}s)`;
     const noteP = document.createElement('p');
     noteP.className = 'exercise-note-body';
     noteP.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
-    details.append(summary, noteP);
+    optionsBody.appendChild(noteP);
 
-    const btnEdit = document.createElement('button');
-    btnEdit.type = 'button';
-    btnEdit.className = 'btn-edit-ex';
-    btnEdit.textContent = 'Editar';
-    btnEdit.addEventListener('click', () => openExerciseDialog(ex));
-
-    footer.append(details, btnEdit);
-    contentCol.appendChild(footer);
+    optionsMenu.append(optionsSummary, optionsBody);
+    bottomActionsRow.append(btnFocusEx, optionsMenu);
+    contentCol.appendChild(bottomActionsRow);
 
     visualLayout.append(illustrationWrap, contentCol);
     li.appendChild(visualLayout);
@@ -1358,6 +1431,7 @@
     triggerHaptic([35]);
     saveState();
     renderExercisesList();
+    renderWorkoutFocusScreen();
     return nextMode;
   }
 
@@ -1375,6 +1449,7 @@
     triggerHaptic([30]);
     saveState();
     renderExercisesList();
+    renderWorkoutFocusScreen();
     return nextRir;
   }
 
@@ -2523,6 +2598,325 @@
     return csvContent;
   }
 
+  // =========================================================================
+  // Módulo Focus UI v1.8: Navegación Direccional Multi-Pantalla y Modo Entrenamiento Activo
+  // =========================================================================
+  const SCREENS_ORDER = ['plan', 'workout', 'stats', 'hub'];
+
+  function navigateWithDirection(updateDOM, direction = 'forward') {
+    if (typeof document === 'undefined' || typeof document.startViewTransition !== 'function') {
+      updateDOM();
+      return;
+    }
+    try {
+      document.startViewTransition({
+        update: updateDOM,
+        types: [direction]
+      });
+    } catch (_) {
+      updateDOM();
+    }
+  }
+
+  function syncScreenVisibility() {
+    const activeScreen = SCREENS_ORDER.includes(state.activeScreen) ? state.activeScreen : 'plan';
+    const mainEl = document.getElementById('main-content');
+    if (mainEl) {
+      mainEl.dataset.activeScreen = activeScreen;
+    }
+
+    document.querySelectorAll('[data-screen-panel]').forEach(panel => {
+      const isCurrent = panel.dataset.screenPanel === activeScreen;
+      panel.hidden = !isCurrent;
+      panel.classList.toggle('is-active-screen', isCurrent);
+    });
+
+    document.querySelectorAll('#bottom-app-nav .bottom-nav-btn').forEach(btn => {
+      const isCurrent = btn.dataset.navScreen === activeScreen;
+      btn.classList.toggle('is-active', isCurrent);
+      if (isCurrent) {
+        btn.setAttribute('aria-current', 'page');
+      } else {
+        btn.removeAttribute('aria-current');
+      }
+    });
+
+    const dayTabsNav = document.getElementById('day-tabs-nav');
+    if (dayTabsNav) {
+      dayTabsNav.hidden = activeScreen === 'workout';
+    }
+  }
+
+  function switchAppScreen(targetScreen, options = {}) {
+    if (!SCREENS_ORDER.includes(targetScreen)) return state.activeScreen;
+    const prevIdx = SCREENS_ORDER.indexOf(state.activeScreen || 'plan');
+    const nextIdx = SCREENS_ORDER.indexOf(targetScreen);
+    const direction = nextIdx >= prevIdx ? 'forward' : 'backward';
+
+    const performSwitch = () => {
+      state.activeScreen = targetScreen;
+      if (typeof options.exerciseIndex === 'number' && options.exerciseIndex >= 0) {
+        state.activeExerciseIndex = options.exerciseIndex;
+      }
+      saveState();
+      syncScreenVisibility();
+      renderWorkoutFocusScreen();
+    };
+
+    if (options.instant) {
+      performSwitch();
+    } else {
+      navigateWithDirection(performSwitch, direction);
+    }
+    return state.activeScreen;
+  }
+
+  function startDayWorkoutSession(dayId = state.selectedDay, exerciseIndex = null) {
+    if (DAYS_ORDER.includes(dayId)) {
+      state.selectedDay = dayId;
+    }
+    const day = state.schedule[state.selectedDay];
+    const exercises = day?.exercises || [];
+
+    let targetIdx = 0;
+    if (typeof exerciseIndex === 'number' && exerciseIndex >= 0 && exerciseIndex < exercises.length) {
+      targetIdx = exerciseIndex;
+    } else {
+      const firstIncomplete = exercises.findIndex(ex => {
+        const total = Number(ex.sets) || 4;
+        const done = (ex.completedSets || []).filter(Boolean).length;
+        return done < total;
+      });
+      targetIdx = firstIncomplete >= 0 ? firstIncomplete : 0;
+    }
+
+    state.activeExerciseIndex = targetIdx;
+    if (!stopwatchState.running) {
+      startSessionStopwatch();
+    }
+    switchAppScreen('workout', { exerciseIndex: targetIdx, instant: true });
+    renderAll();
+    return {
+      activeScreen: state.activeScreen,
+      dayId: state.selectedDay,
+      activeExerciseIndex: state.activeExerciseIndex,
+      exercise: exercises[targetIdx] || null
+    };
+  }
+
+  function exitWorkoutScreen() {
+    switchAppScreen('plan', { instant: true });
+    renderAll();
+    return state.activeScreen;
+  }
+
+  function selectFocusExercise(index) {
+    const day = state.schedule[state.selectedDay];
+    const exercises = day?.exercises || [];
+    if (exercises.length === 0) return null;
+    const clamped = Math.max(0, Math.min(exercises.length - 1, Number(index) || 0));
+    state.activeExerciseIndex = clamped;
+    saveState();
+    renderWorkoutFocusScreen();
+    return exercises[clamped];
+  }
+
+  function renderWorkoutFocusScreen() {
+    const day = state.schedule[state.selectedDay];
+    const exercises = day?.exercises || [];
+    const totalDaySets = exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+    const doneDaySets = exercises.reduce((acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length, 0);
+
+    const dayProgressBadge = document.getElementById('focus-day-progress-badge');
+    if (dayProgressBadge) {
+      dayProgressBadge.textContent = `${doneDaySets} / ${totalDaySets} series`;
+    }
+
+    const dayNameLabel = document.getElementById('focus-day-name-label');
+    if (dayNameLabel && day) {
+      dayNameLabel.textContent = `${day.dayName.toUpperCase()} · ${day.muscleGroup.toUpperCase()}`;
+    }
+
+    const pillsContainer = document.getElementById('focus-stepper-pills');
+    const counterLabel = document.getElementById('focus-ex-counter-label');
+    const prevBtn = document.getElementById('btn-focus-prev-ex');
+    const nextBtn = document.getElementById('btn-focus-next-ex');
+
+    if (exercises.length === 0) {
+      if (counterLabel) counterLabel.textContent = 'Día de Descanso / Sin ejercicios';
+      if (pillsContainer) pillsContainer.innerHTML = '';
+      return null;
+    }
+
+    if (state.activeExerciseIndex >= exercises.length || state.activeExerciseIndex < 0) {
+      state.activeExerciseIndex = 0;
+    }
+
+    const idx = state.activeExerciseIndex;
+    const ex = exercises[idx];
+
+    if (counterLabel) {
+      counterLabel.textContent = `Ejercicio ${idx + 1} de ${exercises.length}`;
+    }
+    if (prevBtn) prevBtn.disabled = idx <= 0;
+    if (nextBtn) nextBtn.disabled = idx >= exercises.length - 1;
+
+    if (pillsContainer) {
+      pillsContainer.innerHTML = '';
+      exercises.forEach((item, i) => {
+        const itemTotal = Number(item.sets) || 4;
+        const itemDone = (item.completedSets || []).filter(Boolean).length;
+        const isAllDone = itemDone === itemTotal && itemTotal > 0;
+
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = `focus-step-pill ${i === idx ? 'is-active' : ''} ${isAllDone ? 'is-completed' : ''}`;
+        pill.dataset.exerciseIndex = String(i);
+        pill.setAttribute('aria-label', `Ir a ejercicio ${i + 1}: ${item.name}`);
+        pill.textContent = isAllDone ? `✓ ${i + 1}` : `${i + 1}`;
+        pill.addEventListener('click', () => selectFocusExercise(i));
+        pillsContainer.appendChild(pill);
+      });
+    }
+
+    // 1. Ilustración / Sprite en 3 Fases (usando clases propias para no alterar selectores de #exercises-list)
+    const spriteStage = document.getElementById('focus-sprite-stage');
+    if (spriteStage && GYM_VISUALS) {
+      const spriteInfo = GYM_VISUALS.getExerciseSpriteInfo(ex);
+      const loadText = ex.loadType === 'nivel' ? `Nivel ${ex.loadValue}` : `${ex.loadValue} kg`;
+      const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
+      spriteStage.innerHTML = `
+        <div class="focus-sprite-box ${spriteInfo.cssClass} ${rowClass}" data-anim-type="${spriteInfo.typeKey}">
+          <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}');"></div>
+          <div class="sprite-overlay-badge">
+            <span class="sprite-badge-tag">🎬 ${spriteInfo.label} (3 Fases)</span>
+            <span class="sprite-badge-load">${loadText}</span>
+          </div>
+          <span class="sprite-zoom-hint">🔍 Ampliar 3 Fases</span>
+        </div>
+      `;
+    }
+
+    // 2. Encabezado del Ejercicio
+    const muscleBadge = document.getElementById('focus-ex-muscle-badge');
+    const equipBadge = document.getElementById('focus-ex-equip-badge');
+    const titleEl = document.getElementById('focus-ex-title');
+    if (muscleBadge) muscleBadge.textContent = `🎯 ${ex.muscle || 'Principal'}`;
+    if (equipBadge) equipBadge.textContent = `⚙️ ${ex.equipment || 'Polea / Máquina'}`;
+    if (titleEl) titleEl.textContent = ex.name;
+
+    // 3. Control Esencial de Peso / Nivel y Repeticiones
+    const badgeInfo = formatLoadBadge(ex);
+    const btnUnit = document.getElementById('btn-focus-load-unit');
+    const loadMain = document.getElementById('focus-load-main');
+    const loadSub = document.getElementById('focus-load-sub');
+    const setsRepsLabel = document.getElementById('focus-sets-reps-label');
+    const restTargetLabel = document.getElementById('focus-rest-target-label');
+
+    if (btnUnit) {
+      btnUnit.className = `btn-toggle-unit ${badgeInfo.cssClass}`;
+    }
+    if (loadMain) loadMain.textContent = badgeInfo.main;
+    if (loadSub) loadSub.textContent = badgeInfo.sub;
+    if (setsRepsLabel) setsRepsLabel.textContent = `${ex.sets || 4} series × ${ex.reps || 12} reps`;
+    if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
+
+    // 4. Cuadrícula de las 4 Series × 12 Reps
+    const setsGrid = document.getElementById('focus-sets-grid');
+    const totalSets = Number(ex.sets) || 4;
+    const doneCount = (ex.completedSets || []).filter(Boolean).length;
+
+    if (setsGrid) {
+      setsGrid.innerHTML = '';
+      for (let s = 0; s < totalSets; s++) {
+        const isDone = Boolean(ex.completedSets && ex.completedSets[s]);
+        const setBtn = document.createElement('button');
+        setBtn.type = 'button';
+        setBtn.className = `btn-set-check btn-focus-set ${isDone ? 'is-done' : ''}`;
+        setBtn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+        setBtn.dataset.setIndex = String(s);
+
+        const sNum = document.createElement('span');
+        sNum.className = 'set-num';
+        sNum.textContent = isDone ? `✓ Serie ${s + 1} Lista` : `Serie ${s + 1}`;
+
+        const sReps = document.createElement('span');
+        sReps.className = 'set-reps';
+        sReps.textContent = `${ex.reps || 12} repeticiones`;
+
+        setBtn.append(sNum, sReps);
+        setBtn.addEventListener('click', () => toggleSetCompletion(state.selectedDay, ex.id, s));
+        setsGrid.appendChild(setBtn);
+      }
+    }
+
+    // 5. Banner de Doble Progresión 1-Toque en Pantalla Activa
+    const overloadContainer = document.getElementById('focus-overload-container');
+    if (overloadContainer) {
+      overloadContainer.innerHTML = '';
+      if (doneCount === totalSets && totalSets > 0) {
+        const overloadBanner = document.createElement('div');
+        overloadBanner.className = 'smart-overload-banner';
+        const nextVal = ex.loadType === 'nivel' ? Number(ex.loadValue) + 1 : Number(ex.loadValue) + 2.5;
+        const nextLabel = ex.loadType === 'nivel' ? `Nivel ${nextVal}` : `${nextVal} kg`;
+
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = `🚀 ¡${totalSets}×${ex.reps} completado! Sube de nivel con 1 toque:`;
+
+        const btnApplyOverload = document.createElement('button');
+        btnApplyOverload.type = 'button';
+        btnApplyOverload.className = 'btn-smart-overload-suggest';
+        btnApplyOverload.textContent = `⚡ Subir a ${nextLabel}`;
+        btnApplyOverload.addEventListener('click', () => applySmartProgressionSuggestion(state.selectedDay, ex.id));
+
+        overloadBanner.append(msgSpan, btnApplyOverload);
+        overloadContainer.appendChild(overloadBanner);
+      }
+    }
+
+    // 6. Temporizador de Descanso Integrado
+    const focusRestDigits = document.getElementById('focus-rest-digits');
+    if (focusRestDigits && !restTimerInterval) {
+      const defaultRest = Number(ex.restSeconds) || 75;
+      const mins = Math.floor(defaultRest / 60);
+      const secs = defaultRest % 60;
+      focusRestDigits.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    // 7. Menú Agrupado de Opciones Secundarias del Ejercicio
+    const btnSwap = document.getElementById('btn-focus-swap-alt');
+    const btnMode = document.getElementById('btn-focus-set-mode');
+    const btnRir = document.getElementById('btn-focus-rir');
+    const btnTut = document.getElementById('btn-focus-tut');
+    const noteEl = document.getElementById('focus-ex-note');
+
+    const setModeKey = ex.setMode || 'normal';
+    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
+    const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
+
+    if (btnSwap) {
+      btnSwap.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
+      btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
+    }
+    if (btnMode) {
+      btnMode.className = `btn-set-mode-chip mode-${setModeKey}`;
+      btnMode.textContent = modeMeta.badge;
+    }
+    if (btnRir) {
+      btnRir.textContent = `🎯 ${ex.targetRir || 'RIR 2'}`;
+    }
+    if (btnTut) {
+      const isTimingThis = tutState.activeExerciseId === ex.id;
+      btnTut.classList.toggle('is-timing', isTimingThis);
+      btnTut.textContent = isTimingThis ? '⏹️ Finalizar Serie TUT' : '⏱️ Medir Serie (TUT 3-1-1)';
+    }
+    if (noteEl) {
+      noteEl.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
+    }
+
+    return ex;
+  }
+
   function renderAll() {
     document.body.classList.toggle('animations-paused', Boolean(state.animationsPaused));
     const btnAnim = document.getElementById('btn-toggle-animations');
@@ -2558,11 +2952,13 @@
       btn.classList.toggle('is-active', btn.dataset.template === (state.activeTemplate || 'default_ppl'));
     });
 
+    syncScreenVisibility();
     renderWeeklySummary();
     renderDayTabs();
     renderDayHero();
     renderWarmupChecklist();
     renderExercisesList();
+    renderWorkoutFocusScreen();
     renderAnalyticsDashboard();
     renderProgressionHistory();
     renderBodyMetricsHistory();
@@ -3066,6 +3462,131 @@
     });
     document.getElementById('btn-timer-skip')?.addEventListener('click', stopRestTimer);
 
+    // Controles de la Pantalla de Entrenamiento Activo (#workout-focus-screen) y Navegación Inferior
+    document.getElementById('btn-start-day-workout')?.addEventListener('click', () => {
+      startDayWorkoutSession(state.selectedDay, null);
+    });
+    document.getElementById('btn-header-start-day')?.addEventListener('click', () => {
+      startDayWorkoutSession(state.selectedDay, null);
+    });
+    document.getElementById('btn-exit-workout-screen')?.addEventListener('click', () => {
+      exitWorkoutScreen();
+    });
+    document.getElementById('btn-focus-clock-toggle')?.addEventListener('click', () => {
+      toggleSessionStopwatch();
+    });
+    document.getElementById('btn-focus-prev-ex')?.addEventListener('click', () => {
+      selectFocusExercise((state.activeExerciseIndex || 0) - 1);
+    });
+    document.getElementById('btn-focus-next-ex')?.addEventListener('click', () => {
+      selectFocusExercise((state.activeExerciseIndex || 0) + 1);
+    });
+
+    const getActiveFocusExercise = () => {
+      const day = state.schedule[state.selectedDay];
+      return day?.exercises?.[state.activeExerciseIndex || 0] || null;
+    };
+
+    document.getElementById('focus-sprite-stage')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) openSpriteViewerDialog(ex);
+    });
+    document.getElementById('btn-focus-load-minus')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) adjustExerciseLoad(state.selectedDay, ex.id, -1);
+    });
+    document.getElementById('btn-focus-load-plus')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) adjustExerciseLoad(state.selectedDay, ex.id, 1);
+    });
+    document.getElementById('btn-focus-load-unit')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) toggleExerciseLoadUnit(state.selectedDay, ex.id);
+    });
+
+    document.getElementById('btn-focus-rest-start')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      startRestTimer(ex?.restSeconds || 75, ex ? `${ex.name} (Descanso)` : 'Descanso entre series');
+    });
+    document.getElementById('btn-focus-rest-minus')?.addEventListener('click', () => {
+      restRemainingSeconds = Math.max(0, restRemainingSeconds - 15);
+      updateTimerDisplay();
+    });
+    document.getElementById('btn-focus-rest-plus')?.addEventListener('click', () => {
+      restRemainingSeconds += 15;
+      restTotalSeconds = Math.max(restTotalSeconds, restRemainingSeconds);
+      updateTimerDisplay();
+    });
+    document.getElementById('btn-focus-rest-skip')?.addEventListener('click', () => {
+      stopRestTimer();
+      const ex = getActiveFocusExercise();
+      restRemainingSeconds = ex?.restSeconds || 75;
+      updateTimerDisplay();
+    });
+
+    document.getElementById('btn-focus-swap-alt')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) swapExerciseAlternative(state.selectedDay, ex.id);
+    });
+    document.getElementById('btn-focus-set-mode')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) cycleExerciseSetMode(state.selectedDay, ex.id);
+    });
+    document.getElementById('btn-focus-rir')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) cycleExerciseRir(state.selectedDay, ex.id);
+    });
+    document.getElementById('btn-focus-calc')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) {
+        const effKg = GYM_VISUALS && typeof GYM_VISUALS.resolveEffectiveLoadKg === 'function'
+          ? GYM_VISUALS.resolveEffectiveLoadKg(ex)
+          : Number(ex.loadValue) || 20;
+        openCalculatorDialog(effKg, ex.reps || 12);
+      }
+    });
+    document.getElementById('btn-focus-tut')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (!ex) return;
+      if (tutState.activeExerciseId === ex.id) {
+        stopTutStopwatch();
+      } else {
+        startTutStopwatch(state.selectedDay, ex.id);
+      }
+      renderWorkoutFocusScreen();
+    });
+    document.getElementById('btn-focus-edit')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) openExerciseDialog(ex);
+    });
+    document.getElementById('btn-focus-finish-workout')?.addEventListener('click', () => {
+      logCurrentWorkoutSession();
+      exitWorkoutScreen();
+    });
+
+    document.querySelectorAll('#bottom-app-nav .bottom-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.navScreen;
+        if (target === 'workout') {
+          startDayWorkoutSession(state.selectedDay, state.activeExerciseIndex || 0);
+        } else if (target) {
+          switchAppScreen(target);
+        }
+      });
+    });
+
+    // Cerrar menús desplegables de cabecera/día al tocar fuera
+    document.addEventListener('click', e => {
+      const headerMenu = document.getElementById('header-tools-menu');
+      if (headerMenu && headerMenu.open && !headerMenu.contains(e.target)) {
+        headerMenu.open = false;
+      }
+      const dayMenu = document.getElementById('day-secondary-menu');
+      if (dayMenu && dayMenu.open && !dayMenu.contains(e.target)) {
+        dayMenu.open = false;
+      }
+    });
+
     document.getElementById('btn-export-json')?.addEventListener('click', () => {
       const dataStr = JSON.stringify(state, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -3115,6 +3636,7 @@
     selectDay: dayId => {
       if (DAYS_ORDER.includes(dayId)) {
         state.selectedDay = dayId;
+        state.activeExerciseIndex = 0;
         saveState();
         renderAll();
       }
@@ -3172,7 +3694,13 @@
     getSmartProgressionSuggestions,
     applySmartProgressionSuggestion,
     setSessionJournalNote,
-    exportWorkoutCsv
+    exportWorkoutCsv,
+    // APIs Focus UI v1.8 (Navegación Multi-Pantalla, Modo Entrenamiento Activo por Ejercicio y Menús Agrupados)
+    switchAppScreen,
+    startDayWorkoutSession,
+    exitWorkoutScreen,
+    selectFocusExercise,
+    renderWorkoutFocusScreen
   };
 
   bindEvents();

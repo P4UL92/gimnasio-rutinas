@@ -377,9 +377,34 @@ assert.ok(csvContent.includes('REPORTE OFICIAL GYM RUTINAS PRO'), 'El archivo CS
 assert.ok(csvContent.includes('Gran bombeo dorsal Nivel 6, sin fatiga articular'), 'El archivo CSV debe incluir las notas de la bitácora de sesiones');
 assert.ok(csvContent.includes(exPoleaEstrecho.name), 'El archivo CSV debe incluir el plan semanal de ejercicios');
 
+// 27. Verificar Módulo Focus UI v1.8: Menús Agrupados, Responsive Vertical y Cambio de Pantalla al Iniciar Día
+assert.ok(doc.getElementById('header-tools-menu'), 'Debe existir el menú desplegable agrupado de opciones en cabecera');
+assert.ok(doc.getElementById('day-secondary-menu'), 'Debe existir el menú desplegable de opciones secundarias del día');
+assert.equal(doc.querySelectorAll('.ex-card-options-menu').length, 6, 'Cada tarjeta de ejercicio debe agrupar sus opciones secundarias en un menú desplegable');
+assert.ok(doc.getElementById('bottom-app-nav'), 'Debe existir la barra de navegación inferior estilo Android');
+
+const workoutLaunch = app.startDayWorkoutSession('lunes', 0);
+assert.equal(workoutLaunch.activeScreen, 'workout', 'Al iniciar el día debe cambiar a la pantalla dedicada de entrenamiento');
+assert.equal(doc.getElementById('workout-focus-screen').hidden, false, 'La pantalla de entrenamiento activo debe mostrarse');
+assert.equal(doc.getElementById('screen-plan').hidden, true, 'La pantalla del plan general debe ocultarse durante el enfoque del ejercicio');
+assert.ok(doc.querySelector('#focus-sprite-stage .focus-sprite-box'), 'La pantalla de entrenamiento debe mostrar la ilustración/sprite de 3 fases del ejercicio activo');
+assert.equal(doc.getElementById('focus-load-main').textContent, 'Nivel 6', 'Debe mostrar la carga esencial del primer ejercicio de Lunes (Nivel 6)');
+assert.equal(doc.querySelectorAll('#focus-sets-grid .btn-focus-set').length, 4, 'Debe mostrar los 4 botones grandes de series (4x12 reps)');
+assert.ok(doc.getElementById('focus-rest-digits').textContent.includes(':'), 'Debe mostrar el temporizador de descanso integrado en la pantalla del ejercicio');
+assert.ok(doc.getElementById('focus-secondary-menu'), 'Las opciones no esenciales del ejercicio activo deben estar agrupadas en #focus-secondary-menu');
+
+const switchedEx = app.selectFocusExercise(2);
+assert.equal(switchedEx.id, 'lun-biceps-press-polea', 'El selector paso a paso debe cambiar al ejercicio 3 (Bíceps en polea)');
+assert.equal(doc.getElementById('focus-load-main').textContent, '10 kg', 'La pantalla activa debe actualizar el peso a 10 kg');
+
+app.exitWorkoutScreen();
+assert.equal(app.getState().activeScreen, 'plan', 'Al salir del modo entrenamiento debe regresar a la pantalla principal del día');
+assert.equal(doc.getElementById('screen-plan').hidden, false, 'La pantalla del plan debe volver a estar visible');
+
 // Re-verificación final: 0 etiquetas <svg> tras todos los renders dinámicos
-assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Legend v1.7');
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar la arquitectura multi-pantalla v1.8 Focus UI');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.7 Legend (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas, tarjeta PNG, nutrición/hidratación, sustitución por máquina ocupada, modo descarga Deload, heatmap 28 días, medallas, iconos PNG nativos, Semáforo de Recuperación Muscular + Readiness Score, Doble Progresión 1-Toque y Bitácora + Exportación CSV Excel) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.8 Focus UI (0% SVGs en DOM, menús agrupados, diseño responsive vertical, cambio de pantalla al iniciar el día de ejercicio con sprite/peso/series/temporizador de descanso y 27 módulos verificados) pasaron con éxito.');
 process.exit(0);
+
