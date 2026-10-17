@@ -18,7 +18,7 @@
           <img src="assets/icons/icon-192.png" alt="" class="brand-logo-img" width="36" height="36">
         </span>
         <div>
-          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.6 MASTER</span>
+          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.7 LEGEND</span>
           <h1>Gym Rutinas Pro</h1>
         </div>
       </div>
@@ -453,11 +453,72 @@
         </div>
       </details>
 
-      <details class="overview-accordion" name="gym-info">
+      <details class="overview-accordion" name="gym-info" id="recovery-readiness-accordion">
         <summary>
-          <span class="summary-title">🏆 Historial de Entrenamientos Registrados</span>
+          <span class="summary-title">🔋 Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score</span>
         </summary>
         <div class="overview-content">
+          <div class="gamification-header-row">
+            <p class="overview-intro" style="margin: 0;">
+              Evalúa tu sueño, energía del Sistema Nervioso Central y agujetas (DOMS) para conocer tu disposición hoy y el estado de supercompensación de cada grupo muscular.
+            </p>
+            <span id="readiness-score-pill" class="warmup-progress-pill is-done">🟢 Readiness: 88% · Óptimo</span>
+          </div>
+
+          <div class="readiness-form-grid">
+            <div class="form-field">
+              <label for="readiness-sleep-hours">Horas de Sueño Anoche</label>
+              <input type="number" id="readiness-sleep-hours" step="0.5" min="3" max="12" value="7.5">
+            </div>
+            <div class="form-field">
+              <label for="readiness-energy-level">Energía / SNC (1 a 5)</label>
+              <select id="readiness-energy-level">
+                <option value="5">5 — Explosivo / Motivación Total</option>
+                <option value="4" selected>4 — Fuerte / Enfoque Sólido</option>
+                <option value="3">3 — Normal / Estándar</option>
+                <option value="2">2 — Cansado / Estrés Laboral</option>
+                <option value="1">1 — Agotado / Sin Energía</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="readiness-doms-level">Agujetas / Dolor Muscular (DOMS)</label>
+              <select id="readiness-doms-level">
+                <option value="1">1 — Sin agujetas (100% suelto)</option>
+                <option value="2" selected>2 — Tensión muscular ligera</option>
+                <option value="3">3 — Agujetas moderadas</option>
+                <option value="4">4 — Dolor muscular alto</option>
+                <option value="5">5 — Muy adolorido / Rígido</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="readiness-recommendation-box" class="nutrition-tip-card" style="margin-bottom: 12px;">
+            <strong>🧠 Recomendación Táctica del Coach</strong>
+            <p id="readiness-recommendation-text">Sistema nervioso fresco. Busca RIR 1 en tu última serie o aplica subida de carga si completas 4×12.</p>
+          </div>
+
+          <div id="muscle-recovery-grid" class="muscle-recovery-grid" aria-label="Semáforo de recuperación por grupo muscular">
+            <!-- Tarjetas de recuperación muscular generadas por app.js -->
+          </div>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info" id="history-journal-accordion">
+        <summary>
+          <span class="summary-title">🏆 Historial de Entrenamientos y Bitácora de Sensaciones</span>
+        </summary>
+        <div class="overview-content">
+          <div class="journal-entry-box">
+            <label for="session-journal-note"><strong>📝 Bitácora de Sensaciones del Día Activo</strong> (se adjunta al pulsar "🏆 Registrar Sesión")</label>
+            <input type="text" id="session-journal-note" placeholder="Ej: Gran bombeo en dorsal con Nivel 6, agarre firme y sin molestia en codos...">
+            <div class="journal-tags-row">
+              <button type="button" class="btn-journal-tag" data-tag="🔥 Gran bombeo muscular">🔥 Gran bombeo</button>
+              <button type="button" class="btn-journal-tag" data-tag="⚡ Fuerza alta en 4×12">⚡ Fuerza alta</button>
+              <button type="button" class="btn-journal-tag" data-tag="🛡️ Cero molestia articular">🛡️ Cero molestia</button>
+              <button type="button" class="btn-journal-tag" data-tag="⏱️ Cadencia 3-1-1 estricta">⏱️ Cadencia 3-1-1</button>
+            </div>
+          </div>
+
           <ul id="workout-history-list" class="workout-history-list">
             <!-- Historial de sesiones -->
           </ul>
@@ -466,14 +527,15 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
-          <span class="summary-title">💾 Respaldo de Datos (Exportar / Importar JSON)</span>
+          <span class="summary-title">💾 Respaldo de Datos y Reporte Excel (.CSV / .JSON)</span>
         </summary>
         <div class="overview-content backup-controls">
           <p class="overview-intro">
-            Tus pesos, niveles de polea, excepciones de domingo, estadísticas y series completadas se guardan automáticamente en tu dispositivo Android.
+            Tus pesos, niveles de polea, excepciones de domingo, estadísticas, bitácora y series completadas se guardan automáticamente en tu dispositivo Android.
           </p>
           <div class="backup-buttons-row">
-            <button type="button" id="btn-export-json" class="btn-secondary">Exportar Rutina (.json)</button>
+            <button type="button" id="btn-export-csv" class="btn-primary">📊 Exportar a Excel (.CSV)</button>
+            <button type="button" id="btn-export-json" class="btn-secondary">Exportar Respaldo (.json)</button>
             <button type="button" id="btn-import-json-trigger" class="btn-secondary">Importar Rutina</button>
             <input type="file" id="input-import-json" accept="application/json" hidden>
           </div>

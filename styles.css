@@ -2655,4 +2655,139 @@ body.animations-paused .exercise-sprite-frame {
   color: #6ee7b7;
 }
 
+/* ==========================================================================
+   Módulos Legend v1.7: Semáforo Recuperación / Readiness, Doble Progresión y Bitácora CSV
+   ========================================================================== */
+
+.smart-overload-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(16, 185, 129, 0.55);
+}
+
+.smart-overload-banner span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #a7f3d0;
+}
+
+.btn-smart-overload-suggest {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.24);
+  color: #fef3c7;
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-smart-overload-suggest:hover {
+  background: rgba(245, 158, 11, 0.38);
+  transform: translateY(-1px);
+}
+
+.readiness-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.muscle-recovery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.recovery-muscle-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recovery-muscle-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.recovery-bar-track {
+  height: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.recovery-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.recovery-muscle-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.journal-entry-box {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.journal-entry-box label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.journal-entry-box input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: rgba(7, 11, 20, 0.9);
+  color: #f8fafc;
+  font-size: 0.84rem;
+}
+
+.journal-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-journal-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+  font-size: 0.73rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+
 

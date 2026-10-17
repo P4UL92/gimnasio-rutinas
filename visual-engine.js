@@ -912,6 +912,177 @@
     };
   }
 
+  // Módulo Legend 1: Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score
+  function calculateReadinessAndMuscleRecovery(state, analytics) {
+    const readiness = state?.readiness || { sleepHours: 7.5, energyLevel: 4, domsLevel: 2 };
+    const sleep = Math.max(3, Math.min(12, Number(readiness.sleepHours) || 7.5));
+    const energy = Math.max(1, Math.min(5, Number(readiness.energyLevel) || 4));
+    const doms = Math.max(1, Math.min(5, Number(readiness.domsLevel) || 2));
+
+    // Puntuación sobre 100: Sueño (hasta 45 pts), Energía SNC (hasta 35 pts), Agujetas/DOMS inverso (hasta 20 pts)
+    const sleepScore = Math.min(45, Math.round((sleep / 8) * 45));
+    const energyScore = Math.round((energy / 5) * 35);
+    const domsScore = Math.round(((6 - doms) / 5) * 20);
+    const readinessScore = Math.max(15, Math.min(100, sleepScore + energyScore + domsScore));
+
+    let statusBadge = '🟢 Óptimo para Récords (80–100%)';
+    let statusClass = 'readiness-high';
+    let recommendation = 'Sistema nervioso fresco. Busca RIR 1 en tu última serie o aplica subida de carga si completas 4×12.';
+
+    if (readinessScore < 60) {
+      statusBadge = '🔴 Fatiga Acumulada (<60%)';
+      statusClass = 'readiness-low';
+      recommendation = 'Prioriza técnica estricta a RIR 3, añade +15s de descanso entre series o activa el 🛡️ Modo Descarga.';
+    } else if (readinessScore < 80) {
+      statusBadge = '🟡 Disposición Estándar (60–79%)';
+      statusClass = 'readiness-med';
+      recommendation = 'Cumple tu volumen programado de 4 series × 12 reps manteniendo RIR 2 controlado.';
+    }
+
+    const muscleMap = analytics?.muscleMap || {};
+    const muscleRecoveryList = Object.entries(muscleMap).map(([groupName, info]) => {
+      const doneRatio = info.sets > 0 ? info.completedSets / info.sets : 0;
+      // Si se completaron series de este grupo en el día/semana actual, reflejar fatiga aguda y ventana de supercompensación
+      const domsPenalty = (doms - 1) * 6;
+      const rawRecovery = Math.round(100 - doneRatio * 55 - domsPenalty);
+      const recoveryPct = Math.max(25, Math.min(100, rawRecovery));
+
+      let stateLabel = '🟢 Fresco (Listo para atacar)';
+      let stateColor = '#10b981';
+      let restWindow = '0h restantes';
+
+      if (recoveryPct < 55) {
+        stateLabel = '🔴 En Reparación Aguda (Ventana 48–72h)';
+        stateColor = '#ef4444';
+        restWindow = '48h sugeridas';
+      } else if (recoveryPct < 82) {
+        stateLabel = '🟡 Supercompensando (Ventana 24h)';
+        stateColor = '#f59e0b';
+        restWindow = '24h sugeridas';
+      }
+
+      return {
+        groupName,
+        completedSets: info.completedSets,
+        targetSets: info.sets,
+        recoveryPct,
+        stateLabel,
+        stateColor,
+        restWindow
+      };
+    });
+
+    return {
+      readinessScore,
+      sleepHours: sleep,
+      energyLevel: energy,
+      domsLevel: doms,
+      statusBadge,
+      statusClass,
+      recommendation,
+      muscleRecoveryList
+    };
+  }
+
+  // Módulo Legend 3: Generador de Reporte Completo en CSV (Compatible con Excel UTF-8 BOM)
+  function escapeCsvCell(val) {
+    const str = String(val ?? '').replace(/\r?\n/g, ' ').trim();
+    if (str.includes(',') || str.includes('"') || str.includes(';')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function generateCsvReportContent(state, daysOrder = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']) {
+    const rows = [];
+    rows.push(['REPORTE OFICIAL GYM RUTINAS PRO - PLANIFICADOR 4x12']);
+    rows.push(['Fecha Exportacion', new Date().toISOString(), 'Plantilla Activa', state?.activeTemplate || 'default_ppl']);
+    rows.push([]);
+
+    // 1. Rutina Semanal y Marcas Configuradas
+    rows.push(['1. RUTINA SEMANAL Y MARCAS CONFIGURADAS']);
+    rows.push(['Dia', 'Enfoque', 'Ejercicio', 'Musculo', 'Equipo', 'Tipo Carga', 'Valor Carga', 'Series', 'Reps', 'Series Completadas', 'Modo Serie', 'RIR', '1RM Estimado (kg)', 'Marca Base Usuario']);
+
+    for (const dayKey of daysOrder) {
+      const day = state?.schedule?.[dayKey];
+      if (!day) continue;
+      if (!day.exercises || day.exercises.length === 0) {
+        rows.push([day.dayName, day.title, 'Descanso / Sin ejercicios', '-', '-', '-', 0, 0, 0, 0, '-', '-', 0, 'No']);
+        continue;
+      }
+      for (const ex of day.exercises) {
+        const doneCount = (ex.completedSets || []).filter(Boolean).length;
+        const e1rm = calculateE1RM(ex.loadType, ex.loadValue, ex.reps);
+        rows.push([
+          day.dayName,
+          day.title,
+          ex.name,
+          ex.muscle,
+          ex.equipment,
+          ex.loadType === 'nivel' ? 'Nivel Polea' : 'Kilogramos (kg)',
+          ex.loadValue,
+          ex.sets || 4,
+          ex.reps || 12,
+          `${doneCount}/${ex.sets || 4}`,
+          ex.setMode || 'normal',
+          ex.targetRir || 'RIR 2',
+          e1rm,
+          ex.userBase ? 'SI (Marca Base)' : 'No'
+        ]);
+      }
+    }
+
+    rows.push([]);
+    // 2. Historial de Sesiones + Bitácora de Sensaciones
+    rows.push(['2. HISTORIAL DE SESIONES Y BITACORA DE SENSACIONES']);
+    rows.push(['Fecha ISO', 'Dia', 'Rutina', 'Series Hechas', 'Series Planeadas', 'Volumen (kg)', 'Duracion', 'Bitacora / Sensaciones']);
+    for (const h of state?.history || []) {
+      rows.push([
+        h.dateISO,
+        h.dayName,
+        h.title,
+        h.setsDone,
+        h.setsPlanned,
+        h.volumeKg,
+        h.durationText || '-',
+        h.sessionNote || 'Sin nota adicional'
+      ]);
+    }
+
+    rows.push([]);
+    // 3. Historial de Sobrecarga Progresiva (PRs)
+    rows.push(['3. HISTORIAL DE SOBRECARGA PROGRESIVA (RECORDS / 1RM)']);
+    rows.push(['Fecha ISO', 'Dia', 'Ejercicio', 'Carga Anterior', 'Nueva Carga', '1RM Estimado (kg)']);
+    for (const pr of state?.progressionHistory || []) {
+      rows.push([
+        pr.dateISO,
+        pr.dayName,
+        pr.exerciseName,
+        pr.prevLabel,
+        pr.unitLabel,
+        pr.e1rmKg
+      ]);
+    }
+
+    rows.push([]);
+    // 4. Registro Corporal Antropométrico
+    rows.push(['4. REGISTRO CORPORAL ANTROPOMETRICO']);
+    rows.push(['Fecha ISO', 'Peso (kg)', '% Grasa', 'Biceps (cm)', 'Pecho/Espalda (cm)', 'Cintura (cm)']);
+    for (const bm of state?.bodyMetrics || []) {
+      rows.push([
+        bm.dateISO,
+        bm.weightKg,
+        bm.fatPct,
+        bm.bicepsCm,
+        bm.chestCm,
+        bm.waistCm
+      ]);
+    }
+
+    const csvBody = rows.map(r => r.map(escapeCsvCell).join(',')).join('\r\n');
+    return '\uFEFF' + csvBody;
+  }
+
   return {
     EXERCISE_SPRITE_CATALOG,
     detectExerciseAnimationType,
@@ -930,6 +1101,8 @@
     EXERCISE_ALTERNATIVES_MAP,
     evaluateAchievements,
     buildConsistencyHeatmap,
+    calculateReadinessAndMuscleRecovery,
+    generateCsvReportContent,
     computeAnalytics
   };
 });

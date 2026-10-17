@@ -40,6 +40,12 @@
         creatineTaken: false,
         postProteinTaken: false
       },
+      readiness: {
+        sleepHours: 7.5,
+        energyLevel: 4,
+        domsLevel: 2
+      },
+      journalNotesByDay: {},
       warmupByDay: {},
       progressionHistory: [],
       bodyMetrics: [],
@@ -105,6 +111,16 @@
           creatineTaken: false,
           postProteinTaken: false
         };
+      }
+      if (!parsed.readiness || typeof parsed.readiness !== 'object') {
+        parsed.readiness = {
+          sleepHours: 7.5,
+          energyLevel: 4,
+          domsLevel: 2
+        };
+      }
+      if (!parsed.journalNotesByDay || typeof parsed.journalNotesByDay !== 'object') {
+        parsed.journalNotesByDay = {};
       }
       parsed.searchQuery = '';
       return parsed;
@@ -644,17 +660,23 @@
 
     const durationMs = getStopwatchElapsedMs();
     const durationText = formatStopwatchDurationText(durationMs);
+    const journalInput = document.getElementById('session-journal-note');
+    const sessionNote =
+      (journalInput?.value || state.journalNotesByDay?.[state.selectedDay] || '').trim() ||
+      '4×12 completado con buena técnica y control excéntrico.';
 
     const record = {
       id: `session-${Date.now()}`,
       dateISO: new Date().toISOString(),
+      dayId: state.selectedDay,
       dayName: day.dayName,
       title: day.title,
       setsDone: doneSets || totalSets,
       setsPlanned: totalSets,
       volumeKg: dayStat ? (dayStat.doneKg || dayStat.plannedKg) : 0,
       durationMs: durationMs,
-      durationText: durationText
+      durationText: durationText,
+      sessionNote
     };
 
     state.history.unshift(record);
@@ -1230,6 +1252,27 @@
       setsRow.appendChild(setBtn);
     }
     contentCol.appendChild(setsRow);
+
+    // Asistente de Doble Progresión Inteligente (Cuando se completan las 4 series × 12 reps)
+    if (doneCount === totalSets && totalSets > 0) {
+      const overloadBanner = document.createElement('div');
+      overloadBanner.className = 'smart-overload-banner';
+      const nextVal = ex.loadType === 'nivel' ? Number(ex.loadValue) + 1 : Number(ex.loadValue) + 2.5;
+      const nextLabel = ex.loadType === 'nivel' ? `Nivel ${nextVal}` : `${nextVal} kg`;
+
+      const msgSpan = document.createElement('span');
+      msgSpan.textContent = `🚀 ¡${totalSets}×${ex.reps} dominado! Listo para sobrecarga progresiva:`;
+
+      const btnApplyOverload = document.createElement('button');
+      btnApplyOverload.type = 'button';
+      btnApplyOverload.className = 'btn-smart-overload-suggest';
+      btnApplyOverload.dataset.exerciseId = ex.id;
+      btnApplyOverload.textContent = `⚡ Subir a ${nextLabel} (+1 toque)`;
+      btnApplyOverload.addEventListener('click', () => applySmartProgressionSuggestion(dayId, ex.id));
+
+      overloadBanner.append(msgSpan, btnApplyOverload);
+      contentCol.appendChild(overloadBanner);
+    }
 
     const tutRow = document.createElement('div');
     tutRow.className = 'set-stopwatch-row';
@@ -2021,10 +2064,12 @@
             minute: '2-digit'
           });
           const durBadge = item.durationText ? ` · ⏱️ ${item.durationText}` : '';
+          const noteLine = item.sessionNote ? `<div><small>📝 ${item.sessionNote}</small></div>` : '';
           li.innerHTML = `
             <div>
               <strong>${item.dayName}: ${item.title}</strong>
               <div><small>${dateStr}${durBadge}</small></div>
+              ${noteLine}
             </div>
             <div>
               <strong>${item.setsDone}/${item.setsPlanned} series</strong> · <span>${item.volumeKg} kg</span>
@@ -2330,6 +2375,154 @@
     return { achievements, heatmap };
   }
 
+  // Módulo Legend 1: Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score
+  function updateReadinessMetrics(partial = {}) {
+    if (!state.readiness || typeof state.readiness !== 'object') {
+      state.readiness = { sleepHours: 7.5, energyLevel: 4, domsLevel: 2 };
+    }
+    if (partial.sleepHours !== undefined) {
+      state.readiness.sleepHours = Math.max(3, Math.min(12, Number(partial.sleepHours) || 7.5));
+    }
+    if (partial.energyLevel !== undefined) {
+      state.readiness.energyLevel = Math.max(1, Math.min(5, Number(partial.energyLevel) || 4));
+    }
+    if (partial.domsLevel !== undefined) {
+      state.readiness.domsLevel = Math.max(1, Math.min(5, Number(partial.domsLevel) || 2));
+    }
+    saveState();
+    return renderRecoveryAndReadinessDashboard();
+  }
+
+  function renderRecoveryAndReadinessDashboard() {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.calculateReadinessAndMuscleRecovery !== 'function') return null;
+    const analytics = GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER);
+    const data = GYM_VISUALS.calculateReadinessAndMuscleRecovery(state, analytics);
+
+    const sleepInput = document.getElementById('readiness-sleep-hours');
+    const energySelect = document.getElementById('readiness-energy-level');
+    const domsSelect = document.getElementById('readiness-doms-level');
+    if (sleepInput && Number(sleepInput.value) !== data.sleepHours) {
+      sleepInput.value = String(data.sleepHours);
+    }
+    if (energySelect && Number(energySelect.value) !== data.energyLevel) {
+      energySelect.value = String(data.energyLevel);
+    }
+    if (domsSelect && Number(domsSelect.value) !== data.domsLevel) {
+      domsSelect.value = String(data.domsLevel);
+    }
+
+    const pillEl = document.getElementById('readiness-score-pill');
+    if (pillEl) {
+      pillEl.textContent = `${data.statusBadge.split(' ')[0]} Readiness: ${data.readinessScore}% · ${data.statusBadge.replace(/^[^\s]+\s/, '')}`;
+    }
+
+    const recEl = document.getElementById('readiness-recommendation-text');
+    if (recEl) {
+      recEl.textContent = data.recommendation;
+    }
+
+    const gridEl = document.getElementById('muscle-recovery-grid');
+    if (gridEl) {
+      gridEl.innerHTML = '';
+      for (const item of data.muscleRecoveryList) {
+        const card = document.createElement('div');
+        card.className = 'recovery-muscle-card';
+        card.innerHTML = `
+          <div class="recovery-muscle-top">
+            <strong>${item.groupName}</strong>
+            <span style="color: ${item.stateColor}; font-weight: 800;">${item.recoveryPct}%</span>
+          </div>
+          <div class="recovery-bar-track">
+            <div class="recovery-bar-fill" style="width: ${item.recoveryPct}%; background: ${item.stateColor};"></div>
+          </div>
+          <div class="recovery-muscle-sub">
+            <span>${item.stateLabel}</span>
+            <strong>${item.completedSets}/${item.targetSets} series (${item.restWindow})</strong>
+          </div>
+        `;
+        gridEl.appendChild(card);
+      }
+    }
+
+    return data;
+  }
+
+  // Módulo Legend 2: Asistente de Doble Progresión Inteligente (1 toque al dominar 4×12)
+  function getSmartProgressionSuggestions(dayId = state.selectedDay) {
+    const day = state.schedule[dayId];
+    if (!day || !Array.isArray(day.exercises)) return [];
+    const suggestions = [];
+    for (const ex of day.exercises) {
+      const totalSets = Number(ex.sets) || 4;
+      const doneCount = (ex.completedSets || []).filter(Boolean).length;
+      if (doneCount === totalSets && totalSets > 0) {
+        const nextLoadValue = ex.loadType === 'nivel' ? Number(ex.loadValue) + 1 : Number(ex.loadValue) + 2.5;
+        suggestions.push({
+          dayId,
+          exerciseId: ex.id,
+          exerciseName: ex.name,
+          loadType: ex.loadType,
+          currentLoad: ex.loadValue,
+          suggestedLoad: nextLoadValue
+        });
+      }
+    }
+    return suggestions;
+  }
+
+  function applySmartProgressionSuggestion(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    const prevLoad = Number(ex.loadValue) || 0;
+    const nextLoad = ex.loadType === 'nivel' ? prevLoad + 1 : prevLoad + 2.5;
+    ex.loadValue = nextLoad;
+
+    const prEntry = recordProgressionEntry(dayId, ex, prevLoad, nextLoad);
+    triggerHaptic([60, 40, 80]);
+    saveState();
+    renderAll();
+    const label = ex.loadType === 'nivel' ? `Nivel ${nextLoad}` : `${nextLoad} kg`;
+    showCelebrationToast(`🚀 ¡Doble Progresión Aplicada! ${ex.name} subió a ${label}`);
+    return { exercise: ex, prEntry, nextLoad };
+  }
+
+  // Módulo Legend 3: Bitácora de Sensaciones y Exportación a Excel (.CSV)
+  function setSessionJournalNote(noteText, dayId = state.selectedDay) {
+    if (!state.journalNotesByDay || typeof state.journalNotesByDay !== 'object') {
+      state.journalNotesByDay = {};
+    }
+    state.journalNotesByDay[dayId] = String(noteText || '');
+    const inputEl = document.getElementById('session-journal-note');
+    if (inputEl && inputEl.value !== state.journalNotesByDay[dayId]) {
+      inputEl.value = state.journalNotesByDay[dayId];
+    }
+    saveState();
+    return state.journalNotesByDay[dayId];
+  }
+
+  function exportWorkoutCsv() {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.generateCsvReportContent !== 'function') return '';
+    const csvContent = GYM_VISUALS.generateCsvReportContent(state, DAYS_ORDER);
+    try {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gym-rutinas-pro-reporte-${state.selectedDay}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      // Ignore blob download restrictions in headless JSDOM
+    }
+    showCelebrationToast('📊 Reporte completo exportado en formato Excel (.CSV)');
+    return csvContent;
+  }
+
   function renderAll() {
     document.body.classList.toggle('animations-paused', Boolean(state.animationsPaused));
     const btnAnim = document.getElementById('btn-toggle-animations');
@@ -2356,6 +2549,11 @@
       btnDeload.textContent = state.deloadModeActive ? '🛡️ Descarga Activa (-20%)' : '🛡️ Modo Descarga';
     }
 
+    const journalInput = document.getElementById('session-journal-note');
+    if (journalInput) {
+      journalInput.value = (state.journalNotesByDay && state.journalNotesByDay[state.selectedDay]) || '';
+    }
+
     document.querySelectorAll('.btn-template-select').forEach(btn => {
       btn.classList.toggle('is-active', btn.dataset.template === (state.activeTemplate || 'default_ppl'));
     });
@@ -2372,6 +2570,7 @@
     renderShareableSummaryCard();
     renderNutritionDashboard();
     renderGamificationDashboard();
+    renderRecoveryAndReadinessDashboard();
     renderWeeklyMatrix();
   }
 
@@ -2555,6 +2754,41 @@
         toggleDeloadMode();
       });
     }
+
+    ['readiness-sleep-hours', 'readiness-energy-level', 'readiness-doms-level'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const handler = () => {
+          updateReadinessMetrics({
+            sleepHours: document.getElementById('readiness-sleep-hours')?.value,
+            energyLevel: document.getElementById('readiness-energy-level')?.value,
+            domsLevel: document.getElementById('readiness-doms-level')?.value
+          });
+        };
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+      }
+    });
+
+    const journalInput = document.getElementById('session-journal-note');
+    if (journalInput) {
+      journalInput.addEventListener('input', () => {
+        setSessionJournalNote(journalInput.value, state.selectedDay);
+      });
+    }
+
+    document.querySelectorAll('.btn-journal-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tagText = btn.dataset.tag || '';
+        const current = (state.journalNotesByDay && state.journalNotesByDay[state.selectedDay]) || '';
+        const nextText = current ? `${current} · ${tagText}` : tagText;
+        setSessionJournalNote(nextText, state.selectedDay);
+      });
+    });
+
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+      exportWorkoutCsv();
+    });
 
     document.getElementById('nutrition-goal-select')?.addEventListener('change', e => {
       setNutritionGoal(e.target.value);
@@ -2931,7 +3165,14 @@
     resetHydrationWater,
     toggleSupplementCheck,
     renderNutritionDashboard,
-    renderGamificationDashboard
+    renderGamificationDashboard,
+    // APIs Legend v1.7 (Semáforo Recuperación/Readiness, Doble Progresión 1-Toque y Bitácora + Exportación Excel CSV)
+    updateReadinessMetrics,
+    renderRecoveryAndReadinessDashboard,
+    getSmartProgressionSuggestions,
+    applySmartProgressionSuggestion,
+    setSessionJournalNote,
+    exportWorkoutCsv
   };
 
   bindEvents();

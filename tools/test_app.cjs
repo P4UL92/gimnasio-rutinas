@@ -340,11 +340,44 @@ assert.ok(fs.existsSync(path.join(root, 'assets/icons/icon-192.png')), 'Debe exi
 assert.ok(fs.existsSync(path.join(root, 'assets/icons/icon-512.png')), 'Debe existir el icono PNG 512x512');
 assert.ok(fs.existsSync(path.join(root, 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png')), 'Debe existir el icono nativo Android mipmap-xxxhdpi');
 
+// 24. Verificar Módulo Legend 1: Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score
+const recReport = app.updateReadinessMetrics({ sleepHours: 8, energyLevel: 5, domsLevel: 1 });
+assert.ok(recReport.readinessScore >= 90, 'Con 8h de sueño, energía 5/5 y DOMS 1/5 el Readiness Score debe ser >= 90%');
+assert.equal(recReport.muscleRecoveryList.length, 5, 'El semáforo debe evaluar los 5 grandes grupos musculares');
+assert.equal(doc.querySelectorAll('#muscle-recovery-grid .recovery-muscle-card').length, 5, 'El DOM debe renderizar 5 tarjetas de recuperación muscular');
+assert.ok(doc.getElementById('readiness-score-pill').textContent.includes('%'), 'El pill de Readiness debe mostrar el porcentaje');
+
+// 25. Verificar Módulo Legend 2: Asistente de Doble Progresión Inteligente con 1 Toque
+app.selectDay('lunes');
+for (let s = 0; s < 4; s++) {
+  const exState = app.getState().schedule.lunes.exercises.find(e => e.id === 'lun-espalda-maquina-amplio');
+  if (!exState.completedSets[s]) {
+    app.toggleSetCompletion('lunes', 'lun-espalda-maquina-amplio', s);
+  }
+}
+const suggestions = app.getSmartProgressionSuggestions('lunes');
+assert.ok(suggestions.some(s => s.exerciseId === 'lun-espalda-maquina-amplio' && s.suggestedLoad === 22.5), 'Al completar 4x12 en Espalda Agarre Amplio (20 kg) debe sugerir subir a 22.5 kg');
+assert.ok(doc.querySelector('.btn-smart-overload-suggest[data-exercise-id="lun-espalda-maquina-amplio"]'), 'La tarjeta del ejercicio debe mostrar el botón 1-toque de Doble Progresión');
+const appliedOverload = app.applySmartProgressionSuggestion('lunes', 'lun-espalda-maquina-amplio');
+assert.equal(appliedOverload.nextLoad, 22.5, 'El botón de Doble Progresión debe incrementar la carga de 20 kg a 22.5 kg con 1 toque');
+assert.equal(app.getState().schedule.lunes.exercises.find(e => e.id === 'lun-espalda-maquina-amplio').loadValue, 22.5, 'El estado debe reflejar los 22.5 kg actualizados');
+app.restoreOriginalSchedule();
+
+// 26. Verificar Módulo Legend 3: Bitácora de Sensaciones por Sesión y Exportación a Excel (.CSV)
+app.selectDay('lunes');
+app.setSessionJournalNote('Gran bombeo dorsal Nivel 6, sin fatiga articular', 'lunes');
+assert.equal(app.getState().journalNotesByDay.lunes, 'Gran bombeo dorsal Nivel 6, sin fatiga articular', 'La nota de bitácora debe guardarse por día');
+const loggedOk = app.logCurrentWorkoutSession();
+assert.equal(loggedOk, true, 'Debe registrar la sesión correctamente');
+assert.equal(app.getState().history[0].sessionNote, 'Gran bombeo dorsal Nivel 6, sin fatiga articular', 'La sesión registrada en el historial debe conservar la nota de sensaciones');
+const csvContent = app.exportWorkoutCsv();
+assert.ok(csvContent.includes('REPORTE OFICIAL GYM RUTINAS PRO'), 'El archivo CSV debe incluir el encabezado oficial');
+assert.ok(csvContent.includes('Gran bombeo dorsal Nivel 6, sin fatiga articular'), 'El archivo CSV debe incluir las notas de la bitácora de sesiones');
+assert.ok(csvContent.includes(exPoleaEstrecho.name), 'El archivo CSV debe incluir el plan semanal de ejercicios');
+
 // Re-verificación final: 0 etiquetas <svg> tras todos los renders dinámicos
-assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Master v1.6');
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Legend v1.7');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.6 Master (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas, tarjeta PNG, nutrición/hidratación, sustitución por máquina ocupada, modo descarga Deload, heatmap 28 días, medallas e iconos PNG nativos) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.7 Legend (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas, tarjeta PNG, nutrición/hidratación, sustitución por máquina ocupada, modo descarga Deload, heatmap 28 días, medallas, iconos PNG nativos, Semáforo de Recuperación Muscular + Readiness Score, Doble Progresión 1-Toque y Bitácora + Exportación CSV Excel) pasaron con éxito.');
 process.exit(0);
-
-
