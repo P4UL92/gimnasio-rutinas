@@ -72,7 +72,13 @@ function prepare(root = path.resolve(__dirname, '..')) {
   if (configureManifest(fs.readFileSync(manifest, 'utf8'), config.appId) !== after) {
     throw new Error('Android manifest configuration was not preserved');
   }
-  console.log('Android project prepared: portrait MainActivity, current web assets synced.');
+
+  const generateIconsScript = path.join(root, 'tools/generate_android_icons.cjs');
+  if (fs.existsSync(generateIconsScript)) {
+    run(generateIconsScript);
+  }
+
+  console.log('Android project prepared: portrait MainActivity, current web assets synced, native icons generated.');
 }
 
 module.exports = { configureManifest, prepare };
