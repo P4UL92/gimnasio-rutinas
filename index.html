@@ -13,15 +13,16 @@
   <header class="app-header">
     <div class="brand-row">
       <div class="brand-identity">
-        <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
-          <path fill="currentColor" d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/>
-        </svg>
+        <span class="brand-icon-badge" aria-hidden="true">🏋️‍♂️</span>
         <div>
           <span class="eyebrow">ANDROID WORKOUT PLANNER</span>
           <h1>Gym Rutinas Pro</h1>
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
+          🔆 Pantalla Activa
+        </button>
         <button type="button" id="btn-toggle-animations" class="btn-ghost" aria-pressed="true" title="Pausar o reanudar animaciones de ejercicios">
           ⏸️ Pausar Anim.
         </button>
@@ -108,9 +109,7 @@
 
           <div class="day-action-bar" id="day-action-bar">
             <button type="button" id="btn-open-exception" class="btn-warning-outline">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-              </svg>
+              <span aria-hidden="true">📅</span>
               <span id="btn-exception-label">No entrenaré hoy → Mover al Domingo</span>
             </button>
             <button type="button" id="btn-add-exercise" class="btn-primary-outline">
@@ -122,7 +121,7 @@
           </div>
         </div>
 
-        <!-- Mapa Anatómico Corporal Interactivo (Frente y Espalda) -->
+        <!-- Mapa Anatómico Corporal Interactivo (Frente y Espalda 100% Raster + CSS) -->
         <div class="day-anatomy-panel" id="day-anatomy-panel" aria-label="Mapa anatómico de músculos trabajados hoy">
           <!-- Renderizado por visual-engine.js -->
         </div>
@@ -144,13 +143,33 @@
     </search>
 
     <section aria-labelledby="exercises-heading" class="exercises-section">
+      <!-- Checklist Interactivo de Calentamiento Articular (5 min) -->
+      <details id="warmup-checklist-card" class="warmup-checklist-card">
+        <summary class="warmup-summary">
+          <div class="warmup-summary-left">
+            <span class="warmup-badge">🔥 CALENTAMIENTO</span>
+            <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
+          </div>
+          <span id="warmup-progress-pill" class="warmup-progress-pill">0 / 4 listos</span>
+        </summary>
+        <div class="warmup-body">
+          <ul id="warmup-steps-list" class="warmup-steps-list">
+            <!-- Pasos de calentamiento generados por app.js -->
+          </ul>
+          <div class="warmup-actions-row">
+            <button type="button" id="btn-start-warmup-timer" class="btn-secondary">⏱️ Temporizador Calentamiento (5:00)</button>
+            <button type="button" id="btn-complete-all-warmup" class="btn-ghost">✓ Marcar todos</button>
+          </div>
+        </div>
+      </details>
+
       <div class="section-header-row">
         <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
-        <span class="unit-legend">Toca <strong>kg / Nivel</strong> para alternar unidad</span>
+        <span class="unit-legend">Toca el <strong>Sprite</strong> para 3 fases o <strong>kg / Nivel</strong> para unidad</span>
       </div>
 
       <ul id="exercises-list" class="exercises-list">
-        <!-- Tarjetas de ejercicios con ilustraciones SVG animadas renderizadas por app.js -->
+        <!-- Tarjetas de ejercicios con sprites rasterizados de 3 fases renderizadas por app.js -->
       </ul>
     </section>
 
@@ -235,6 +254,20 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
+          <span class="summary-title">📈 Historial de Sobrecarga Progresiva y Récords (PRs / 1RM)</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Cada vez que subas el peso (kg) o el nivel de placa en tus ejercicios, se registrará automáticamente tu progreso y tu <strong>1RM Estimado (Fórmula de Epley)</strong>.
+          </p>
+          <ul id="pr-history-list" class="workout-history-list">
+            <!-- Récords personales de sobrecarga progresiva -->
+          </ul>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info">
+        <summary>
           <span class="summary-title">🏆 Historial de Entrenamientos Registrados</span>
         </summary>
         <div class="overview-content">
@@ -268,13 +301,12 @@
       <button type="button" id="btn-mode-stopwatch" class="timer-mode-tab">⏱️ Cronómetro</button>
     </div>
 
-    <!-- Panel 1: Temporizador de Descanso -->
+    <!-- Panel 1: Temporizador de Descanso (Anillo Cónico CSS, 0% SVG) -->
     <div id="panel-timer-rest" class="timer-panel-content">
       <div class="timer-info">
-        <svg class="timer-ring-svg" viewBox="0 0 40 40" width="38" height="38" aria-hidden="true">
-          <circle cx="20" cy="20" r="16" fill="none" stroke="#1e293b" stroke-width="4"/>
-          <circle id="timer-ring-circle" cx="20" cy="20" r="16" fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="100.5" stroke-dashoffset="0" stroke-linecap="round"/>
-        </svg>
+        <div id="timer-ring-conic" class="timer-ring-conic" style="--ring-pct: 100%;" aria-hidden="true">
+          <span class="timer-ring-inner">⏳</span>
+        </div>
         <div>
           <div class="timer-top-line">
             <span class="timer-badge">⏱️ DESCANSO</span>
@@ -473,8 +505,61 @@
     </form>
   </dialog>
 
+  <!-- Modal Nativo: Visor Técnico Pantalla Completa de las 3 Fases del Sprite -->
+  <dialog id="sprite-viewer-dialog" class="gym-dialog sprite-viewer-dialog" closedby="any" aria-labelledby="sprite-viewer-title">
+    <form method="dialog" class="dialog-form">
+      <header class="dialog-header">
+        <div>
+          <span id="sprite-viewer-eyebrow" class="eyebrow">BIOMECÁNICA EN 3 FASES</span>
+          <h2 id="sprite-viewer-title">Demostración Técnica del Ejercicio</h2>
+        </div>
+        <button type="submit" value="close" class="btn-icon-close" aria-label="Cerrar visor técnico">✕</button>
+      </header>
+      <div class="dialog-body sprite-viewer-body">
+        <!-- Escenario del Sprite Ampliado -->
+        <div id="sprite-viewer-stage" class="sprite-viewer-stage mode-animated">
+          <div id="sprite-viewer-frame" class="sprite-viewer-frame"></div>
+          <div class="sprite-viewer-badges">
+            <span id="sprite-viewer-phase-badge" class="badge badge-muscle">Secuencia Animada (Fases 1 → 2 → 3)</span>
+            <span id="sprite-viewer-load-badge" class="badge badge-user-base">Carga Actual</span>
+          </div>
+        </div>
+
+        <!-- Selector de Fase Individual o Vista Completa -->
+        <div class="sprite-phase-controls" role="group" aria-label="Seleccionar fase del movimiento">
+          <button type="button" class="btn-phase-step is-active" data-phase="animated">▶ Animado</button>
+          <button type="button" class="btn-phase-step" data-phase="phase-1">1️⃣ Fase Inicial</button>
+          <button type="button" class="btn-phase-step" data-phase="phase-2">2️⃣ Recorrido Medio</button>
+          <button type="button" class="btn-phase-step" data-phase="phase-3">3️⃣ Contracción Máx.</button>
+          <button type="button" class="btn-phase-step" data-phase="full-strip">🖼️ 3 Fases Juntas</button>
+        </div>
+
+        <!-- Selector de Velocidad de Animación -->
+        <div class="sprite-speed-row">
+          <span class="speed-label">Velocidad de cadencia:</span>
+          <div class="speed-btns">
+            <button type="button" class="btn-speed-step" data-speed="4.2s">0.5× Lento</button>
+            <button type="button" class="btn-speed-step is-active" data-speed="2.4s">1.0× Normal</button>
+            <button type="button" class="btn-speed-step" data-speed="1.4s">1.5× Rápido</button>
+          </div>
+        </div>
+
+        <div class="sprite-viewer-meta">
+          <p id="sprite-viewer-note" class="sprite-viewer-note">Mantén el control excéntrico y evita impulsos.</p>
+          <div class="sprite-viewer-stats">
+            <span id="sprite-viewer-e1rm">📈 1RM Est.: -- kg</span>
+            <span id="sprite-viewer-sets-reps">🎯 Estándar: 4 × 12 reps</span>
+          </div>
+        </div>
+      </div>
+      <footer class="dialog-footer">
+        <button type="submit" value="close" class="btn-primary" style="width: 100%;">Cerrar Visor Técnico</button>
+      </footer>
+    </form>
+  </dialog>
+
   <footer class="app-footer">
-    <p>Gym Rutinas Pro v2.0 · Ilustraciones Animadas, Mapa Anatómico y Estadísticas Interactivas · Android (Capacitor 7)</p>
+    <p>Gym Rutinas Pro v2.1 · Sprites Rasterizados 3 Fases, Visor Técnico, Sobrecarga Progresiva y Modo Nativo · Android (Capacitor 7)</p>
   </footer>
 
   <script src="routines-data.js"></script>

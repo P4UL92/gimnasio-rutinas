@@ -52,17 +52,21 @@ assert.equal(exBicepsPolea.loadValue, 10);
 assert.equal(exBicepsPolea.sets, 4);
 assert.equal(exBicepsPolea.reps, 12);
 
-// 2. Verificar spritesheets rasterizados de ejercicios (Cero SVGs para ejercicios)
+// 2. Verificar CERO SVGs en todo el DOM (100% Sprites e Imágenes Rasterizadas + CSS)
 const doc = window.document;
+const allDomSvgs = doc.querySelectorAll('svg');
+assert.equal(allDomSvgs.length, 0, 'El DOM completo debe tener 0 etiquetas <svg> (100% libre de SVGs)');
+
 const exerciseSprites = doc.querySelectorAll('.exercise-sprite-box');
 assert.equal(exerciseSprites.length, 6, 'Cada uno de los 6 ejercicios del día debe renderizar su componente de sprite rasterizado');
 const spriteFrames = doc.querySelectorAll('.exercise-sprite-frame');
 assert.equal(spriteFrames.length, 6, 'Cada ejercicio debe tener su fotograma de animación por sprite');
-const svgExerciseAnims = doc.querySelectorAll('.exercise-illustration-wrap svg');
-assert.equal(svgExerciseAnims.length, 0, 'No deben existir SVGs para animaciones de ejercicios');
 
-const anatomyFigures = doc.querySelectorAll('#day-anatomy-panel svg');
-assert.equal(anatomyFigures.length, 2, 'Debe renderizar el mapa anatómico frontal y posterior');
+const anatomyRasterImg = doc.querySelector('#day-anatomy-panel .anatomy-raster-img');
+assert.ok(anatomyRasterImg, 'Debe renderizar el mapa anatómico corporal rasterizado');
+assert.ok(fs.existsSync(path.join(root, 'assets/sprites/anatomy_body_map.jpg')), 'El archivo anatomy_body_map.jpg debe existir en disco');
+const activeHotspots = doc.querySelectorAll('#day-anatomy-panel .anatomy-hotspot.is-active');
+assert.ok(activeHotspots.length >= 4, 'El mapa anatómico debe iluminar los hotspots musculares activos del día');
 
 const barCols = doc.querySelectorAll('#daily-bars-chart .bar-col');
 assert.equal(barCols.length, 7, 'El gráfico de barras debe mostrar los 7 días (Lunes a Domingo)');
@@ -93,13 +97,21 @@ for (const d of trainingDays) {
 }
 assert.ok(detectedTypesSet.size >= 22, `Los ejercicios de la semana deben cubrir todos los movimientos específicos (detectados: ${detectedTypesSet.size})`);
 
-// 4. Verificar cambio de unidad kg <-> Nivel y ajuste de peso
+// 4. Verificar cambio de unidad kg <-> Nivel, ajuste de peso y registro automático de Sobrecarga Progresiva (PRs / 1RM)
+const prevPrCount = (app.getState().progressionHistory || []).length;
 app.adjustExerciseLoad('lunes', 'lun-espalda-polea-estrecho', 1);
 assert.equal(
   app.getState().schedule.lunes.exercises[0].loadValue,
   7,
   'Nivel debe subir de 6 a 7'
 );
+assert.equal(
+  app.getState().progressionHistory.length,
+  prevPrCount + 1,
+  'Al subir de carga debe registrarse automáticamente un récord de sobrecarga progresiva (PR)'
+);
+assert.ok(app.getState().progressionHistory[0].e1rmKg > 0, 'El PR debe incluir el cálculo de 1RM estimado (Fórmula de Epley)');
+
 app.adjustExerciseLoad('lunes', 'lun-espalda-polea-estrecho', -1);
 assert.equal(
   app.getState().schedule.lunes.exercises[0].loadValue,
@@ -107,7 +119,31 @@ assert.equal(
   'Nivel debe regresar a 6'
 );
 
-// 5. Verificar marcado de series (4 series) y actualización de tonelaje
+// 5. Verificar Visor Técnico Pantalla Completa de 3 Fases (#sprite-viewer-dialog)
+app.openSpriteViewerDialog(exPoleaEstrecho);
+assert.equal(doc.getElementById('sprite-viewer-title').textContent, exPoleaEstrecho.name);
+app.setSpriteViewerPhase('phase-3');
+assert.ok(doc.getElementById('sprite-viewer-stage').classList.contains('mode-phase-3'), 'El visor debe cambiar a la Fase 3 (Contracción Máxima)');
+app.setSpriteViewerPhase('full-strip');
+assert.ok(doc.getElementById('sprite-viewer-stage').classList.contains('mode-full-strip'), 'El visor debe permitir ver las 3 fases juntas');
+app.setSpriteViewerSpeed('1.4s');
+assert.equal(doc.getElementById('sprite-viewer-frame').style.animationDuration, '1.4s', 'El visor debe ajustar la velocidad de cadencia');
+
+// 6. Verificar Checklist Interactivo de Calentamiento Articular (5 min)
+const warmupItems = doc.querySelectorAll('#warmup-steps-list .warmup-step-btn');
+assert.equal(warmupItems.length, 4, 'Debe mostrar los 4 pasos de calentamiento articular específicos del día');
+app.toggleWarmupStep('lunes', 'w1');
+assert.equal(app.getState().warmupByDay.lunes.w1, true, 'El paso w1 de calentamiento debe marcarse como completado');
+app.completeAllWarmupSteps('lunes');
+assert.ok(doc.getElementById('warmup-progress-pill').textContent.includes('4 / 4'), 'Todos los pasos de calentamiento deben quedar completados');
+
+// 7. Verificar Modo Nativo (WakeLock)
+app.toggleWakeLock(true);
+assert.equal(app.getState().wakeLockEnabled, true, 'WakeLock debe activarse');
+app.toggleWakeLock(false);
+assert.equal(app.getState().wakeLockEnabled, false, 'WakeLock debe desactivarse');
+
+// 8. Verificar marcado de series (4 series) y actualización de tonelaje
 app.toggleSetCompletion('lunes', 'lun-espalda-maquina-amplio', 0);
 assert.equal(
   app.getState().schedule.lunes.exercises[1].completedSets[0],
@@ -119,11 +155,11 @@ assert.ok(
   'El tonelaje movido debe actualizarse a 240 kg (1 serie x 12 reps x 20 kg)'
 );
 
-// 6. Verificar registro de sesión en el historial
+// 9. Verificar registro de sesión en el historial
 app.logCurrentWorkoutSession();
 assert.equal(app.getState().history.length, 1, 'Debe guardar la sesión en el historial');
 
-// 7. Verificar excepción: Mover un día al Domingo
+// 10. Verificar excepción: Mover un día al Domingo
 assert.equal(app.getState().schedule.domingo.exercises.length, 0, 'Domingo inicia libre');
 app.moveDayToSunday('miercoles');
 assert.equal(
@@ -142,7 +178,7 @@ assert.equal(
   'Domingo recibe los 6 ejercicios del Miércoles'
 );
 
-// 8. Verificar restaurar semana original y recorrer días al Domingo
+// 11. Verificar restaurar semana original y recorrer días al Domingo
 app.restoreOriginalSchedule();
 assert.equal(app.getState().schedule.domingo.exercises.length, 0);
 app.shiftChainToSunday('jueves');
@@ -153,7 +189,7 @@ assert.equal(
   'Al recorrer desde Jueves, Sábado pasa al Domingo'
 );
 
-// 9. Verificar Cronómetro de Sesión (Inicio, Vuelta, Pausa, Reinicio)
+// 12. Verificar Cronómetro de Sesión (Inicio, Vuelta, Pausa, Reinicio)
 app.restoreOriginalSchedule();
 app.selectDay('lunes');
 assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
@@ -173,7 +209,7 @@ app.resetSessionStopwatch();
 assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
 assert.equal(doc.querySelectorAll('#stopwatch-laps-list .lap-item').length, 0);
 
-// 10. Verificar Cronómetro de Serie (TUT - Time Under Tension) y avance de serie
+// 13. Verificar Cronómetro de Serie (TUT - Time Under Tension) y avance de serie
 const tutButtons = doc.querySelectorAll('.btn-tut-stopwatch');
 assert.equal(tutButtons.length, 6, 'Cada ejercicio debe tener su botón de cronómetro de serie (TUT)');
 
@@ -188,7 +224,7 @@ app.stopRestTimer();
 const afterDoneSets = (firstEx.completedSets || []).filter(Boolean).length;
 assert.equal(afterDoneSets, initialDoneSets + 1, 'Al finalizar TUT debe marcar la serie como completada');
 
-// 11. Verificar Modo Flotante Dual (Descanso vs Cronómetro)
+// 14. Verificar Modo Flotante Dual (Descanso vs Cronómetro)
 app.switchFloatingTimerMode('stopwatch');
 assert.equal(doc.getElementById('panel-timer-stopwatch').hidden, false);
 assert.equal(doc.getElementById('panel-timer-rest').hidden, true);
@@ -197,7 +233,7 @@ app.switchFloatingTimerMode('rest');
 assert.equal(doc.getElementById('panel-timer-rest').hidden, false);
 assert.equal(doc.getElementById('panel-timer-stopwatch').hidden, true);
 
-// 12. Verificar que el registro de sesión guarde la duración del cronómetro
+// 15. Verificar que el registro de sesión guarde la duración del cronómetro
 app.startSessionStopwatch();
 app.logCurrentWorkoutSession();
 const lastHistory = app.getState().history[0];
@@ -207,5 +243,5 @@ app.resetSessionStopwatch();
 app.stopRestTimer();
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas de ilustraciones SVG, mapa anatómico, gráficos estadísticos, cargas (kg/Nivel), series 4x12, excepciones al Domingo y cronómetro (Sesión + TUT + Flotante dual) pasaron con éxito.');
+console.log('PASS: Todas las pruebas (0% SVGs en DOM, 24 patrones de sprites en 3 fases, visor técnico fullscreen, mapa anatómico rasterizado, calentamiento articular, sobrecarga progresiva 1RM, WakeLock, cargas kg/Nivel, series 4x12, excepciones al Domingo y cronómetro) pasaron con éxito.');
 process.exit(0);

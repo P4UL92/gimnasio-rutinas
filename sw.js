@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gym-rutinas-pro-v3';
+const CACHE_NAME = 'gym-rutinas-pro-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './assets/icon.svg',
+  './assets/sprites/anatomy_body_map.jpg',
   './assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
   './assets/sprites/gym_exercise_sprite_sheet_fullbody.jpg',
   './assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',

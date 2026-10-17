@@ -268,8 +268,9 @@
         : `${exercise.loadValue} KG`;
 
     return `
-      <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="img" aria-label="Demostración visual del ejercicio ${exercise.name}">
+      <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="button" tabindex="0" title="Toca para abrir el Visor Técnico de 3 Fases" aria-label="Demostración visual del ejercicio ${exercise.name}. Toca para ampliar las 3 fases">
         <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
+        <span class="sprite-zoom-hint" aria-hidden="true">🔍 3 Fases</span>
         <div class="sprite-overlay-badge">
           <span class="sprite-badge-tag">${info.label}</span>
           <span class="sprite-badge-load">${loadLabel}</span>
@@ -300,66 +301,105 @@
     };
   }
 
-  // Renderiza el Mapa Anatómico Corporal Dual (Vista Frontal + Vista Posterior)
+  // Renderiza el Mapa Anatómico Corporal Dual 100% Rasterizado + Hotspots CSS (Cero SVGs en todo el DOM)
   function renderAnatomyMapSVG(day) {
     const z = getActiveAnatomyZones(day);
-    const active = flag => (flag ? 'muscle-zone is-active' : 'muscle-zone');
+    const activeLabels = [];
+    if (z.lats) activeLabels.push('Dorsal / Espalda');
+    if (z.traps) activeLabels.push('Trapecio');
+    if (z.biceps) activeLabels.push('Bíceps');
+    if (z.chest) activeLabels.push('Pectoral');
+    if (z.triceps) activeLabels.push('Tríceps');
+    if (z.shoulders) activeLabels.push('Deltoides');
+    if (z.core) activeLabels.push('Core / Abdomen');
+    if (z.quads) activeLabels.push('Cuádriceps');
+    if (z.glutesHams) activeLabels.push('Glúteo / Femoral');
+    if (z.calves) activeLabels.push('Gemelos / Sóleo');
+
+    const dotClass = flag => (flag ? 'anatomy-hotspot is-active' : 'anatomy-hotspot');
 
     return `
-      <div class="anatomy-figures-grid">
-        <figure class="anatomy-figure">
-          <figcaption>Vista Frontal</figcaption>
-          <svg viewBox="0 0 140 240" width="140" height="240" role="img" aria-label="Mapa anatómico frontal de músculos activos">
-            <!-- Cabeza y cuello -->
-            <circle cx="70" cy="24" r="14" class="body-base"/>
-            <rect x="64" y="38" width="12" height="10" rx="3" class="body-base"/>
-            <!-- Hombros (Deltoides) -->
-            <ellipse cx="42" cy="58" rx="10" ry="12" class="${active(z.shoulders)}"/>
-            <ellipse cx="98" cy="58" rx="10" ry="12" class="${active(z.shoulders)}"/>
-            <!-- Pectorales -->
-            <path d="M50 48 Q70 52 90 48 L88 74 Q70 78 52 74 Z" class="${active(z.chest)}"/>
-            <!-- Bíceps -->
-            <rect x="30" y="70" width="11" height="28" rx="5" class="${active(z.biceps)}"/>
-            <rect x="99" y="70" width="11" height="28" rx="5" class="${active(z.biceps)}"/>
-            <!-- Antebrazos -->
-            <rect x="26" y="100" width="10" height="26" rx="4" class="body-base"/>
-            <rect x="104" y="100" width="10" height="26" rx="4" class="body-base"/>
-            <!-- Core / Abdomen -->
-            <rect x="54" y="76" width="32" height="42" rx="6" class="${active(z.core)}"/>
-            <!-- Cuádriceps -->
-            <rect x="48" y="122" width="19" height="52" rx="8" class="${active(z.quads)}"/>
-            <rect x="73" y="122" width="19" height="52" rx="8" class="${active(z.quads)}"/>
-            <!-- Pantorrillas / Tibiales -->
-            <rect x="50" y="178" width="15" height="44" rx="6" class="${active(z.calves)}"/>
-            <rect x="75" y="178" width="15" height="44" rx="6" class="${active(z.calves)}"/>
-          </svg>
-        </figure>
-
-        <figure class="anatomy-figure">
-          <figcaption>Vista Posterior (Espalda)</figcaption>
-          <svg viewBox="0 0 140 240" width="140" height="240" role="img" aria-label="Mapa anatómico posterior de espalda y piernas">
-            <circle cx="70" cy="24" r="14" class="body-base"/>
-            <!-- Trapecio y Deltoides Posterior -->
-            <polygon points="50,44 90,44 82,64 58,64" class="${active(z.traps)}"/>
-            <ellipse cx="42" cy="58" rx="10" ry="12" class="${active(z.shoulders)}"/>
-            <ellipse cx="98" cy="58" rx="10" ry="12" class="${active(z.shoulders)}"/>
-            <!-- Dorsal Ancho y Espalda Media -->
-            <polygon points="46,60 94,60 84,108 56,108" class="${active(z.lats)}"/>
-            <!-- Tríceps -->
-            <rect x="30" y="70" width="11" height="28" rx="5" class="${active(z.triceps)}"/>
-            <rect x="99" y="70" width="11" height="28" rx="5" class="${active(z.triceps)}"/>
-            <!-- Glúteos -->
-            <rect x="48" y="110" width="44" height="24" rx="10" class="${active(z.glutesHams)}"/>
-            <!-- Isquiotibiales (Femoral) -->
-            <rect x="49" y="136" width="18" height="40" rx="7" class="${active(z.glutesHams)}"/>
-            <rect x="73" y="136" width="18" height="40" rx="7" class="${active(z.glutesHams)}"/>
-            <!-- Gemelos / Sóleo -->
-            <rect x="50" y="178" width="15" height="44" rx="6" class="${active(z.calves)}"/>
-            <rect x="75" y="178" width="15" height="44" rx="6" class="${active(z.calves)}"/>
-          </svg>
-        </figure>
+      <div class="anatomy-raster-card" role="img" aria-label="Mapa anatómico corporal frontal y dorsal de músculos activos">
+        <div class="anatomy-raster-stage">
+          <img src="assets/sprites/anatomy_body_map.jpg" alt="Mapa Anatómico Frontal y Dorsal" class="anatomy-raster-img" loading="eager">
+          <!-- Hotspots Vista Frontal (Izquierda ~28% X) -->
+          <span class="${dotClass(z.shoulders)}" style="left: 20%; top: 24%;" title="Deltoides Frontal"></span>
+          <span class="${dotClass(z.shoulders)}" style="left: 36%; top: 24%;" title="Deltoides Frontal"></span>
+          <span class="${dotClass(z.chest)}" style="left: 28%; top: 28%;" title="Pectoral Mayor"></span>
+          <span class="${dotClass(z.biceps)}" style="left: 17%; top: 34%;" title="Bíceps Braquial"></span>
+          <span class="${dotClass(z.biceps)}" style="left: 39%; top: 34%;" title="Bíceps Braquial"></span>
+          <span class="${dotClass(z.core)}" style="left: 28%; top: 41%;" title="Core y Recto Abdominal"></span>
+          <span class="${dotClass(z.quads)}" style="left: 24%; top: 58%;" title="Cuádriceps"></span>
+          <span class="${dotClass(z.quads)}" style="left: 32%; top: 58%;" title="Cuádriceps"></span>
+          <!-- Hotspots Vista Posterior / Dorsal (Derecha ~72% X) -->
+          <span class="${dotClass(z.traps)}" style="left: 72%; top: 22%;" title="Trapecio y Espalda Alta"></span>
+          <span class="${dotClass(z.lats)}" style="left: 67%; top: 33%;" title="Dorsal Ancho"></span>
+          <span class="${dotClass(z.lats)}" style="left: 77%; top: 33%;" title="Dorsal Ancho"></span>
+          <span class="${dotClass(z.triceps)}" style="left: 61%; top: 35%;" title="Tríceps"></span>
+          <span class="${dotClass(z.triceps)}" style="left: 83%; top: 35%;" title="Tríceps"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 72%; top: 49%;" title="Glúteos"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 68%; top: 62%;" title="Isquiotibiales / Femoral"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 76%; top: 62%;" title="Isquiotibiales / Femoral"></span>
+          <span class="${dotClass(z.calves)}" style="left: 68%; top: 78%;" title="Gemelos y Sóleo"></span>
+          <span class="${dotClass(z.calves)}" style="left: 76%; top: 78%;" title="Gemelos y Sóleo"></span>
+        </div>
+        <div class="anatomy-active-tags">
+          ${
+            activeLabels.length > 0
+              ? activeLabels.map(l => `<span class="muscle-zone is-active">${l}</span>`).join('')
+              : '<span class="muscle-zone">Recuperación Activa</span>'
+          }
+        </div>
       </div>
-    `;
+    `.trim();
+  }
+
+  // Calcula el 1RM Estimado (Fórmula de Epley) a partir de la carga (kg o nivel) y repeticiones
+  function calculateE1RM(loadType, loadValue, reps) {
+    const r = Math.max(1, Number(reps) || 12);
+    const val = Number(loadValue) || 0;
+    const effectiveKg =
+      loadType === 'nivel'
+        ? val * 3.5
+        : loadType === 'corporal'
+          ? 35 + val
+          : val;
+    return Math.round(effectiveKg * (1 + r / 30) * 10) / 10;
+  }
+
+  // Genera el protocolo de calentamiento articular de 5 minutos adaptado al grupo muscular del día
+  function getWarmupProtocolForDay(day) {
+    const text = `${day?.title || ''} ${day?.muscleGroup || ''}`.toLowerCase();
+    if (text.includes('espalda') || text.includes('bíceps') || text.includes('tracción')) {
+      return [
+        { id: 'w1', label: 'Rotaciones escapulares y movilidad torácica (2 × 15 reps)', duration: '60s' },
+        { id: 'w2', label: 'Dislocaciones de hombro con banda o bastón suave', duration: '60s' },
+        { id: 'w3', label: 'Serie de aproximación en polea alta al 40% (15 reps fluidas)', duration: '90s' },
+        { id: 'w4', label: 'Activación de codos y muñecas (curl ligero sin fatiga)', duration: '60s' }
+      ];
+    }
+    if (text.includes('pecho') || text.includes('tríceps') || text.includes('empuje')) {
+      return [
+        { id: 'w1', label: 'Rotación externa de manguito rotador en polea o banda (2 × 15)', duration: '75s' },
+        { id: 'w2', label: 'Aperturas dinámicas de pectoral y retracción escapular', duration: '60s' },
+        { id: 'w3', label: 'Extensión suave de codos en cuerda para lubricar tríceps', duration: '60s' },
+        { id: 'w4', label: 'Serie de aproximación en máquina de pecho al 40% (15 reps)', duration: '90s' }
+      ];
+    }
+    if (text.includes('pierna') || text.includes('cuádriceps') || text.includes('glúteo') || text.includes('femoral')) {
+      return [
+        { id: 'w1', label: 'Movilidad dinámica de cadera 90/90 y flexores pélvicos', duration: '75s' },
+        { id: 'w2', label: 'Dorsiflexión de tobillo contra pared y activación tibial', duration: '60s' },
+        { id: 'w3', label: 'Puente de glúteo isométrico en suelo (2 × 12 reps)', duration: '75s' },
+        { id: 'w4', label: 'Serie de aproximación en prensa / máquina al 40% (15 reps)', duration: '90s' }
+      ];
+    }
+    return [
+      { id: 'w1', label: 'Círculos articulares de cuello, hombros y cadera', duration: '60s' },
+      { id: 'w2', label: 'Activación de core (Plancha abdominal / Bird-dog 2 × 30s)', duration: '75s' },
+      { id: 'w3', label: 'Y-T-W escapular sin peso para deltoides posterior', duration: '75s' },
+      { id: 'w4', label: 'Serie de aproximación ligera en el primer ejercicio (15 reps)', duration: '90s' }
+    ];
   }
 
   // Calcula tonelaje estimado y métricas estadísticas de toda la semana
@@ -460,6 +500,9 @@
     renderExerciseIllustrationSVG,
     renderExerciseSprite,
     renderAnatomyMapSVG,
+    calculateE1RM,
+    getWarmupProtocolForDay,
     computeAnalytics
   };
 });
+

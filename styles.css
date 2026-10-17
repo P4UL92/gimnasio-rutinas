@@ -1826,3 +1826,369 @@ body.animations-paused .exercise-sprite-frame {
   color: var(--text-muted);
 }
 
+/* Brand Icon Badge (0% SVG) */
+.brand-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+}
+
+#btn-toggle-wakelock[aria-pressed="true"] {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
+/* Raster Anatomy Body Map + Glowing Hotspots (0% SVG) */
+.anatomy-raster-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(11, 15, 25, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px;
+}
+
+.anatomy-raster-stage {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: #0b0f19;
+}
+
+.anatomy-raster-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  filter: contrast(1.06) brightness(0.95);
+}
+
+.anatomy-hotspot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.anatomy-hotspot.is-active {
+  background: #10b981;
+  border-color: #a7f3d0;
+  box-shadow: 0 0 10px #10b981, 0 0 18px rgba(6, 182, 212, 0.85);
+  animation: pulseDot 1.5s infinite ease-in-out;
+}
+
+.anatomy-active-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.anatomy-active-tags .muscle-zone {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.8);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.anatomy-active-tags .muscle-zone.is-active {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Conic Gradient Rest Timer Ring (0% SVG) */
+.timer-ring-conic {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent-emerald) var(--ring-pct, 100%), #1e293b 0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timer-ring-inner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+}
+
+/* Sprite Zoom Hint Badge */
+.exercise-sprite-box {
+  cursor: pointer;
+}
+
+.sprite-zoom-hint {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(11, 15, 25, 0.82);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+
+/* Interactive 5-Minute Warmup Checklist Card */
+.warmup-checklist-card {
+  background: linear-gradient(135deg var(--in-oklab), rgba(15, 23, 42, 0.95), rgba(23, 37, 84, 0.35));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-md);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.warmup-summary {
+  padding: 11px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  list-style: none;
+}
+
+.warmup-summary::-webkit-details-marker {
+  display: none;
+}
+
+.warmup-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.warmup-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.warmup-progress-pill {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.warmup-progress-pill.is-done {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.warmup-body {
+  padding: 0 14px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.warmup-steps-list {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.warmup-step-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.warmup-step-btn[aria-pressed="true"] {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.14);
+  color: #a7f3d0;
+}
+
+.warmup-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Fullscreen 3-Phase Sprite Technique Viewer Modal */
+.sprite-viewer-dialog {
+  max-width: 580px;
+}
+
+.sprite-viewer-stage {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  border-radius: var(--radius-md);
+  background: #0b0f19;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  overflow: hidden;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8);
+}
+
+.sprite-viewer-frame {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: 300% 215%;
+  background-position: 0% 4%;
+  animation: spritePhaseCycle 2.4s steps(1) infinite;
+}
+
+.sprite-viewer-stage.row-bottom .sprite-viewer-frame {
+  background-position: 0% 98%;
+  animation-name: spritePhaseCycleBottom;
+}
+
+.sprite-viewer-stage.mode-phase-1 .sprite-viewer-frame {
+  animation: none !important;
+  background-position-x: 0% !important;
+}
+
+.sprite-viewer-stage.mode-phase-2 .sprite-viewer-frame {
+  animation: none !important;
+  background-position-x: 50% !important;
+}
+
+.sprite-viewer-stage.mode-phase-3 .sprite-viewer-frame {
+  animation: none !important;
+  background-position-x: 100% !important;
+}
+
+.sprite-viewer-stage.mode-full-strip .sprite-viewer-frame {
+  animation: none !important;
+  background-size: 100% 215% !important;
+  background-position-x: 50% !important;
+}
+
+.sprite-viewer-badges {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.sprite-phase-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-phase-step,
+.btn-speed-step {
+  flex: 1;
+  min-width: 92px;
+  min-height: 34px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-phase-step.is-active,
+.btn-speed-step.is-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border-color: var(--accent-emerald);
+}
+
+.sprite-speed-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.speed-label {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.speed-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.sprite-viewer-meta {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.sprite-viewer-note {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.sprite-viewer-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.76rem;
+  color: var(--accent-emerald);
+  font-weight: 700;
+}
+

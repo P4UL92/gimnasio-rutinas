@@ -28,6 +28,9 @@
       selectedDay: detectDefaultDay(),
       searchQuery: '',
       animationsPaused: false,
+      wakeLockEnabled: false,
+      warmupByDay: {},
+      progressionHistory: [],
       history: [],
       schedule
     };
@@ -66,6 +69,12 @@
       if (!Array.isArray(parsed.history)) {
         parsed.history = [];
       }
+      if (!Array.isArray(parsed.progressionHistory)) {
+        parsed.progressionHistory = [];
+      }
+      if (!parsed.warmupByDay || typeof parsed.warmupByDay !== 'object') {
+        parsed.warmupByDay = {};
+      }
       parsed.searchQuery = '';
       return parsed;
     } catch (_) {
@@ -77,6 +86,7 @@
   let restTimerInterval = null;
   let restTotalSeconds = 75;
   let restRemainingSeconds = 0;
+  let wakeLockSentinel = null;
 
   function saveState() {
     try {
@@ -329,7 +339,94 @@
     }, 3200);
   }
 
+  function triggerHaptic(pattern = [60]) {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch (_) {
+      // Ignore vibration errors on unsupported environments
+    }
+  }
+
+  function sendRestFinishedNotification(titleText, bodyText) {
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification(titleText, {
+          body: bodyText,
+          icon: 'assets/icon.svg',
+          silent: false
+        });
+      }
+    } catch (_) {
+      // Ignore notification errors in headless/WebView without permission
+    }
+  }
+
+  async function toggleWakeLock(forceState) {
+    const nextState = typeof forceState === 'boolean' ? forceState : !state.wakeLockEnabled;
+    state.wakeLockEnabled = nextState;
+
+    try {
+      if (nextState && typeof navigator !== 'undefined' && navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+        wakeLockSentinel = await navigator.wakeLock.request('screen');
+      } else if (!nextState && wakeLockSentinel && typeof wakeLockSentinel.release === 'function') {
+        await wakeLockSentinel.release();
+        wakeLockSentinel = null;
+      }
+    } catch (_) {
+      // Fallback gracefully if WakeLock API is restricted
+    }
+
+    saveState();
+    const btnWake = document.getElementById('btn-toggle-wakelock');
+    if (btnWake) {
+      btnWake.setAttribute('aria-pressed', state.wakeLockEnabled ? 'true' : 'false');
+      btnWake.textContent = state.wakeLockEnabled ? '🔆 Pantalla Fija' : '🔆 Pantalla Activa';
+    }
+    return state.wakeLockEnabled;
+  }
+
+  function recordProgressionEntry(dayId, ex, previousLoad, newLoad) {
+    if (newLoad <= previousLoad) return null;
+    const day = state.schedule[dayId];
+    const e1rm = GYM_VISUALS && typeof GYM_VISUALS.calculateE1RM === 'function'
+      ? GYM_VISUALS.calculateE1RM(ex.loadType, newLoad, ex.reps)
+      : Math.round(newLoad * (1 + (ex.reps || 12) / 30) * 10) / 10;
+
+    const unitLabel = ex.loadType === 'nivel' ? `Nivel ${newLoad}` : `${newLoad} kg`;
+    const prevLabel = ex.loadType === 'nivel' ? `Nivel ${previousLoad}` : `${previousLoad} kg`;
+
+    const entry = {
+      id: `pr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      dateISO: new Date().toISOString(),
+      dayId,
+      dayName: day ? day.dayName : dayId,
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      loadType: ex.loadType,
+      previousLoad,
+      newLoad,
+      unitLabel,
+      prevLabel,
+      reps: ex.reps || 12,
+      e1rmKg: e1rm
+    };
+
+    if (!Array.isArray(state.progressionHistory)) {
+      state.progressionHistory = [];
+    }
+    state.progressionHistory.unshift(entry);
+    if (state.progressionHistory.length > 40) {
+      state.progressionHistory.length = 40;
+    }
+    triggerHaptic([50, 40, 90]);
+    showCelebrationToast(`📈 ¡Sobrecarga Progresiva en ${ex.name}! ${prevLabel} → ${unitLabel} (1RM Est: ${e1rm} kg)`);
+    return entry;
+  }
+
   function playCompletionTone() {
+    triggerHaptic([70, 40, 70]);
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -400,9 +497,13 @@
     const ex = day.exercises.find(item => item.id === exerciseId);
     if (!ex) return;
 
+    const prevVal = Number(ex.loadValue) || 0;
     const step = ex.loadType === 'nivel' ? 1 : 2.5;
-    const nextVal = Math.max(0, Number((Number(ex.loadValue) + deltaDirection * step).toFixed(1)));
+    const nextVal = Math.max(0, Number((prevVal + deltaDirection * step).toFixed(1)));
     ex.loadValue = nextVal;
+    if (nextVal > prevVal) {
+      recordProgressionEntry(dayId, ex, prevVal, nextVal);
+    }
     saveState();
     renderAll();
   }
@@ -419,6 +520,7 @@
     renderAll();
 
     if (newState) {
+      triggerHaptic([45]);
       const doneInEx = ex.completedSets.filter(Boolean).length;
       if (doneInEx === (Number(ex.sets) || 4)) {
         showCelebrationToast(`🔥 ¡4 series de ${ex.name} completadas!`);
@@ -614,7 +716,7 @@
     renderAll();
   }
 
-  // Rest Timer with SVG Ring Progress
+  // Rest Timer with CSS Conic Ring Progress (0% SVG)
   function startRestTimer(seconds, labelText) {
     const bar = document.getElementById('rest-timer-bar');
     const countdownEl = document.getElementById('timer-countdown');
@@ -637,6 +739,8 @@
         restTimerInterval = null;
         labelEl.textContent = '¡Descanso terminado! Lista la siguiente serie 💪';
         playCompletionTone();
+        triggerHaptic([120, 60, 120]);
+        sendRestFinishedNotification('⏱️ ¡Descanso terminado!', 'Es hora de iniciar tu siguiente serie de 12 repeticiones 💪');
         return;
       }
       updateTimerDisplay();
@@ -645,17 +749,16 @@
 
   function updateTimerDisplay() {
     const countdownEl = document.getElementById('timer-countdown');
-    const ringEl = document.getElementById('timer-ring-circle');
+    const conicRingEl = document.getElementById('timer-ring-conic');
     if (countdownEl) {
       const mins = Math.floor(restRemainingSeconds / 60);
       const secs = restRemainingSeconds % 60;
       countdownEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
-    if (ringEl) {
-      const circumference = 100.5;
+    if (conicRingEl) {
       const ratio = restTotalSeconds > 0 ? Math.max(0, restRemainingSeconds / restTotalSeconds) : 0;
-      const offset = circumference * (1 - ratio);
-      ringEl.setAttribute('stroke-dashoffset', offset.toFixed(1));
+      const pct = Math.round(ratio * 100);
+      conicRingEl.style.setProperty('--ring-pct', `${pct}%`);
     }
   }
 
@@ -883,6 +986,13 @@
     if (GYM_VISUALS) {
       illustrationWrap.innerHTML = GYM_VISUALS.renderExerciseIllustrationSVG(ex);
     }
+    illustrationWrap.addEventListener('click', () => openSpriteViewerDialog(ex));
+    illustrationWrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openSpriteViewerDialog(ex);
+      }
+    });
 
     const contentCol = document.createElement('div');
     contentCol.className = 'exercise-content-col';
@@ -1033,6 +1143,138 @@
     li.appendChild(visualLayout);
 
     return li;
+  }
+
+  function toggleWarmupStep(dayId, stepId) {
+    if (!state.warmupByDay || typeof state.warmupByDay !== 'object') {
+      state.warmupByDay = {};
+    }
+    if (!state.warmupByDay[dayId]) {
+      state.warmupByDay[dayId] = {};
+    }
+    const nextVal = !state.warmupByDay[dayId][stepId];
+    state.warmupByDay[dayId][stepId] = nextVal;
+    if (nextVal) triggerHaptic([35]);
+    saveState();
+    renderWarmupChecklist();
+  }
+
+  function completeAllWarmupSteps(dayId) {
+    const day = state.schedule[dayId];
+    if (!day || !GYM_VISUALS || typeof GYM_VISUALS.getWarmupProtocolForDay !== 'function') return;
+    const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
+    if (!state.warmupByDay || typeof state.warmupByDay !== 'object') {
+      state.warmupByDay = {};
+    }
+    state.warmupByDay[dayId] = {};
+    for (const s of steps) {
+      state.warmupByDay[dayId][s.id] = true;
+    }
+    triggerHaptic([50, 40, 50]);
+    saveState();
+    renderWarmupChecklist();
+    showCelebrationToast('🔥 ¡Calentamiento articular completado! Listo para tus series efectivas.');
+  }
+
+  function renderWarmupChecklist() {
+    const card = document.getElementById('warmup-checklist-card');
+    const titleEl = document.getElementById('warmup-title-text');
+    const pillEl = document.getElementById('warmup-progress-pill');
+    const listEl = document.getElementById('warmup-steps-list');
+    if (!card || !listEl || !GYM_VISUALS || typeof GYM_VISUALS.getWarmupProtocolForDay !== 'function') return;
+
+    const dayId = state.selectedDay;
+    const day = state.schedule[dayId];
+    if (!day || day.exercises.length === 0) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+
+    const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
+    const dayWarmupMap = (state.warmupByDay && state.warmupByDay[dayId]) || {};
+    let doneCount = 0;
+
+    listEl.innerHTML = '';
+    for (const step of steps) {
+      const isDone = Boolean(dayWarmupMap[step.id]);
+      if (isDone) doneCount += 1;
+
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'warmup-step-btn';
+      btn.dataset.stepId = step.id;
+      btn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+      btn.innerHTML = `
+        <span>${isDone ? '✅' : '⬜'} ${step.label}</span>
+        <strong>${step.duration}</strong>
+      `;
+      btn.addEventListener('click', () => toggleWarmupStep(dayId, step.id));
+      li.appendChild(btn);
+      listEl.appendChild(li);
+    }
+
+    if (titleEl) {
+      titleEl.textContent = `Calentamiento Articular (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
+    }
+    if (pillEl) {
+      pillEl.textContent = `${doneCount} / ${steps.length} listos`;
+      pillEl.classList.toggle('is-done', doneCount === steps.length);
+    }
+  }
+
+  function renderProgressionHistory() {
+    const prList = document.getElementById('pr-history-list');
+    if (!prList) return;
+    prList.innerHTML = '';
+
+    const records = Array.isArray(state.progressionHistory) ? state.progressionHistory : [];
+    if (records.length === 0) {
+      // Mostrar resumen base de las 3 marcas iniciales del usuario con su 1RM estimado
+      const lunesEx = state.schedule.lunes?.exercises || [];
+      const baseItems = lunesEx.filter(e => e.userBase);
+      for (const ex of baseItems) {
+        const e1rm = GYM_VISUALS && typeof GYM_VISUALS.calculateE1RM === 'function'
+          ? GYM_VISUALS.calculateE1RM(ex.loadType, ex.loadValue, ex.reps)
+          : 0;
+        const unitLabel = ex.loadType === 'nivel' ? `Nivel ${ex.loadValue}` : `${ex.loadValue} kg`;
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.innerHTML = `
+          <div>
+            <strong>★ Base: ${ex.name}</strong>
+            <div><small>Marca inicial configurada (${ex.sets} × ${ex.reps} reps)</small></div>
+          </div>
+          <div>
+            <strong>${unitLabel}</strong> · <span>1RM Est: ${e1rm} kg</span>
+          </div>
+        `;
+        prList.appendChild(li);
+      }
+      return;
+    }
+
+    for (const item of records) {
+      const li = document.createElement('li');
+      li.className = 'history-item';
+      const dateStr = new Date(item.dateISO).toLocaleDateString('es-PE', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      li.innerHTML = `
+        <div>
+          <strong>📈 ${item.exerciseName} (${item.dayName})</strong>
+          <div><small>${dateStr} · Subida: ${item.prevLabel} → ${item.unitLabel}</small></div>
+        </div>
+        <div>
+          <strong>${item.unitLabel}</strong> · <span>1RM Est: ${item.e1rmKg} kg</span>
+        </div>
+      `;
+      prList.appendChild(li);
+    }
   }
 
   function renderExercisesList() {
@@ -1344,12 +1586,102 @@
       btnAnim.textContent = state.animationsPaused ? '▶️ Reanudar Anim.' : '⏸️ Pausar Anim.';
     }
 
+    const btnWake = document.getElementById('btn-toggle-wakelock');
+    if (btnWake) {
+      btnWake.setAttribute('aria-pressed', state.wakeLockEnabled ? 'true' : 'false');
+      btnWake.textContent = state.wakeLockEnabled ? '🔆 Pantalla Fija' : '🔆 Pantalla Activa';
+    }
+
     renderWeeklySummary();
     renderDayTabs();
     renderDayHero();
+    renderWarmupChecklist();
     renderExercisesList();
     renderAnalyticsDashboard();
+    renderProgressionHistory();
     renderWeeklyMatrix();
+  }
+
+  // Visor Técnico Pantalla Completa de 3 Fases
+  function setSpriteViewerPhase(phaseMode) {
+    const stage = document.getElementById('sprite-viewer-stage');
+    const phaseBadge = document.getElementById('sprite-viewer-phase-badge');
+    if (!stage) return;
+
+    stage.classList.remove('mode-animated', 'mode-phase-1', 'mode-phase-2', 'mode-phase-3', 'mode-full-strip');
+    stage.classList.add(`mode-${phaseMode}`);
+
+    const labels = {
+      'animated': 'Secuencia Animada (Fases 1 → 2 → 3)',
+      'phase-1': 'Fase 1: Posición Inicial y Estiramiento',
+      'phase-2': 'Fase 2: Recorrido Concéntrico Medio',
+      'phase-3': 'Fase 3: Contracción Isométrica Máxima',
+      'full-strip': 'Vista Completa: Las 3 Fases Biomecánicas'
+    };
+    if (phaseBadge) {
+      phaseBadge.textContent = labels[phaseMode] || labels.animated;
+    }
+
+    document.querySelectorAll('.btn-phase-step').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.phase === phaseMode);
+    });
+  }
+
+  function setSpriteViewerSpeed(speedCss) {
+    const frame = document.getElementById('sprite-viewer-frame');
+    if (frame) {
+      frame.style.animationDuration = speedCss;
+    }
+    document.querySelectorAll('.btn-speed-step').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.speed === speedCss);
+    });
+  }
+
+  function openSpriteViewerDialog(exercise) {
+    if (!exercise || !GYM_VISUALS) return;
+    const dialog = document.getElementById('sprite-viewer-dialog');
+    const titleEl = document.getElementById('sprite-viewer-title');
+    const eyebrowEl = document.getElementById('sprite-viewer-eyebrow');
+    const stageEl = document.getElementById('sprite-viewer-stage');
+    const frameEl = document.getElementById('sprite-viewer-frame');
+    const loadBadgeEl = document.getElementById('sprite-viewer-load-badge');
+    const noteEl = document.getElementById('sprite-viewer-note');
+    const e1rmEl = document.getElementById('sprite-viewer-e1rm');
+    const setsRepsEl = document.getElementById('sprite-viewer-sets-reps');
+
+    const info = GYM_VISUALS.getExerciseSpriteInfo(exercise);
+    const e1rm = typeof GYM_VISUALS.calculateE1RM === 'function'
+      ? GYM_VISUALS.calculateE1RM(exercise.loadType, exercise.loadValue, exercise.reps)
+      : 0;
+    const loadText = exercise.loadType === 'nivel' ? `Nivel ${exercise.loadValue}` : `${exercise.loadValue} kg`;
+
+    if (titleEl) titleEl.textContent = exercise.name;
+    if (eyebrowEl) eyebrowEl.textContent = `${info.label} · ${exercise.muscle || 'Técnica en 3 Fases'}`;
+    if (stageEl) {
+      stageEl.classList.toggle('row-bottom', info.row === 'bottom');
+    }
+    if (frameEl) {
+      frameEl.style.backgroundImage = `url('${info.spriteUrl}')`;
+    }
+    if (loadBadgeEl) {
+      loadBadgeEl.textContent = `Carga: ${loadText}`;
+    }
+    if (noteEl) {
+      noteEl.textContent = exercise.note || 'Controla la fase excéntrica y mantén 1 segundo en máxima contracción.';
+    }
+    if (e1rmEl) {
+      e1rmEl.textContent = `📈 1RM Est.: ${e1rm} kg`;
+    }
+    if (setsRepsEl) {
+      setsRepsEl.textContent = `🎯 Meta: ${exercise.sets || 4} series × ${exercise.reps || 12} reps`;
+    }
+
+    setSpriteViewerPhase('animated');
+    setSpriteViewerSpeed('2.4s');
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    }
   }
 
   // Dialog Modal Controllers
@@ -1424,6 +1756,13 @@
   }
 
   function bindEvents() {
+    const btnWake = document.getElementById('btn-toggle-wakelock');
+    if (btnWake) {
+      btnWake.addEventListener('click', () => {
+        toggleWakeLock();
+      });
+    }
+
     const btnToggleAnim = document.getElementById('btn-toggle-animations');
     if (btnToggleAnim) {
       btnToggleAnim.addEventListener('click', () => {
@@ -1432,6 +1771,27 @@
         renderAll();
       });
     }
+
+    document.querySelectorAll('.btn-phase-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.phase) setSpriteViewerPhase(btn.dataset.phase);
+      });
+    });
+
+    document.querySelectorAll('.btn-speed-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.speed) setSpriteViewerSpeed(btn.dataset.speed);
+      });
+    });
+
+    document.getElementById('btn-start-warmup-timer')?.addEventListener('click', () => {
+      startRestTimer(300, '🔥 Calentamiento Articular y Activación (5 min)');
+      showCelebrationToast('🔥 Temporizador de calentamiento de 5 min iniciado');
+    });
+
+    document.getElementById('btn-complete-all-warmup')?.addEventListener('click', () => {
+      completeAllWarmupSteps(state.selectedDay);
+    });
 
     const btnLogWorkout = document.getElementById('btn-log-workout');
     if (btnLogWorkout) {
@@ -1496,6 +1856,8 @@
         if (idVal) {
           const existing = day.exercises.find(e => e.id === idVal);
           if (existing) {
+            const prevLoad = Number(existing.loadValue) || 0;
+            const sameType = existing.loadType === loadTypeVal;
             existing.name = nameVal;
             existing.muscle = muscleVal;
             existing.equipment = equipVal;
@@ -1510,6 +1872,9 @@
               { length: setsVal },
               (_, idx) => Boolean(existing.completedSets && existing.completedSets[idx])
             );
+            if (sameType && loadVal > prevLoad) {
+              recordProgressionEntry(state.selectedDay, existing, prevLoad, loadVal);
+            }
           }
         } else {
           day.exercises.push({
@@ -1679,7 +2044,14 @@
     stopTutStopwatch,
     switchFloatingTimerMode,
     startRestTimer,
-    stopRestTimer
+    stopRestTimer,
+    // Nuevas APIs Pro (Visor Técnico 3 Fases, Calentamiento, Sobrecarga Progresiva y WakeLock)
+    openSpriteViewerDialog,
+    setSpriteViewerPhase,
+    setSpriteViewerSpeed,
+    toggleWarmupStep,
+    completeAllWarmupSteps,
+    toggleWakeLock
   };
 
   bindEvents();
