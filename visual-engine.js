@@ -564,9 +564,353 @@
     densidad_poleas: {
       id: 'densidad_poleas',
       name: 'Alta Densidad en Poleas y Máquinas (Superseries & Dropsets)',
-      description: 'Activa automáticamente biseries, dropsets en polea y RIR 1–2 en los ejercicios clave de la semana para máxima hipertrofia en menos tiempo.'
+      description: 'Activa automáticamente biseries, dropsets en polea y RIR 1–2 en los ejercicios clave de la semana para máxima hipertrofia en menos tiempo.',
+      dayOverrides: {
+        lunes: { defaultSetMode: 'dropset', defaultRir: 'RIR 1' },
+        martes: { defaultSetMode: 'superserie', defaultRir: 'RIR 1' },
+        jueves: { defaultSetMode: 'dropset', defaultRir: 'RIR 1' },
+        viernes: { defaultSetMode: 'superserie', defaultRir: 'RIR 1' }
+      }
     }
   };
+
+  // Módulo Master 1: Calculadora de Nutrición Deportiva, Macros e Hidratación
+  function calculateNutritionPlan(weightKg = 74.5, goalKey = 'hipertrofia', workoutMinutes = 60) {
+    const w = Math.max(40, Math.min(180, Number(weightKg) || 74.5));
+    const baseTdee = Math.round(w * 31 + (Number(workoutMinutes) || 60) * 5.2);
+
+    const goals = {
+      hipertrofia: {
+        id: 'hipertrofia',
+        label: 'Volumen Limpio / Hipertrofia (+320 kcal)',
+        kcalDelta: 320,
+        proteinPerKg: 2.2,
+        fatPerKg: 0.95,
+        preWorkoutTip: '40g Avena o Plátano + 25g Whey 45 min antes de entrenar',
+        postWorkoutTip: '30-35g Proteína + 60g Carbohidratos rápidos + 5g Creatina Monohidrato'
+      },
+      definicion: {
+        id: 'definicion',
+        label: 'Definición Muscular / Déficit (-400 kcal)',
+        kcalDelta: -400,
+        proteinPerKg: 2.4,
+        fatPerKg: 0.85,
+        preWorkoutTip: 'Café negro / Pre-entreno + 20g Proteína aislada + electrolitos',
+        postWorkoutTip: '35g Proteína magra + vegetales verdes + 40g arroz/papa cocida + 5g Creatina'
+      },
+      mantenimiento: {
+        id: 'mantenimiento',
+        label: 'Recomposición Corporal / Mantenimiento (Normocalórico)',
+        kcalDelta: 0,
+        proteinPerKg: 2.1,
+        fatPerKg: 0.9,
+        preWorkoutTip: 'Fruta mediana + 25g Proteína 45 min antes de la sesión',
+        postWorkoutTip: '30g Proteína + 45g Carbohidratos complejos + 5g Creatina'
+      }
+    };
+
+    const cfg = goals[goalKey] || goals.hipertrofia;
+    const targetKcal = Math.max(1400, baseTdee + cfg.kcalDelta);
+    const proteinGrams = Math.round(w * cfg.proteinPerKg);
+    const fatGrams = Math.round(w * cfg.fatPerKg);
+    const proteinKcal = proteinGrams * 4;
+    const fatKcal = fatGrams * 9;
+    const carbsGrams = Math.max(80, Math.round((targetKcal - proteinKcal - fatKcal) / 4));
+    const targetWaterMl = Math.round(w * 40 + 500); // Base 40ml/kg + 500ml intra-entreno
+
+    return {
+      weightKg: w,
+      goalKey: cfg.id,
+      goalLabel: cfg.label,
+      targetKcal,
+      proteinGrams,
+      carbsGrams,
+      fatGrams,
+      targetWaterMl,
+      preWorkoutTip: cfg.preWorkoutTip,
+      postWorkoutTip: cfg.postWorkoutTip
+    };
+  }
+
+  // Módulo Master 2: Sustitución Inteligente de Ejercicios ("Máquina Ocupada")
+  const EXERCISE_ALTERNATIVES_MAP = {
+    back_pulldown_narrow: {
+      altName: 'Dominadas Asistidas o Jalón Unilateral en Polea',
+      altEquipment: 'Máquina Asistida / Polea Alta',
+      altSpriteType: 'back_pullover',
+      altNote: 'Alternativa biomecánica de tracción vertical con énfasis en dorsal inferior. Mantén 4×12.'
+    },
+    back_machine_wide: {
+      altName: 'Remo en Máquina Convergente Agarre Prono Amplio',
+      altEquipment: 'Máquina Hammer / Polea',
+      altSpriteType: 'back_row_seated',
+      altNote: 'Alternativa directa cuando la máquina de espalda amplia está ocupada. Codos abiertos a 60°.'
+    },
+    back_row_seated: {
+      altName: 'Remo con Mancuerna a Una Mano (Serrucho) o Remo en Punta',
+      altEquipment: 'Mancuerna / Banco Plano',
+      altSpriteType: 'back_machine_wide',
+      altNote: 'Excelente sustituto libre para densidad de romboides y dorsal medio en 4×12.'
+    },
+    back_pullover: {
+      altName: 'Pull-Over con Mancuerna en Banco Plano',
+      altEquipment: 'Mancuerna + Banco',
+      altSpriteType: 'back_pulldown_narrow',
+      altNote: 'Estiramiento profundo del dorsal ancho manteniendo codos semirrígidos.'
+    },
+    bicep_curl: {
+      altName: 'Curl de Bíceps Alterno con Mancuernas o Barra Z',
+      altEquipment: 'Mancuernas / Barra Z',
+      altSpriteType: 'bicep_hammer',
+      altNote: 'Sustituto ideal si la polea baja está ocupada. Supina la muñeca al subir.'
+    },
+    bicep_hammer: {
+      altName: 'Curl Martillo Cruzado con Mancuernas',
+      altEquipment: 'Par de Mancuernas',
+      altSpriteType: 'bicep_curl',
+      altNote: 'Ataca el braquial anterior y braquiorradial sin depender de la estación de poleas.'
+    },
+    chest_press: {
+      altName: 'Press Plano con Mancuernas o Barra Olímpica',
+      altEquipment: 'Banco Plano + Mancuernas',
+      altSpriteType: 'chest_incline',
+      altNote: 'Equivalente biomecánico de empuje horizontal con mayor rango de estabilización.'
+    },
+    chest_incline: {
+      altName: 'Press Inclinado en Multipower (Smith) o Polea Baja',
+      altEquipment: 'Multipower / Banco 30°',
+      altSpriteType: 'chest_press',
+      altNote: 'Enfocado en la porción clavicular (pecho superior) con tensión controlada.'
+    },
+    chest_pecdeck: {
+      altName: 'Aperturas con Mancuernas en Banco Plano',
+      altEquipment: 'Mancuernas + Banco',
+      altSpriteType: 'chest_crossover',
+      altNote: 'Aducción horizontal libre cuando el Pec Deck está ocupado.'
+    },
+    chest_crossover: {
+      altName: 'Fondos Inclinados o Aperturas en Máquina Contractora',
+      altEquipment: 'Paralelas / Pec Deck',
+      altSpriteType: 'chest_pecdeck',
+      altNote: 'Aísla las fibras esternales e inferiores del pectoral.'
+    },
+    tricep_pushdown: {
+      altName: 'Press Francés con Barra Z o Mancuernas',
+      altEquipment: 'Barra Z / Banco Plano',
+      altSpriteType: 'tricep_overhead',
+      altNote: 'Gran estímulo en las 3 cabezas del tríceps sin usar torre de polea.'
+    },
+    tricep_overhead: {
+      altName: 'Extensión Copa con Mancuerna a Dos Manos Tras Nuca',
+      altEquipment: 'Mancuerna en Banco 90°',
+      altSpriteType: 'tricep_pushdown',
+      altNote: 'Estiramiento máximo de la cabeza larga del tríceps.'
+    },
+    tricep_dips: {
+      altName: 'Press Cerrado en Máquina o Banco Plano',
+      altEquipment: 'Barra / Máquina Multipower',
+      altSpriteType: 'tricep_pushdown',
+      altNote: 'Empuje compuesto de tríceps con codos pegados al torso.'
+    },
+    leg_press: {
+      altName: 'Sentadilla en Multipower (Smith) o Prensa Horizontal',
+      altEquipment: 'Multipower / Máquina',
+      altSpriteType: 'leg_hack_squat',
+      altNote: 'Sustituto directo de empuje bilateral de tren inferior.'
+    },
+    leg_hack_squat: {
+      altName: 'Zancadas Búlgaras con Mancuernas o Prensa 45° Pies Bajos',
+      altEquipment: 'Mancuernas + Banco',
+      altSpriteType: 'leg_press',
+      altNote: 'Enfoque dominante de rodilla y cuádriceps.'
+    },
+    leg_extension: {
+      altName: 'Sentadilla Sissy Asistida o Paso Atrás (Step-Down)',
+      altEquipment: 'Soporte / Mancuerna',
+      altSpriteType: 'leg_hack_squat',
+      altNote: 'Aísla el recto femoral cuando el sillón de cuádriceps está ocupado.'
+    },
+    leg_curl: {
+      altName: 'Curl Femoral con Deslizadores o Mancuerna entre Pies',
+      altEquipment: 'Banco Plano + Mancuerna',
+      altSpriteType: 'leg_rdl',
+      altNote: 'Flexión de rodilla estricta para isquiotibiales.'
+    },
+    leg_hip_thrust: {
+      altName: 'Puente de Glúteo en Máquina o Pull-Through en Polea Baja',
+      altEquipment: 'Polea Baja / Cuerda',
+      altSpriteType: 'leg_rdl',
+      altNote: 'Extensión de cadera con pico de contracción en glúteo mayor.'
+    },
+    leg_rdl: {
+      altName: 'Buenos Días en Multipower o Hiperextensiones 45° con Disco',
+      altEquipment: 'Banco 45° / Barra',
+      altSpriteType: 'leg_hip_thrust',
+      altNote: 'Bisagra de cadera para cadena posterior (isquios y glúteos).'
+    },
+    leg_adductor: {
+      altName: 'Sentadilla Sumo con Mancuerna / Kettlebell Pesada',
+      altEquipment: 'Mancuerna Pesada',
+      altSpriteType: 'leg_abductor',
+      altNote: 'Puntas hacia afuera a 45° para activar aductores profundos.'
+    },
+    leg_abductor: {
+      altName: 'Abducción de Cadera en Polea Baja con Tobillera',
+      altEquipment: 'Polea Baja + Tobillera',
+      altSpriteType: 'leg_adductor',
+      altNote: 'Tensión continua en glúteo medio y menor.'
+    },
+    leg_calves: {
+      altName: 'Elevación de Gemelos Unilateral con Mancuerna en Escalón',
+      altEquipment: 'Escalón + Mancuerna',
+      altSpriteType: 'leg_press',
+      altNote: 'Pausa de 2 segundos abajo y 1 segundo en punta.'
+    },
+    shoulder_press: {
+      altName: 'Press Arnold Sentado con Mancuernas',
+      altEquipment: 'Banco 85° + Mancuernas',
+      altSpriteType: 'shoulder_lateral',
+      altNote: 'Recorrido completo de deltoides anterior y lateral.'
+    },
+    shoulder_lateral: {
+      altName: 'Elevación Lateral con Mancuernas Sentado (Estricto)',
+      altEquipment: 'Par de Mancuernas',
+      altSpriteType: 'shoulder_press',
+      altNote: 'Elimina el impulso lumbar aislando la cabeza lateral del hombro.'
+    },
+    shoulder_facepull: {
+      altName: 'Pájaros con Mancuernas Pecho Apoyado en Banco Inclinado',
+      altEquipment: 'Banco 30° + Mancuernas',
+      altSpriteType: 'shoulder_reardelt',
+      altNote: 'Salud articular del manguito rotador y deltoides posterior.'
+    },
+    shoulder_reardelt: {
+      altName: 'Encogimientos con Mancuernas + Remo al Mentón Agarre Ancho',
+      altEquipment: 'Mancuernas / Barra Z',
+      altSpriteType: 'shoulder_facepull',
+      altNote: 'Estímulo directo de trapecio superior y deltoides posterior.'
+    },
+    core_crunch: {
+      altName: 'Elevación de Piernas Colgado o en Silla Romana + Plancha',
+      altEquipment: 'Silla Romana / Lastre',
+      altSpriteType: 'shoulder_reardelt',
+      altNote: 'Flexión pélvica para recto abdominal inferior y core.'
+    }
+  };
+
+  // Módulo Master 3: Gamificación, Medallas Desbloqueables y Heatmap de Constancia
+  function evaluateAchievements(state, analytics) {
+    const lunesEx = state?.schedule?.lunes?.exercises || [];
+    const poleaEstrecho = lunesEx.find(e => e.id === 'lun-espalda-polea-estrecho');
+    const bicepsPolea = lunesEx.find(e => e.id === 'lun-biceps-press-polea');
+    const prCount = (state?.progressionHistory || []).length;
+    const sessionsCount = (state?.history || []).length;
+    const totalDoneSets = analytics?.perDay?.reduce((acc, d) => acc + (d.doneSets || 0), 0) || 0;
+    const sundayUsed =
+      (state?.schedule?.domingo?.exercises?.length || 0) > 0 ||
+      (state?.history || []).some(h => h.dayId === 'domingo' || /domingo/i.test(h.dayName || ''));
+    const waterMl = state?.nutrition?.waterMl || 0;
+
+    return [
+      {
+        id: 'badge_dorsal_lvl6',
+        icon: '🦍',
+        title: 'Dominador Dorsal Nivel 6+',
+        desc: 'Mantén o supera el Nivel 6 en Jalón al pecho agarre estrecho (4×12).',
+        unlocked: Boolean(poleaEstrecho && Number(poleaEstrecho.loadValue) >= 6),
+        progressText: poleaEstrecho ? `Actual: Nivel ${poleaEstrecho.loadValue}` : 'Base Lunes'
+      },
+      {
+        id: 'badge_biceps_10kg',
+        icon: '💪',
+        title: 'Maestro del Bíceps en Polea',
+        desc: 'Domina el curl/press de bíceps en polea con 10 kg o más en 4×12.',
+        unlocked: Boolean(bicepsPolea && Number(bicepsPolea.loadValue) >= 10),
+        progressText: bicepsPolea ? `Actual: ${bicepsPolea.loadValue} kg` : 'Base Lunes'
+      },
+      {
+        id: 'badge_active_sets',
+        icon: '⚡',
+        title: 'Fuego Bajo Tensión (TUT)',
+        desc: 'Completa al menos 4 series efectivas dentro de tu semana activa.',
+        unlocked: totalDoneSets >= 4 || sessionsCount >= 1,
+        progressText: `${totalDoneSets} series listas`
+      },
+      {
+        id: 'badge_pr_breaker',
+        icon: '📈',
+        title: 'Rompedor de Récords (Sobrecarga)',
+        desc: 'Registra al menos 1 subida de peso o nivel en tu historial de PRs.',
+        unlocked: prCount >= 1,
+        progressText: `${prCount} PRs registrados`
+      },
+      {
+        id: 'badge_sunday_tactician',
+        icon: '🔄',
+        title: 'Estratega Dominical',
+        desc: 'Usa el comodín de reprogramación al Domingo para no perder ningún entreno.',
+        unlocked: sundayUsed,
+        progressText: sundayUsed ? 'Comodín Dominical Activo' : 'Listo para usar'
+      },
+      {
+        id: 'badge_hydration_tank',
+        icon: '💧',
+        title: 'Atleta Hidratado & Constante',
+        desc: 'Registra al menos 1 sesión en el historial o alcanza 2000 ml de hidratación.',
+        unlocked: sessionsCount >= 1 || waterMl >= 2000,
+        progressText: `${sessionsCount} sesiones · ${waterMl} ml`
+      }
+    ];
+  }
+
+  function buildConsistencyHeatmap(state, analytics) {
+    const historyDates = new Set(
+      (state?.history || []).map(h => {
+        try {
+          return new Date(h.dateISO).toISOString().slice(0, 10);
+        } catch (_) {
+          return '';
+        }
+      })
+    );
+
+    const cells = [];
+    const today = new Date();
+    let activeDaysCount = 0;
+
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const isoDay = d.toISOString().slice(0, 10);
+      const dayLabel = d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' });
+      const loggedInHistory = historyDates.has(isoDay);
+
+      // Si es la semana actual (últimos 6 días), reflejar también las series completadas en el tablero
+      let level = 0;
+      if (loggedInHistory) {
+        level = 3;
+      } else if (i === 0 && (analytics?.completedWeeklyVolumeKg || 0) > 0) {
+        level = 2;
+      } else if (i <= 5 && (state?.progressionHistory || []).length > 0 && i % 2 === 0) {
+        level = 1;
+      }
+
+      if (level > 0) activeDaysCount += 1;
+      cells.push({
+        isoDay,
+        dayLabel,
+        level, // 0: descanso/sin registro, 1: ligero, 2: activo, 3: sesión completa
+        isToday: i === 0
+      });
+    }
+
+    const streakWeeks = Math.max(1, Math.ceil(((state?.history || []).length + 1) / 3));
+    return {
+      cells,
+      activeDaysCount,
+      streakWeeks
+    };
+  }
 
   return {
     EXERCISE_SPRITE_CATALOG,
@@ -582,6 +926,10 @@
     SET_MODE_CATALOG,
     RIR_ORDER,
     WORKOUT_TEMPLATES,
+    calculateNutritionPlan,
+    EXERCISE_ALTERNATIVES_MAP,
+    evaluateAchievements,
+    buildConsistencyHeatmap,
     computeAnalytics
   };
 });

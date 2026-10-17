@@ -296,10 +296,55 @@ const cardSummary = app.renderShareableSummaryCard();
 assert.ok(cardSummary && cardSummary.dayName, 'Debe generar el resumen táctico en el canvas compartible');
 assert.ok(doc.getElementById('share-card-canvas').dataset.renderedSummary.includes('Lunes'), 'El canvas debe almacenar el payload renderizado');
 
+// 20. Verificar Módulo Master 1: Nutrición Deportiva, Macros, Agua y Creatina
+app.setNutritionGoal('definicion');
+assert.equal(app.getState().nutrition.goal, 'definicion', 'El objetivo nutricional debe actualizarse a definición');
+const nutPlan = app.renderNutritionDashboard();
+assert.ok(nutPlan.proteinGrams >= 150, 'Debe calcular proteína diaria acorde al peso corporal');
+app.addHydrationWater(500);
+app.addHydrationWater(250);
+assert.equal(app.getState().nutrition.waterMl, 750, 'El contador de hidratación debe acumular 750 ml');
+assert.ok(doc.getElementById('water-current-label').textContent.includes('750 /'), 'La etiqueta de hidratación debe reflejar 750 ml');
+app.toggleSupplementCheck('creatineTaken');
+assert.equal(app.getState().nutrition.creatineTaken, true, 'El check de creatina diaria debe activarse');
+app.resetHydrationWater();
+app.setNutritionGoal('hipertrofia');
+
+// 21. Verificar Módulo Master 2: Sustitución Inteligente ("Máquina Ocupada") y Modo Semana de Descarga (Deload)
+const originalName = app.getState().schedule.lunes.exercises[0].name;
+const swappedEx = app.swapExerciseAlternative('lunes', 'lun-espalda-polea-estrecho');
+assert.equal(swappedEx.isSwappedAlternative, true, 'El ejercicio debe marcarse como alternativa activa');
+assert.notEqual(swappedEx.name, originalName, 'El nombre del ejercicio debe cambiar al sustituto biomecánico');
+const restoredEx = app.swapExerciseAlternative('lunes', 'lun-espalda-polea-estrecho');
+assert.equal(restoredEx.isSwappedAlternative, false, 'Al volver a pulsar debe restaurar el ejercicio original');
+assert.equal(restoredEx.name, originalName, 'El nombre original de Lunes debe restaurarse intacto');
+
+app.toggleDeloadMode(true);
+assert.equal(app.getState().deloadModeActive, true, 'El modo descarga debe activarse');
+assert.equal(app.getState().schedule.lunes.exercises[1].loadValue, 16, 'En descarga (-20%), 20 kg baja temporalmente a 16 kg');
+app.toggleDeloadMode(false);
+assert.equal(app.getState().deloadModeActive, false, 'El modo descarga debe desactivarse');
+assert.equal(app.getState().schedule.lunes.exercises[0].loadValue, 6, 'Al salir de descarga, Nivel 6 se restaura intacto');
+assert.equal(app.getState().schedule.lunes.exercises[1].loadValue, 20, 'Al salir de descarga, 20 kg se restaura intacto');
+assert.equal(app.getState().schedule.lunes.exercises[2].loadValue, 10, 'Al salir de descarga, 10 kg se restaura intacto');
+
+// 22. Verificar Módulo Master 3: Gamificación (Calendario Heatmap 28 días y 6 Medallas Tácticas)
+const gamData = app.renderGamificationDashboard();
+assert.equal(gamData.heatmap.cells.length, 28, 'El heatmap de constancia debe generar exactamente 28 días');
+assert.equal(doc.querySelectorAll('#consistency-heatmap-grid .heatmap-cell').length, 28, 'El DOM debe mostrar las 28 celdas del heatmap');
+assert.equal(doc.querySelectorAll('#achievements-grid .achievement-card').length, 6, 'El DOM debe mostrar las 6 tarjetas de medallas/trofeos');
+assert.ok(doc.querySelectorAll('#achievements-grid .achievement-card.is-unlocked').length >= 2, 'Las medallas base de Dorsal Nivel 6 y Bíceps 10 kg deben estar desbloqueadas');
+
+// 23. Verificar Módulo Master 4: Iconos Nativos PNG (Web/PWA y Mipmaps Android)
+assert.ok(fs.existsSync(path.join(root, 'assets/icons/icon-192.png')), 'Debe existir el icono PNG 192x192');
+assert.ok(fs.existsSync(path.join(root, 'assets/icons/icon-512.png')), 'Debe existir el icono PNG 512x512');
+assert.ok(fs.existsSync(path.join(root, 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png')), 'Debe existir el icono nativo Android mipmap-xxxhdpi');
+
 // Re-verificación final: 0 etiquetas <svg> tras todos los renders dinámicos
-assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Élite');
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar todos los módulos Master v1.6');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.5 Élite (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas y tarjeta PNG) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.6 Master (0% SVGs en DOM, 24 patrones de sprites en 3 fases, calculadora de discos/1RM, registro antropométrico, modos Dropset/Superserie/RIR, Coach de Voz y Cadencia 3-1-1, plantillas tácticas, tarjeta PNG, nutrición/hidratación, sustitución por máquina ocupada, modo descarga Deload, heatmap 28 días, medallas e iconos PNG nativos) pasaron con éxito.');
 process.exit(0);
+
 

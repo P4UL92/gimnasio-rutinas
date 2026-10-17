@@ -6,16 +6,19 @@
   <meta name="theme-color" content="#0b0f17">
   <title>Gym Rutinas Pro — Planificador Lunes a Sábado + Domingo</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="app-header">
     <div class="brand-row">
       <div class="brand-identity">
-        <span class="brand-icon-badge" aria-hidden="true">🏋️‍♂️</span>
+        <span class="brand-icon-badge" aria-hidden="true">
+          <img src="assets/icons/icon-192.png" alt="" class="brand-logo-img" width="36" height="36">
+        </span>
         <div>
-          <span class="eyebrow">ANDROID WORKOUT PLANNER</span>
+          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.6 MASTER</span>
           <h1>Gym Rutinas Pro</h1>
         </div>
       </div>
@@ -25,6 +28,9 @@
         </button>
         <button type="button" id="btn-toggle-voice-coach" class="btn-ghost" aria-pressed="false" title="Activar Entrenador de Voz (TTS) y Metrónomo de Cadencia 3-1-1 en series TUT">
           🔊 Coach Voz / Cadencia
+        </button>
+        <button type="button" id="btn-toggle-deload-mode" class="btn-ghost" aria-pressed="false" title="Activar o desactivar Semana de Descarga Articular (-20% carga sugerida y RIR 3)">
+          🛡️ Modo Descarga
         </button>
         <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
           🔆 Pantalla Activa
@@ -341,6 +347,108 @@
               <button type="button" id="btn-generate-share-card" class="btn-secondary">🔄 Actualizar Tarjeta</button>
               <button type="button" id="btn-download-share-card" class="btn-primary">📥 Descargar Tarjeta PNG</button>
             </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info" id="nutrition-accordion">
+        <summary>
+          <span class="summary-title">🥗 Nutrición Deportiva, Macros, Agua y Creatina (Pre / Post-Entreno)</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Cálculo automático de macronutrientes según tu peso corporal actual y objetivo físico, con control rápido de hidratación intra-entreno y suplementación diaria.
+          </p>
+          <div class="nutrition-controls-row">
+            <div class="form-field">
+              <label for="nutrition-goal-select">Objetivo Nutricional Activo</label>
+              <select id="nutrition-goal-select">
+                <option value="hipertrofia">Volumen Limpio / Hipertrofia (+320 kcal · 2.2g Prot/kg)</option>
+                <option value="definicion">Definición Muscular / Déficit (-400 kcal · 2.4g Prot/kg)</option>
+                <option value="mantenimiento">Recomposición / Mantenimiento (Normocalórico · 2.1g Prot/kg)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="macros-kpi-grid">
+            <div class="macro-card macro-kcal">
+              <span class="macro-label">Energía Diaria</span>
+              <strong id="macro-kcal-val">2950 kcal</strong>
+              <small id="macro-weight-ref">Base: 74.5 kg</small>
+            </div>
+            <div class="macro-card macro-protein">
+              <span class="macro-label">Proteína (Hipertrofia)</span>
+              <strong id="macro-protein-val">164 g</strong>
+              <small>~4 comidas de 40g</small>
+            </div>
+            <div class="macro-card macro-carbs">
+              <span class="macro-label">Carbohidratos (Glucógeno)</span>
+              <strong id="macro-carbs-val">395 g</strong>
+              <small>Energía en poleas 4×12</small>
+            </div>
+            <div class="macro-card macro-fat">
+              <span class="macro-label">Grasas Esenciales</span>
+              <strong id="macro-fat-val">71 g</strong>
+              <small>Soporte hormonal</small>
+            </div>
+          </div>
+
+          <div class="hydration-tracker-box">
+            <div class="hydration-header">
+              <div>
+                <strong>💧 Hidratación Diaria + Intra-Entreno</strong>
+                <div class="hydration-sub" id="water-current-label">0 / 3480 ml consumidos (0%)</div>
+              </div>
+              <div class="hydration-actions">
+                <button type="button" id="btn-water-add-250" class="btn-secondary">+250 ml (Vaso)</button>
+                <button type="button" id="btn-water-add-500" class="btn-primary">+500 ml (Shaker)</button>
+                <button type="button" id="btn-water-reset" class="btn-ghost">Reiniciar</button>
+              </div>
+            </div>
+            <div class="water-progress-track">
+              <div id="water-progress-fill" class="water-progress-fill" style="width: 0%;"></div>
+            </div>
+            <div class="supplement-checks-row">
+              <button type="button" id="btn-toggle-creatine" class="btn-supp-check" aria-pressed="false">
+                ⬜ ⚡ Creatina Monohidrato (5g hoy)
+              </button>
+              <button type="button" id="btn-toggle-post-protein" class="btn-supp-check" aria-pressed="false">
+                ⬜ 🥤 Batido / Comida Post-Entreno Cumplida
+              </button>
+            </div>
+          </div>
+
+          <div class="nutrition-tips-grid">
+            <div class="nutrition-tip-card">
+              <strong>⏱️ Protocolo Pre-Entreno (45 min antes)</strong>
+              <p id="nutrition-pre-tip">40g Avena o Plátano + 25g Whey 45 min antes de entrenar</p>
+            </div>
+            <div class="nutrition-tip-card">
+              <strong>🏆 Protocolo Post-Entreno (Ventana Anabólica)</strong>
+              <p id="nutrition-post-tip">30-35g Proteína + 60g Carbohidratos rápidos + 5g Creatina Monohidrato</p>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="overview-accordion" name="gym-info" id="gamification-accordion">
+        <summary>
+          <span class="summary-title">🏅 Gamificación: Racha, Heatmap Mensual (28 Días) y Medallas</span>
+        </summary>
+        <div class="overview-content">
+          <div class="gamification-header-row">
+            <p class="overview-intro" style="margin: 0;">
+              Visualiza tu mapa de calor de los últimos 28 días y desbloquea trofeos tácticos superando tus marcas de Lunes a Sábado.
+            </p>
+            <span id="streak-badge-pill" class="warmup-progress-pill is-done">🔥 Racha: 1 Semana Activa</span>
+          </div>
+
+          <div id="consistency-heatmap-grid" class="consistency-heatmap-grid" aria-label="Mapa de calor de constancia de 28 días">
+            <!-- 28 celdas generadas por app.js -->
+          </div>
+
+          <div id="achievements-grid" class="achievements-grid">
+            <!-- 6 medallas generadas por app.js -->
           </div>
         </div>
       </details>

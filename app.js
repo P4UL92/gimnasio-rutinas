@@ -26,13 +26,20 @@
       }));
     }
     return {
-      version: 3,
+      version: 4,
       selectedDay: detectDefaultDay(),
       searchQuery: '',
       animationsPaused: false,
       wakeLockEnabled: false,
       voiceCoachEnabled: false,
+      deloadModeActive: false,
       activeTemplate: 'default_ppl',
+      nutrition: {
+        goal: 'hipertrofia',
+        waterMl: 0,
+        creatineTaken: false,
+        postProteinTaken: false
+      },
       warmupByDay: {},
       progressionHistory: [],
       bodyMetrics: [],
@@ -87,6 +94,17 @@
       }
       if (!parsed.activeTemplate) {
         parsed.activeTemplate = 'default_ppl';
+      }
+      if (typeof parsed.deloadModeActive !== 'boolean') {
+        parsed.deloadModeActive = false;
+      }
+      if (!parsed.nutrition || typeof parsed.nutrition !== 'object') {
+        parsed.nutrition = {
+          goal: 'hipertrofia',
+          waterMl: 0,
+          creatineTaken: false,
+          postProteinTaken: false
+        };
       }
       parsed.searchQuery = '';
       return parsed;
@@ -430,7 +448,7 @@
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification(titleText, {
           body: bodyText,
-          icon: 'assets/icon.svg',
+          icon: 'assets/icons/icon-192.png',
           silent: false
         });
       }
@@ -1176,7 +1194,17 @@
       openCalculatorDialog(effKg, ex.reps || 12);
     });
 
-    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip);
+    const btnAltSwapChip = document.createElement('button');
+    btnAltSwapChip.type = 'button';
+    btnAltSwapChip.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
+    btnAltSwapChip.dataset.exerciseId = ex.id;
+    btnAltSwapChip.title = ex.isSwappedAlternative
+      ? 'Volver al ejercicio titular original'
+      : '¿Máquina o polea ocupada? Toca para cambiar por su ejercicio equivalente biomecánico';
+    btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
+    btnAltSwapChip.addEventListener('click', () => swapExerciseAlternative(dayId, ex.id));
+
+    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip, btnAltSwapChip);
     contentCol.appendChild(intensityRow);
 
     const setsRow = document.createElement('div');
@@ -2062,6 +2090,246 @@
     }
   }
 
+  // Módulo Master: Sustitución Inteligente ("Máquina Ocupada") y Modo Descarga (Deload)
+  function swapExerciseAlternative(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day || !GYM_VISUALS || !GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    if (ex.isSwappedAlternative && ex.originalSnapshot) {
+      ex.name = ex.originalSnapshot.name;
+      ex.equipment = ex.originalSnapshot.equipment;
+      ex.spriteType = ex.originalSnapshot.spriteType;
+      ex.note = ex.originalSnapshot.note;
+      ex.isSwappedAlternative = false;
+      delete ex.originalSnapshot;
+      triggerHaptic([35]);
+      saveState();
+      renderExercisesList();
+      showCelebrationToast(`↩️ Ejercicio restaurado: ${ex.name}`);
+      return ex;
+    }
+
+    const detectedKey = GYM_VISUALS.detectExerciseAnimationType(ex);
+    const altMeta =
+      GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP[detectedKey] ||
+      GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP.back_row_seated;
+
+    ex.originalSnapshot = {
+      name: ex.name,
+      equipment: ex.equipment,
+      spriteType: ex.spriteType || detectedKey,
+      note: ex.note
+    };
+
+    ex.name = altMeta.altName;
+    ex.equipment = altMeta.altEquipment;
+    ex.spriteType = altMeta.altSpriteType;
+    ex.note = altMeta.altNote;
+    ex.isSwappedAlternative = true;
+
+    triggerHaptic([45, 35]);
+    saveState();
+    renderExercisesList();
+    showCelebrationToast(`🔄 Alternativa activada: ${ex.name}`);
+    return ex;
+  }
+
+  function toggleDeloadMode(forceState) {
+    const nextState = typeof forceState === 'boolean' ? forceState : !state.deloadModeActive;
+    if (nextState === state.deloadModeActive) return state.deloadModeActive;
+
+    state.deloadModeActive = nextState;
+    for (const dayKey of DAYS_ORDER) {
+      const day = state.schedule[dayKey];
+      for (const ex of day.exercises) {
+        if (nextState) {
+          ex.preDeloadSnapshot = {
+            loadValue: ex.loadValue,
+            targetRir: ex.targetRir || 'RIR 2'
+          };
+          if (ex.loadType === 'nivel') {
+            ex.loadValue = Math.max(1, Math.round(Number(ex.loadValue) * 0.8));
+          } else {
+            ex.loadValue = Math.max(2.5, Math.round(Number(ex.loadValue) * 0.8 * 2) / 2);
+          }
+          ex.targetRir = 'RIR 3';
+        } else if (ex.preDeloadSnapshot) {
+          ex.loadValue = ex.preDeloadSnapshot.loadValue;
+          ex.targetRir = ex.preDeloadSnapshot.targetRir;
+          delete ex.preDeloadSnapshot;
+        }
+      }
+    }
+
+    triggerHaptic([50, 40]);
+    saveState();
+    renderAll();
+    showCelebrationToast(
+      state.deloadModeActive
+        ? '🛡️ Modo Semana de Descarga activo (-20% carga y RIR 3 para recuperación articular)'
+        : '🔥 Modo Intensidad Normal restaurado (100% de tus cargas titulares)'
+    );
+    return state.deloadModeActive;
+  }
+
+  // Módulo Master: Nutrición Deportiva, Macros, Agua y Suplementación
+  function getLatestUserBodyWeight() {
+    if (Array.isArray(state.bodyMetrics) && state.bodyMetrics.length > 0) {
+      return Number(state.bodyMetrics[0].weightKg) || 74.5;
+    }
+    const inputEl = document.getElementById('body-weight-kg');
+    return Number(inputEl?.value) || 74.5;
+  }
+
+  function setNutritionGoal(goalKey) {
+    if (!state.nutrition || typeof state.nutrition !== 'object') {
+      state.nutrition = { goal: 'hipertrofia', waterMl: 0, creatineTaken: false, postProteinTaken: false };
+    }
+    state.nutrition.goal = goalKey;
+    saveState();
+    renderNutritionDashboard();
+    return state.nutrition;
+  }
+
+  function addHydrationWater(deltaMl) {
+    if (!state.nutrition || typeof state.nutrition !== 'object') {
+      state.nutrition = { goal: 'hipertrofia', waterMl: 0, creatineTaken: false, postProteinTaken: false };
+    }
+    state.nutrition.waterMl = Math.max(0, Math.min(6000, (Number(state.nutrition.waterMl) || 0) + Number(deltaMl)));
+    triggerHaptic([30]);
+    saveState();
+    renderNutritionDashboard();
+    renderGamificationDashboard();
+    return state.nutrition.waterMl;
+  }
+
+  function resetHydrationWater() {
+    if (state.nutrition) {
+      state.nutrition.waterMl = 0;
+      saveState();
+      renderNutritionDashboard();
+      renderGamificationDashboard();
+    }
+  }
+
+  function toggleSupplementCheck(field) {
+    if (!state.nutrition || typeof state.nutrition !== 'object') {
+      state.nutrition = { goal: 'hipertrofia', waterMl: 0, creatineTaken: false, postProteinTaken: false };
+    }
+    state.nutrition[field] = !state.nutrition[field];
+    triggerHaptic([35]);
+    saveState();
+    renderNutritionDashboard();
+    return state.nutrition[field];
+  }
+
+  function renderNutritionDashboard() {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.calculateNutritionPlan !== 'function') return null;
+    const weightKg = getLatestUserBodyWeight();
+    const goalKey = state.nutrition?.goal || 'hipertrofia';
+    const currentDay = state.schedule[state.selectedDay];
+    const workoutMins = currentDay?.estimatedMinutes || 60;
+
+    const plan = GYM_VISUALS.calculateNutritionPlan(weightKg, goalKey, workoutMins);
+
+    const goalSelect = document.getElementById('nutrition-goal-select');
+    if (goalSelect && goalSelect.value !== goalKey) {
+      goalSelect.value = goalKey;
+    }
+
+    const kcalEl = document.getElementById('macro-kcal-val');
+    const weightRefEl = document.getElementById('macro-weight-ref');
+    const protEl = document.getElementById('macro-protein-val');
+    const carbsEl = document.getElementById('macro-carbs-val');
+    const fatEl = document.getElementById('macro-fat-val');
+    const preTipEl = document.getElementById('nutrition-pre-tip');
+    const postTipEl = document.getElementById('nutrition-post-tip');
+
+    if (kcalEl) kcalEl.textContent = `${plan.targetKcal} kcal`;
+    if (weightRefEl) weightRefEl.textContent = `Base: ${plan.weightKg} kg`;
+    if (protEl) protEl.textContent = `${plan.proteinGrams} g`;
+    if (carbsEl) carbsEl.textContent = `${plan.carbsGrams} g`;
+    if (fatEl) fatEl.textContent = `${plan.fatGrams} g`;
+    if (preTipEl) preTipEl.textContent = plan.preWorkoutTip;
+    if (postTipEl) postTipEl.textContent = plan.postWorkoutTip;
+
+    const waterMl = Number(state.nutrition?.waterMl) || 0;
+    const waterPct = Math.min(100, Math.round((waterMl / plan.targetWaterMl) * 100));
+    const waterLabelEl = document.getElementById('water-current-label');
+    const waterFillEl = document.getElementById('water-progress-fill');
+    if (waterLabelEl) {
+      waterLabelEl.textContent = `${waterMl} / ${plan.targetWaterMl} ml consumidos (${waterPct}%)`;
+    }
+    if (waterFillEl) {
+      waterFillEl.style.width = `${waterPct}%`;
+    }
+
+    const btnCreatine = document.getElementById('btn-toggle-creatine');
+    if (btnCreatine) {
+      const taken = Boolean(state.nutrition?.creatineTaken);
+      btnCreatine.setAttribute('aria-pressed', taken ? 'true' : 'false');
+      btnCreatine.textContent = `${taken ? '✅' : '⬜'} ⚡ Creatina Monohidrato (5g hoy)`;
+    }
+
+    const btnPostProt = document.getElementById('btn-toggle-post-protein');
+    if (btnPostProt) {
+      const taken = Boolean(state.nutrition?.postProteinTaken);
+      btnPostProt.setAttribute('aria-pressed', taken ? 'true' : 'false');
+      btnPostProt.textContent = `${taken ? '✅' : '⬜'} 🥤 Batido / Comida Post-Entreno Cumplida`;
+    }
+
+    return plan;
+  }
+
+  // Módulo Master: Gamificación, Heatmap de 28 días y Medallas Tácticas
+  function renderGamificationDashboard() {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.evaluateAchievements !== 'function') return null;
+    const analytics = GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER);
+    const achievements = GYM_VISUALS.evaluateAchievements(state, analytics);
+    const heatmap = GYM_VISUALS.buildConsistencyHeatmap(state, analytics);
+
+    const streakEl = document.getElementById('streak-badge-pill');
+    if (streakEl) {
+      const unlockedCount = achievements.filter(a => a.unlocked).length;
+      streakEl.textContent = `🔥 Racha: ${heatmap.streakWeeks} Sem. · 🏅 ${unlockedCount}/${achievements.length} Trofeos`;
+    }
+
+    const heatmapGrid = document.getElementById('consistency-heatmap-grid');
+    if (heatmapGrid) {
+      heatmapGrid.innerHTML = '';
+      for (const cell of heatmap.cells) {
+        const div = document.createElement('div');
+        div.className = `heatmap-cell level-${cell.level} ${cell.isToday ? 'is-today' : ''}`;
+        div.title = `${cell.dayLabel}: ${cell.level > 0 ? 'Día activo / entrenado' : 'Descanso / sin registro'}`;
+        div.textContent = cell.dayLabel;
+        heatmapGrid.appendChild(div);
+      }
+    }
+
+    const achGrid = document.getElementById('achievements-grid');
+    if (achGrid) {
+      achGrid.innerHTML = '';
+      for (const ach of achievements) {
+        const card = document.createElement('div');
+        card.className = `achievement-card ${ach.unlocked ? 'is-unlocked' : ''}`;
+        card.dataset.badgeId = ach.id;
+        card.innerHTML = `
+          <span class="achievement-icon" aria-hidden="true">${ach.icon}</span>
+          <div class="achievement-body">
+            <strong>${ach.title}</strong>
+            <p>${ach.desc}</p>
+            <span class="achievement-status">${ach.unlocked ? '✓ DESBLOQUEADO' : '🔒 EN PROGRESO'} · ${ach.progressText}</span>
+          </div>
+        `;
+        achGrid.appendChild(card);
+      }
+    }
+
+    return { achievements, heatmap };
+  }
+
   function renderAll() {
     document.body.classList.toggle('animations-paused', Boolean(state.animationsPaused));
     const btnAnim = document.getElementById('btn-toggle-animations');
@@ -2082,6 +2350,12 @@
       btnVoice.textContent = state.voiceCoachEnabled ? '🔊 Coach Activo (3-1-1)' : '🔊 Coach Voz / Cadencia';
     }
 
+    const btnDeload = document.getElementById('btn-toggle-deload-mode');
+    if (btnDeload) {
+      btnDeload.setAttribute('aria-pressed', state.deloadModeActive ? 'true' : 'false');
+      btnDeload.textContent = state.deloadModeActive ? '🛡️ Descarga Activa (-20%)' : '🛡️ Modo Descarga';
+    }
+
     document.querySelectorAll('.btn-template-select').forEach(btn => {
       btn.classList.toggle('is-active', btn.dataset.template === (state.activeTemplate || 'default_ppl'));
     });
@@ -2096,6 +2370,8 @@
     renderBodyMetricsHistory();
     renderCalculatorModal();
     renderShareableSummaryCard();
+    renderNutritionDashboard();
+    renderGamificationDashboard();
     renderWeeklyMatrix();
   }
 
@@ -2273,6 +2549,37 @@
       });
     }
 
+    const btnDeload = document.getElementById('btn-toggle-deload-mode');
+    if (btnDeload) {
+      btnDeload.addEventListener('click', () => {
+        toggleDeloadMode();
+      });
+    }
+
+    document.getElementById('nutrition-goal-select')?.addEventListener('change', e => {
+      setNutritionGoal(e.target.value);
+    });
+
+    document.getElementById('btn-water-add-250')?.addEventListener('click', () => {
+      addHydrationWater(250);
+    });
+
+    document.getElementById('btn-water-add-500')?.addEventListener('click', () => {
+      addHydrationWater(500);
+    });
+
+    document.getElementById('btn-water-reset')?.addEventListener('click', () => {
+      resetHydrationWater();
+    });
+
+    document.getElementById('btn-toggle-creatine')?.addEventListener('click', () => {
+      toggleSupplementCheck('creatineTaken');
+    });
+
+    document.getElementById('btn-toggle-post-protein')?.addEventListener('click', () => {
+      toggleSupplementCheck('postProteinTaken');
+    });
+
     const btnOpenCalc = document.getElementById('btn-open-calc-dialog');
     if (btnOpenCalc) {
       btnOpenCalc.addEventListener('click', () => {
@@ -2290,6 +2597,7 @@
 
     document.getElementById('btn-save-body-metrics')?.addEventListener('click', () => {
       recordBodyMetrics();
+      renderNutritionDashboard();
     });
 
     document.querySelectorAll('.btn-template-select').forEach(btn => {
@@ -2614,7 +2922,16 @@
     getCadencePhaseForSecond,
     applyWorkoutTemplate,
     renderShareableSummaryCard,
-    downloadShareableSummaryCard
+    downloadShareableSummaryCard,
+    // APIs Master v1.6 (Nutrición/Hidratación, Sustitución Máquina Ocupada, Modo Descarga Deload y Gamificación)
+    swapExerciseAlternative,
+    toggleDeloadMode,
+    setNutritionGoal,
+    addHydrationWater,
+    resetHydrationWater,
+    toggleSupplementCheck,
+    renderNutritionDashboard,
+    renderGamificationDashboard
   };
 
   bindEvents();
