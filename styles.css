@@ -519,7 +519,8 @@ body.animations-paused * {
   transform: scale(1.03);
 }
 
-/* Row 1 (Fila superior) */
+/* Row 1 (Fila superior de cualquier spritesheet) */
+.sprite-row-top .exercise-sprite-frame,
 .sprite-pulley-narrow .exercise-sprite-frame,
 .sprite-machine-wide .exercise-sprite-frame,
 .sprite-chest-press .exercise-sprite-frame,
@@ -527,7 +528,8 @@ body.animations-paused * {
   background-position-y: 8%;
 }
 
-/* Row 2 (Fila inferior) */
+/* Row 2 (Fila inferior de cualquier spritesheet) */
+.sprite-row-bottom .exercise-sprite-frame,
 .sprite-cable-bicep .exercise-sprite-frame,
 .sprite-tricep-pushdown .exercise-sprite-frame,
 .sprite-shoulder-press .exercise-sprite-frame {

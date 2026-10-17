@@ -7,84 +7,256 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  // Clasifica cada ejercicio por su patrón biomecánico para generar su ilustración animada SVG
-  function detectExerciseAnimationType(exercise) {
-    const id = (exercise.id || '').toLowerCase();
-    const name = (exercise.name || '').toLowerCase();
+  // Catálogo completo de 24 patrones biomecánicos en 14 hojas de sprites rasterizados (3 fases por ejercicio)
+  const EXERCISE_SPRITE_CATALOG = {
+    'pulley-narrow-back': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
+      row: 'top',
+      label: 'POLEA ESTRECHA',
+      title: 'Jalón en Polea Agarre Estrecho',
+      cssModifier: 'sprite-pulley-narrow sprite-row-top'
+    },
+    'machine-wide-back': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_fullbody.jpg',
+      row: 'top',
+      label: 'AGARRE AMPLIO',
+      title: 'Espalda Agarre Amplio en Máquina / Polea',
+      cssModifier: 'sprite-machine-wide sprite-row-top'
+    },
+    'seated-cable-row': {
+      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
+      row: 'top',
+      label: 'REMO SENTADO',
+      title: 'Remo Horizontal Sentado en Polea Baja',
+      cssModifier: 'sprite-seated-row sprite-row-top'
+    },
+    'cable-pullover': {
+      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
+      row: 'bottom',
+      label: 'PULL-OVER POLEA',
+      title: 'Pull-Over en Polea Alta con Cuerda',
+      cssModifier: 'sprite-cable-pullover sprite-row-bottom'
+    },
+    'cable-bicep-curl': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
+      row: 'bottom',
+      label: 'CURL BÍCEPS',
+      title: 'Curl / Press de Bíceps en Polea Baja',
+      cssModifier: 'sprite-cable-bicep sprite-row-bottom'
+    },
+    'hammer-curl': {
+      spriteUrl: 'assets/sprites/sprite_bicep_hammer_incline_chest.jpg',
+      row: 'top',
+      label: 'CURL MARTILLO',
+      title: 'Curl Martillo con Mancuernas o Cuerda',
+      cssModifier: 'sprite-hammer-curl sprite-row-top'
+    },
+    'chest-press': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
+      row: 'top',
+      label: 'PRESS PECHO',
+      title: 'Press de Pecho Sentado / Convergente',
+      cssModifier: 'sprite-chest-press sprite-row-top'
+    },
+    'incline-chest-press': {
+      spriteUrl: 'assets/sprites/sprite_bicep_hammer_incline_chest.jpg',
+      row: 'bottom',
+      label: 'PRESS INCLINADO',
+      title: 'Press Inclinado de Pecho (Superior)',
+      cssModifier: 'sprite-incline-chest sprite-row-bottom'
+    },
+    'pec-deck-fly': {
+      spriteUrl: 'assets/sprites/sprite_chest_pecdeck_cable_crossover.jpg',
+      row: 'top',
+      label: 'PEC DECK',
+      title: 'Aperturas en Contractora (Pec Deck)',
+      cssModifier: 'sprite-pec-deck sprite-row-top'
+    },
+    'cable-crossover': {
+      spriteUrl: 'assets/sprites/sprite_chest_pecdeck_cable_crossover.jpg',
+      row: 'bottom',
+      label: 'CRUCES POLEA',
+      title: 'Cruces de Pecho en Polea Alta',
+      cssModifier: 'sprite-cable-crossover sprite-row-bottom'
+    },
+    'tricep-pushdown': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
+      row: 'bottom',
+      label: 'TRÍCEPS POLEA',
+      title: 'Extensión de Tríceps en Polea Alta (Pushdown)',
+      cssModifier: 'sprite-tricep-pushdown sprite-row-bottom'
+    },
+    'tricep-overhead': {
+      spriteUrl: 'assets/sprites/sprite_triceps_overhead_dips.jpg',
+      row: 'top',
+      label: 'TRÍCEPS TRAS NUCA',
+      title: 'Extensión de Tríceps Sobre la Cabeza',
+      cssModifier: 'sprite-tricep-overhead sprite-row-top'
+    },
+    'machine-dips': {
+      spriteUrl: 'assets/sprites/sprite_triceps_overhead_dips.jpg',
+      row: 'bottom',
+      label: 'FONDOS MÁQUINA',
+      title: 'Fondos de Tríceps en Máquina Sentada',
+      cssModifier: 'sprite-machine-dips sprite-row-bottom'
+    },
+    'leg-press': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+      row: 'top',
+      label: 'PRENSA PIERNAS',
+      title: 'Prensa de Piernas Inclinada 45°',
+      cssModifier: 'sprite-leg-press sprite-row-top'
+    },
+    'quad-extension': {
+      spriteUrl: 'assets/sprites/sprite_legs_quad_ext_hamstring_curl.jpg',
+      row: 'top',
+      label: 'EXT. CUÁDRICEPS',
+      title: 'Extensión de Cuádriceps en Máquina',
+      cssModifier: 'sprite-quad-ext sprite-row-top'
+    },
+    'hamstring-curl': {
+      spriteUrl: 'assets/sprites/sprite_legs_quad_ext_hamstring_curl.jpg',
+      row: 'bottom',
+      label: 'CURL FEMORAL',
+      title: 'Curl Femoral Tumbado o Sentado',
+      cssModifier: 'sprite-hamstring-curl sprite-row-bottom'
+    },
+    'hack-squat': {
+      spriteUrl: 'assets/sprites/sprite_legs_hack_squat_calves.jpg',
+      row: 'top',
+      label: 'SENTADILLA HACK',
+      title: 'Sentadilla Hack / Goblet / Libre',
+      cssModifier: 'sprite-hack-squat sprite-row-top'
+    },
+    'calf-raise': {
+      spriteUrl: 'assets/sprites/sprite_legs_hack_squat_calves.jpg',
+      row: 'bottom',
+      label: 'GEMELOS / SÓLEO',
+      title: 'Elevación de Talones (Gemelos y Sóleo)',
+      cssModifier: 'sprite-calf-raise sprite-row-bottom'
+    },
+    'hip-thrust': {
+      spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
+      row: 'top',
+      label: 'HIP THRUST',
+      title: 'Hip Thrust (Empuje de Cadera Glúteo)',
+      cssModifier: 'sprite-hip-thrust sprite-row-top'
+    },
+    'romanian-deadlift': {
+      spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
+      row: 'bottom',
+      label: 'PESO MUERTO',
+      title: 'Peso Muerto Rumano (Femoral y Glúteo)',
+      cssModifier: 'sprite-rdl sprite-row-bottom'
+    },
+    'hip-adductor': {
+      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
+      row: 'top',
+      label: 'ADUCTORES',
+      title: 'Aductores en Máquina Sentada',
+      cssModifier: 'sprite-hip-adductor sprite-row-top'
+    },
+    'hip-abductor': {
+      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
+      row: 'bottom',
+      label: 'ABDUCCIÓN CADERA',
+      title: 'Abducción de Cadera en Máquina (Glúteo Medio)',
+      cssModifier: 'sprite-hip-abductor sprite-row-bottom'
+    },
+    'shoulder-press': {
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+      row: 'bottom',
+      label: 'PRESS HOMBRO',
+      title: 'Press Militar de Hombros',
+      cssModifier: 'sprite-shoulder-press sprite-row-bottom'
+    },
+    'lateral-raise': {
+      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
+      row: 'top',
+      label: 'ELEV. LATERALES',
+      title: 'Elevaciones Laterales de Hombro',
+      cssModifier: 'sprite-lateral-raise sprite-row-top'
+    },
+    'face-pull': {
+      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
+      row: 'bottom',
+      label: 'FACE PULL',
+      title: 'Face Pull en Polea Alta con Cuerda',
+      cssModifier: 'sprite-face-pull sprite-row-bottom'
+    },
+    'rear-delt-shrugs': {
+      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
+      row: 'top',
+      label: 'POSTERIOR / TRAP',
+      title: 'Vuelos Posteriores y Encogimientos de Trapecio',
+      cssModifier: 'sprite-rear-delt sprite-row-top'
+    },
+    'cable-crunch-abs': {
+      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
+      row: 'bottom',
+      label: 'CRUNCH CORE',
+      title: 'Crunch Abdominal en Polea Alta / Core',
+      cssModifier: 'sprite-cable-crunch sprite-row-bottom'
+    }
+  };
 
-    if (id.includes('polea-estrecho') || name.includes('agarre estrecho') || name.includes('remo')) {
-      return 'pulley-narrow-back';
+  // Clasifica cada ejercicio (preconfigurado o personalizado) en su patrón biomecánico exacto
+  function detectExerciseAnimationType(exercise) {
+    if (exercise && exercise.spriteType && exercise.spriteType !== 'auto' && EXERCISE_SPRITE_CATALOG[exercise.spriteType]) {
+      return exercise.spriteType;
     }
-    if (id.includes('maquina-amplio') || name.includes('agarre amplio') || name.includes('pull-over')) {
-      return 'machine-wide-back';
-    }
-    if (id.includes('biceps') || name.includes('bíceps') || name.includes('curl martillo')) {
-      return 'cable-bicep-curl';
-    }
-    if (name.includes('pecho') || name.includes('inclinado') || name.includes('apertura') || name.includes('cruces')) {
-      return 'chest-press';
-    }
-    if (name.includes('tríceps') || name.includes('triceps') || name.includes('fondos')) {
-      return 'tricep-pushdown';
-    }
-    if (name.includes('prensa') || name.includes('sentadilla') || name.includes('cuádriceps')) {
-      return 'leg-press';
-    }
-    if (name.includes('hip thrust') || name.includes('peso muerto') || name.includes('femoral') || name.includes('abducción') || name.includes('aductores') || name.includes('talones') || name.includes('gemelos')) {
-      return 'posterior-legs';
-    }
-    return 'shoulder-core';
+
+    const id = ((exercise && exercise.id) || '').toLowerCase();
+    const name = ((exercise && exercise.name) || '').toLowerCase();
+    const muscle = ((exercise && exercise.muscle) || '').toLowerCase();
+    const text = `${id} ${name} ${muscle}`;
+
+    // 1. Espalda
+    if (id.includes('remo') || name.includes('remo')) return 'seated-cable-row';
+    if (id.includes('pullover') || id.includes('pull-over') || name.includes('pull-over') || name.includes('pullover')) return 'cable-pullover';
+    if (id.includes('polea-estrecho') || name.includes('agarre estrecho') || name.includes('triángulo')) return 'pulley-narrow-back';
+    if (id.includes('maquina-amplio') || name.includes('agarre amplio') || name.includes('dominada') || name.includes('jalón')) return 'machine-wide-back';
+
+    // 2. Bíceps y Antebrazo
+    if (id.includes('martillo') || name.includes('martillo') || name.includes('braquial') || name.includes('neutro')) return 'hammer-curl';
+    if (id.includes('biceps') || name.includes('bíceps') || name.includes('biceps') || name.includes('curl de brazo') || name.includes('predicador')) return 'cable-bicep-curl';
+
+    // 3. Pecho
+    if (id.includes('inclinado') || name.includes('inclinado') || name.includes('clavicular')) return 'incline-chest-press';
+    if (id.includes('pec-deck') || name.includes('pec deck') || name.includes('apertura') || name.includes('contractora') || name.includes('mariposa')) return 'pec-deck-fly';
+    if (id.includes('cruces') || name.includes('cruces') || name.includes('crossover')) return 'cable-crossover';
+    if (name.includes('pecho') || name.includes('banca') || muscle.includes('pectoral')) return 'chest-press';
+
+    // 4. Tríceps
+    if (id.includes('tras-nuca') || name.includes('sobre la cabeza') || name.includes('tras nuca') || name.includes('francés')) return 'tricep-overhead';
+    if (id.includes('fondos') || name.includes('fondos') || name.includes('dip')) return 'machine-dips';
+    if (name.includes('tríceps') || name.includes('triceps') || name.includes('pushdown')) return 'tricep-pushdown';
+
+    // 5. Piernas y Glúteos
+    if (id.includes('hip-thrust') || name.includes('hip thrust') || name.includes('puente de glúteo')) return 'hip-thrust';
+    if (id.includes('peso-muerto') || name.includes('peso muerto') || name.includes('rumano') || name.includes('buenos días')) return 'romanian-deadlift';
+    if (id.includes('extension-cuadriceps') || name.includes('extensión de cuádriceps') || name.includes('silla de cuádriceps')) return 'quad-extension';
+    if (id.includes('curl-femoral') || name.includes('femoral') || name.includes('isquiotibial')) return 'hamstring-curl';
+    if (id.includes('sentadilla') || name.includes('sentadilla') || name.includes('hack') || name.includes('goblet') || name.includes('zancada') || name.includes('búlgara')) return 'hack-squat';
+    if (id.includes('aductores') || name.includes('aductores') || name.includes('aducción')) return 'hip-adductor';
+    if (id.includes('abduccion') || name.includes('abducción') || name.includes('abductora')) return 'hip-abductor';
+    if (id.includes('talones') || id.includes('gemelos') || name.includes('talones') || name.includes('gemelos') || name.includes('pantorrilla') || name.includes('sóleo')) return 'calf-raise';
+    if (id.includes('prensa') || name.includes('prensa') || text.includes('cuádriceps') || text.includes('pierna')) return 'leg-press';
+
+    // 6. Hombros, Trapecio y Core
+    if (id.includes('laterales') || name.includes('laterales') || name.includes('elevación lateral')) return 'lateral-raise';
+    if (id.includes('face-pull') || name.includes('face pull')) return 'face-pull';
+    if (id.includes('pajaros') || id.includes('trapecio') || name.includes('posteriores') || name.includes('rear delt') || name.includes('encogimiento') || name.includes('trapecio')) return 'rear-delt-shrugs';
+    if (id.includes('crunch') || name.includes('crunch') || name.includes('abdomen') || name.includes('abdominal') || name.includes('plancha') || text.includes('core')) return 'cable-crunch-abs';
+    if (text.includes('espalda') || text.includes('dorsal')) return 'pulley-narrow-back';
+
+    return 'shoulder-press';
   }
 
   // Mapeo de spritesheets rasterizados para cada ejercicio (Sin SVGs de animación)
   function getExerciseSpriteInfo(exercise) {
     const type = detectExerciseAnimationType(exercise);
-    switch (type) {
-      case 'pulley-narrow-back':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
-          label: 'POLEA ESTRECHA',
-          cssModifier: 'sprite-pulley-narrow'
-        };
-      case 'machine-wide-back':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_fullbody.jpg',
-          label: 'AGARRE AMPLIO',
-          cssModifier: 'sprite-machine-wide'
-        };
-      case 'cable-bicep-curl':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
-          label: 'CURL BÍCEPS',
-          cssModifier: 'sprite-cable-bicep'
-        };
-      case 'chest-press':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
-          label: 'PRESS PECHO',
-          cssModifier: 'sprite-chest-press'
-        };
-      case 'tricep-pushdown':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
-          label: 'TRÍCEPS CUERDA',
-          cssModifier: 'sprite-tricep-pushdown'
-        };
-      case 'leg-press':
-      case 'posterior-legs':
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
-          label: 'PRENSA PIERNAS',
-          cssModifier: 'sprite-leg-press'
-        };
-      case 'shoulder-core':
-      default:
-        return {
-          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
-          label: 'PRESS HOMBRO',
-          cssModifier: 'sprite-shoulder-press'
-        };
-    }
+    return EXERCISE_SPRITE_CATALOG[type] || EXERCISE_SPRITE_CATALOG['shoulder-press'];
   }
 
   // Genera el contenedor de imagen/sprite rasterizado del ejercicio (Cero SVGs para animaciones)
@@ -96,7 +268,7 @@
         : `${exercise.loadValue} KG`;
 
     return `
-      <div class="exercise-sprite-box ${info.cssModifier}" role="img" aria-label="Demostración visual del ejercicio ${exercise.name}">
+      <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="img" aria-label="Demostración visual del ejercicio ${exercise.name}">
         <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
         <div class="sprite-overlay-badge">
           <span class="sprite-badge-tag">${info.label}</span>
@@ -282,7 +454,9 @@
   }
 
   return {
+    EXERCISE_SPRITE_CATALOG,
     detectExerciseAnimationType,
+    getExerciseSpriteInfo,
     renderExerciseIllustrationSVG,
     renderExerciseSprite,
     renderAnatomyMapSVG,

@@ -70,15 +70,28 @@ assert.equal(barCols.length, 7, 'El gráfico de barras debe mostrar los 7 días 
 const muscleRows = doc.querySelectorAll('#muscle-stats-tbody tr');
 assert.equal(muscleRows.length, 5, 'La tabla accesible del gráfico de distribución muscular debe tener 5 grupos');
 
-// 3. Verificar todos los días de Lunes a Sábado
+// 3. Verificar todos los días de Lunes a Sábado y que cada ejercicio tenga su imagen de sprite real en disco
+const catalog = window.GYM_VISUALS.EXERCISE_SPRITE_CATALOG;
+assert.ok(catalog && Object.keys(catalog).length >= 24, 'El catálogo debe incluir los 24 patrones biomecánicos de ejercicios');
+for (const [key, item] of Object.entries(catalog)) {
+  const fullSpritePath = path.join(root, item.spriteUrl);
+  assert.ok(fs.existsSync(fullSpritePath), `El archivo de sprite para ${key} debe existir en disco: ${item.spriteUrl}`);
+}
+
 const trainingDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+const detectedTypesSet = new Set();
 for (const d of trainingDays) {
   assert.ok(state.schedule[d].exercises.length >= 6, `${d} debe tener su rutina completa`);
   for (const ex of state.schedule[d].exercises) {
     assert.equal(ex.sets, 4, `${ex.name} en ${d} debe tener 4 series`);
     assert.equal(ex.reps, 12, `${ex.name} en ${d} debe tener 12 repeticiones`);
+    const spriteInfo = window.GYM_VISUALS.getExerciseSpriteInfo(ex);
+    assert.ok(spriteInfo && spriteInfo.spriteUrl, `${ex.name} debe tener sprite asignado`);
+    assert.ok(fs.existsSync(path.join(root, spriteInfo.spriteUrl)), `La imagen ${spriteInfo.spriteUrl} de ${ex.name} debe existir`);
+    detectedTypesSet.add(window.GYM_VISUALS.detectExerciseAnimationType(ex));
   }
 }
+assert.ok(detectedTypesSet.size >= 22, `Los ejercicios de la semana deben cubrir todos los movimientos específicos (detectados: ${detectedTypesSet.size})`);
 
 // 4. Verificar cambio de unidad kg <-> Nivel y ajuste de peso
 app.adjustExerciseLoad('lunes', 'lun-espalda-polea-estrecho', 1);

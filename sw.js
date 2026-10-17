@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gym-rutinas-pro-v2';
+const CACHE_NAME = 'gym-rutinas-pro-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,21 @@ const ASSETS = [
   './visual-engine.js',
   './app.js',
   './manifest.json',
-  './assets/icon.svg'
+  './assets/icon.svg',
+  './assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
+  './assets/sprites/gym_exercise_sprite_sheet_fullbody.jpg',
+  './assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
+  './assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+  './assets/sprites/sprite_back_row_pullover.jpg',
+  './assets/sprites/sprite_bicep_hammer_incline_chest.jpg',
+  './assets/sprites/sprite_chest_pecdeck_cable_crossover.jpg',
+  './assets/sprites/sprite_triceps_overhead_dips.jpg',
+  './assets/sprites/sprite_legs_quad_ext_hamstring_curl.jpg',
+  './assets/sprites/sprite_legs_hack_squat_calves.jpg',
+  './assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
+  './assets/sprites/sprite_legs_adductor_abductor.jpg',
+  './assets/sprites/sprite_shoulders_lateral_facepull.jpg',
+  './assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg'
 ];
 
 self.addEventListener('install', event => {

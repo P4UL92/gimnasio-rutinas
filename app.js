@@ -1384,6 +1384,7 @@
     const setsInput = document.getElementById('edit-sets');
     const repsInput = document.getElementById('edit-reps');
     const restInput = document.getElementById('edit-rest');
+    const spriteTypeSelect = document.getElementById('edit-sprite-type');
     const noteInput = document.getElementById('edit-note');
     const btnDelete = document.getElementById('btn-delete-exercise');
 
@@ -1398,6 +1399,7 @@
       setsInput.value = exerciseToEdit.sets || 4;
       repsInput.value = exerciseToEdit.reps || 12;
       restInput.value = exerciseToEdit.restSeconds || 75;
+      if (spriteTypeSelect) spriteTypeSelect.value = exerciseToEdit.spriteType || 'auto';
       noteInput.value = exerciseToEdit.note || '';
       btnDelete.hidden = false;
     } else {
@@ -1411,6 +1413,7 @@
       setsInput.value = 4;
       repsInput.value = 12;
       restInput.value = 75;
+      if (spriteTypeSelect) spriteTypeSelect.value = 'auto';
       noteInput.value = '';
       btnDelete.hidden = true;
     }
@@ -1486,6 +1489,7 @@
         const setsVal = Math.max(1, Math.min(10, Number(document.getElementById('edit-sets').value) || 4));
         const repsVal = Math.max(1, Math.min(50, Number(document.getElementById('edit-reps').value) || 12));
         const restVal = Math.max(15, Number(document.getElementById('edit-rest').value) || 75);
+        const spriteTypeVal = document.getElementById('edit-sprite-type')?.value || 'auto';
         const noteVal = document.getElementById('edit-note').value.trim();
 
         const day = state.schedule[state.selectedDay];
@@ -1500,6 +1504,7 @@
             existing.sets = setsVal;
             existing.reps = repsVal;
             existing.restSeconds = restVal;
+            existing.spriteType = spriteTypeVal;
             existing.note = noteVal;
             existing.completedSets = Array.from(
               { length: setsVal },
@@ -1517,6 +1522,7 @@
             sets: setsVal,
             reps: repsVal,
             restSeconds: restVal,
+            spriteType: spriteTypeVal,
             userBase: false,
             note: noteVal,
             completedSets: Array.from({ length: setsVal }, () => false)
