@@ -52,10 +52,14 @@ assert.equal(exBicepsPolea.loadValue, 10);
 assert.equal(exBicepsPolea.sets, 4);
 assert.equal(exBicepsPolea.reps, 12);
 
-// 2. Verificar ilustraciones SVG animadas, mapa anatómico y gráficos estadísticos en DOM
+// 2. Verificar spritesheets rasterizados de ejercicios (Cero SVGs para ejercicios)
 const doc = window.document;
-const exerciseSVGs = doc.querySelectorAll('.ex-anim-svg');
-assert.equal(exerciseSVGs.length, 6, 'Cada uno de los 6 ejercicios del día debe renderizar su ilustración SVG animada');
+const exerciseSprites = doc.querySelectorAll('.exercise-sprite-box');
+assert.equal(exerciseSprites.length, 6, 'Cada uno de los 6 ejercicios del día debe renderizar su componente de sprite rasterizado');
+const spriteFrames = doc.querySelectorAll('.exercise-sprite-frame');
+assert.equal(spriteFrames.length, 6, 'Cada ejercicio debe tener su fotograma de animación por sprite');
+const svgExerciseAnims = doc.querySelectorAll('.exercise-illustration-wrap svg');
+assert.equal(svgExerciseAnims.length, 0, 'No deben existir SVGs para animaciones de ejercicios');
 
 const anatomyFigures = doc.querySelectorAll('#day-anatomy-panel svg');
 assert.equal(anatomyFigures.length, 2, 'Debe renderizar el mapa anatómico frontal y posterior');

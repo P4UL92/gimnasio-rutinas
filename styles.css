@@ -487,37 +487,107 @@ body.animations-paused * {
   }
 }
 
-.anim-pull-arm {
-  animation: pullHorizontal 2.2s ease-in-out infinite;
-  --animation-reduced: none;
+/* Raster Exercise Spritesheet Animations (GPU-Accelerated, Zero SVGs for Exercises) */
+.exercise-sprite-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 110px;
+  max-height: 130px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #0b0f19;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7);
 }
 
-.anim-push-arm {
-  animation: pushHorizontal 2.2s ease-in-out infinite;
-  --animation-reduced: none;
+.exercise-sprite-frame {
+  width: 100%;
+  height: 100%;
+  background-size: 300% 200%;
+  background-repeat: no-repeat;
+  animation: playSpriteSteps 2.4s steps(2) infinite alternate;
+  will-change: background-position;
+  filter: contrast(1.05) brightness(1.02);
+  transition: transform 0.2s ease;
 }
 
-.anim-vertical-pull {
-  animation: verticalPullMove 2.2s ease-in-out infinite;
-  --animation-reduced: none;
+.exercise-sprite-box:hover .exercise-sprite-frame {
+  transform: scale(1.03);
 }
 
-.anim-weight-stack {
-  animation: weightStackLift 2.2s ease-in-out infinite;
-  --animation-reduced: none;
+/* Row 1 (Fila superior) */
+.sprite-pulley-narrow .exercise-sprite-frame,
+.sprite-machine-wide .exercise-sprite-frame,
+.sprite-chest-press .exercise-sprite-frame,
+.sprite-leg-press .exercise-sprite-frame {
+  background-position-y: 8%;
 }
 
-.anim-curl-forearm {
-  transform-origin: 108px 62px;
-  animation: curlForearmMove 2s ease-in-out infinite;
-  --animation-reduced: none;
+/* Row 2 (Fila inferior) */
+.sprite-cable-bicep .exercise-sprite-frame,
+.sprite-tricep-pushdown .exercise-sprite-frame,
+.sprite-shoulder-press .exercise-sprite-frame {
+  background-position-y: 92%;
 }
 
-.anim-muscle-glow {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pulseMuscle 1.8s ease-in-out infinite;
-  --animation-reduced: none;
+@keyframes playSpriteSteps {
+  0% {
+    background-position-x: 0%;
+  }
+  100% {
+    background-position-x: 100%;
+  }
+}
+
+/* Control de pausa y accesibilidad para animaciones */
+body.animations-paused .exercise-sprite-frame {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exercise-sprite-frame {
+    animation: none !important;
+    background-position-x: 50% !important;
+  }
+}
+
+.sprite-overlay-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.sprite-badge-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #34d399;
+  background: rgba(11, 15, 25, 0.88);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+  backdrop-filter: blur(4px);
+}
+
+.sprite-badge-load {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(11, 15, 25, 0.88);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
 }
 
 /* Search Bar */
@@ -601,15 +671,10 @@ body.animations-paused * {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0b1120;
+  background: transparent;
   border-radius: var(--radius-sm);
   overflow: hidden;
-}
-
-.ex-anim-svg {
-  display: block;
   width: 100%;
-  height: auto;
 }
 
 .exercise-top {

@@ -36,171 +36,79 @@
     return 'shoulder-core';
   }
 
-  // Genera una ilustración SVG animada del ejercicio (máquina/polea + atleta + vector de fuerza)
-  function renderExerciseIllustrationSVG(exercise) {
+  // Mapeo de spritesheets rasterizados para cada ejercicio (Sin SVGs de animación)
+  function getExerciseSpriteInfo(exercise) {
     const type = detectExerciseAnimationType(exercise);
+    switch (type) {
+      case 'pulley-narrow-back':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
+          label: 'POLEA ESTRECHA',
+          cssModifier: 'sprite-pulley-narrow'
+        };
+      case 'machine-wide-back':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_fullbody.jpg',
+          label: 'AGARRE AMPLIO',
+          cssModifier: 'sprite-machine-wide'
+        };
+      case 'cable-bicep-curl':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg',
+          label: 'CURL BÍCEPS',
+          cssModifier: 'sprite-cable-bicep'
+        };
+      case 'chest-press':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
+          label: 'PRESS PECHO',
+          cssModifier: 'sprite-chest-press'
+        };
+      case 'tricep-pushdown':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_chest_triceps.jpg',
+          label: 'TRÍCEPS CUERDA',
+          cssModifier: 'sprite-tricep-pushdown'
+        };
+      case 'leg-press':
+      case 'posterior-legs':
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+          label: 'PRENSA PIERNAS',
+          cssModifier: 'sprite-leg-press'
+        };
+      case 'shoulder-core':
+      default:
+        return {
+          spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+          label: 'PRESS HOMBRO',
+          cssModifier: 'sprite-shoulder-press'
+        };
+    }
+  }
+
+  // Genera el contenedor de imagen/sprite rasterizado del ejercicio (Cero SVGs para animaciones)
+  function renderExerciseSprite(exercise) {
+    const info = getExerciseSpriteInfo(exercise);
     const loadLabel =
       exercise.loadType === 'nivel'
         ? `NIVEL ${exercise.loadValue}`
         : `${exercise.loadValue} KG`;
 
-    switch (type) {
-      case 'pulley-narrow-back':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Torre de Poleas Nivel 6 -->
-            <rect x="24" y="18" width="26" height="84" rx="4" fill="#1e293b" stroke="#334155"/>
-            <g class="anim-weight-stack">
-              <rect x="27" y="58" width="20" height="6" rx="2" fill="#f59e0b"/>
-              <rect x="27" y="66" width="20" height="6" rx="2" fill="#10b981"/>
-              <rect x="27" y="74" width="20" height="6" rx="2" fill="#334155"/>
-            </g>
-            <circle cx="37" cy="24" r="5" fill="#10b981"/>
-            <!-- Cable y Agarre Estrecho -->
-            <line x1="42" y1="24" x2="108" y2="54" stroke="#34d399" stroke-width="2" stroke-dasharray="3 2" class="anim-cable-line"/>
-            <!-- Atleta traccionando espalda -->
-            <circle cx="126" cy="36" r="9" fill="#94a3b8"/>
-            <path d="M126 46 L122 82 L102 98" stroke="#64748b" stroke-width="6" stroke-linecap="round" fill="none"/>
-            <!-- Músculo Dorsal Activo -->
-            <ellipse cx="128" cy="62" rx="7" ry="13" fill="#10b981" class="anim-muscle-glow"/>
-            <!-- Brazo en Tracción Estrecha -->
-            <g class="anim-pull-arm">
-              <path d="M124 50 L102 56 L114 64" stroke="#34d399" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <polygon points="98,52 105,56 98,60" fill="#f59e0b"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#fcd34d" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#6ee7b7" font-size="8" font-weight="700">POLEA ESTRECHA</text>
-          </svg>`;
+    return `
+      <div class="exercise-sprite-box ${info.cssModifier}" role="img" aria-label="Demostración visual del ejercicio ${exercise.name}">
+        <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
+        <div class="sprite-overlay-badge">
+          <span class="sprite-badge-tag">${info.label}</span>
+          <span class="sprite-badge-load">${loadLabel}</span>
+        </div>
+      </div>
+    `.trim();
+  }
 
-      case 'machine-wide-back':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Marco de Máquina Agarre Amplio -->
-            <path d="M40 96 L40 20 L140 20 L140 96" stroke="#334155" stroke-width="4" fill="none"/>
-            <!-- Barra Amplia Animada -->
-            <g class="anim-vertical-pull">
-              <line x1="52" y1="32" x2="128" y2="32" stroke="#06b6d4" stroke-width="4" stroke-linecap="round"/>
-              <line x1="52" y1="32" x2="66" y2="54" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-              <line x1="128" y1="32" x2="114" y2="54" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-            </g>
-            <!-- Silueta Dorsal en V -->
-            <circle cx="90" cy="48" r="8" fill="#94a3b8"/>
-            <polygon points="70,58 110,58 98,90 82,90" fill="#10b981" class="anim-muscle-glow"/>
-            <text x="90" y="106" text-anchor="middle" fill="#67e8f9" font-size="8.5" font-weight="800">AGARRE AMPLIO · ${loadLabel}</text>
-          </svg>`;
-
-      case 'cable-bicep-curl':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Polea Baja -->
-            <rect x="26" y="22" width="18" height="76" rx="3" fill="#1e293b" stroke="#334155"/>
-            <circle cx="35" cy="90" r="5" fill="#06b6d4"/>
-            <line x1="40" y1="90" x2="92" y2="62" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 2"/>
-            <!-- Torso y Bíceps Activo -->
-            <circle cx="118" cy="30" r="9" fill="#94a3b8"/>
-            <line x1="118" y1="40" x2="118" y2="92" stroke="#64748b" stroke-width="8" stroke-linecap="round"/>
-            <!-- Bíceps Iluminado -->
-            <circle cx="107" cy="56" r="7" fill="#10b981" class="anim-muscle-glow"/>
-            <!-- Antebrazo animando el Curl -->
-            <g class="anim-curl-forearm">
-              <line x1="108" y1="62" x2="86" y2="48" stroke="#34d399" stroke-width="5" stroke-linecap="round"/>
-              <circle cx="84" cy="47" r="4" fill="#f59e0b"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#67e8f9" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#6ee7b7" font-size="8" font-weight="700">CURL POLEA</text>
-          </svg>`;
-
-      case 'chest-press':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Respaldo y Máquina de Pecho -->
-            <line x1="54" y1="26" x2="54" y2="94" stroke="#475569" stroke-width="6" stroke-linecap="round"/>
-            <circle cx="70" cy="36" r="8" fill="#94a3b8"/>
-            <!-- Pectoral Activo -->
-            <ellipse cx="76" cy="56" rx="9" ry="11" fill="#38bdf8" class="anim-muscle-glow"/>
-            <!-- Brazo de Empuje Horizontal -->
-            <g class="anim-push-arm">
-              <line x1="74" y1="54" x2="124" y2="54" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
-              <rect x="122" y="42" width="10" height="24" rx="3" fill="#10b981"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#38bdf8" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#bae6fd" font-size="8" font-weight="700">EMPUJE PECHO</text>
-          </svg>`;
-
-      case 'tricep-pushdown':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <rect x="30" y="18" width="18" height="82" rx="3" fill="#1e293b" stroke="#334155"/>
-            <circle cx="39" cy="24" r="5" fill="#38bdf8"/>
-            <line x1="44" y1="24" x2="90" y2="66" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 2"/>
-            <circle cx="114" cy="30" r="8" fill="#94a3b8"/>
-            <line x1="114" y1="40" x2="114" y2="92" stroke="#64748b" stroke-width="8" stroke-linecap="round"/>
-            <!-- Tríceps Activo -->
-            <ellipse cx="118" cy="54" rx="6" ry="10" fill="#38bdf8" class="anim-muscle-glow"/>
-            <g class="anim-vertical-pull">
-              <line x1="110" y1="56" x2="90" y2="76" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
-              <circle cx="88" cy="78" r="4" fill="#f59e0b"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#38bdf8" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#6ee7b7" font-size="8" font-weight="700">EXTENSIÓN TRÍCEPS</text>
-          </svg>`;
-
-      case 'leg-press':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Riel de Prensa 45° -->
-            <line x1="36" y1="88" x2="142" y2="28" stroke="#334155" stroke-width="4"/>
-            <!-- Cuádriceps Activo -->
-            <path d="M52 82 L82 58 L104 68" stroke="#f59e0b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" class="anim-muscle-glow"/>
-            <!-- Plataforma de Prensa Animada -->
-            <g class="anim-push-arm">
-              <line x1="102" y1="36" x2="122" y2="68" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
-              <circle cx="120" cy="44" r="9" fill="#f59e0b"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#fcd34d" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#fde68a" font-size="8" font-weight="700">FUERZA PIERNA</text>
-          </svg>`;
-
-      case 'posterior-legs':
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <!-- Banco de Hip Thrust / Femoral -->
-            <rect x="30" y="64" width="34" height="28" rx="4" fill="#334155"/>
-            <g class="anim-vertical-pull">
-              <path d="M46 62 L92 54 L126 88" stroke="#f43f5e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <circle cx="90" cy="50" r="8" fill="#10b981"/>
-            </g>
-            <circle cx="88" cy="58" r="10" fill="#f43f5e" opacity="0.45" class="anim-muscle-glow"/>
-            <text x="162" y="26" text-anchor="end" fill="#fda4af" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#fda4af" font-size="8" font-weight="700">GLÚTEO · FEMORAL</text>
-          </svg>`;
-
-      default:
-        return `
-          <svg class="ex-anim-svg" viewBox="0 0 180 120" width="180" height="120" aria-hidden="true">
-            <rect x="8" y="8" width="164" height="104" rx="12" fill="#0d1526" stroke="#1e293b"/>
-            <circle cx="90" cy="52" r="9" fill="#94a3b8"/>
-            <rect x="76" y="62" width="28" height="32" rx="6" fill="#475569"/>
-            <!-- Deltoides Iluminados -->
-            <circle cx="72" cy="64" r="7" fill="#a855f7" class="anim-muscle-glow"/>
-            <circle cx="108" cy="64" r="7" fill="#a855f7" class="anim-muscle-glow"/>
-            <!-- Press de Hombros Animado -->
-            <g class="anim-vertical-pull">
-              <line x1="56" y1="36" x2="124" y2="36" stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
-              <rect x="50" y="28" width="8" height="16" rx="2" fill="#10b981"/>
-              <rect x="122" y="28" width="8" height="16" rx="2" fill="#10b981"/>
-            </g>
-            <text x="162" y="26" text-anchor="end" fill="#d8b4fe" font-size="9" font-weight="800">${loadLabel}</text>
-            <text x="162" y="104" text-anchor="end" fill="#d8b4fe" font-size="8" font-weight="700">HOMBRO · CORE</text>
-          </svg>`;
-    }
+  // Compatibilidad hacia atrás (retorna el componente de imagen/sprite rasterizado sin SVGs)
+  function renderExerciseIllustrationSVG(exercise) {
+    return renderExerciseSprite(exercise);
   }
 
   // Determina qué zonas anatómicas se iluminan según el día seleccionado
@@ -376,6 +284,7 @@
   return {
     detectExerciseAnimationType,
     renderExerciseIllustrationSVG,
+    renderExerciseSprite,
     renderAnatomyMapSVG,
     computeAnalytics
   };
