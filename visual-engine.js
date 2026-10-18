@@ -806,6 +806,39 @@
     }
   };
 
+  // Módulo de Series y Repeticiones Dinámicas (6, 8, 10, 12, 15 y Pirámides)
+  const REPS_PRESETS = [
+    { key: 6, label: '6 reps (Fuerza)', scheme: 'fixed', restSeconds: 90, series: (sets) => Array(sets).fill(6) },
+    { key: 8, label: '8 reps (Fuerza/Hipertrofia)', scheme: 'fixed', restSeconds: 90, series: (sets) => Array(sets).fill(8) },
+    { key: 10, label: '10 reps (Tensión Media)', scheme: 'fixed', restSeconds: 75, series: (sets) => Array(sets).fill(10) },
+    { key: 12, label: '12 reps (Hipertrofia)', scheme: 'fixed', restSeconds: 75, series: (sets) => Array(sets).fill(12) },
+    { key: 15, label: '15 reps (Bombeo / Quema)', scheme: 'fixed', restSeconds: 60, series: (sets) => Array(sets).fill(15) },
+    { key: 'pyramid', label: 'Pirámide (12-10-8-6)', scheme: 'pyramid', restSeconds: 75, series: (sets) => {
+      const base = [12, 10, 8, 6, 6, 6, 6, 6];
+      return base.slice(0, sets);
+    }}
+  ];
+
+  function formatExerciseRepsSummary(exercise) {
+    if (!exercise) return '12 reps';
+    if (Array.isArray(exercise.seriesReps) && exercise.seriesReps.length > 0) {
+      const allEqual = exercise.seriesReps.every(r => r === exercise.seriesReps[0]);
+      if (!allEqual) {
+        return `${exercise.seriesReps.join('-')} reps`;
+      }
+      return `${exercise.seriesReps[0]} reps`;
+    }
+    return `${exercise.reps || 12} reps`;
+  }
+
+  function getExerciseSetReps(exercise, setIndex) {
+    if (!exercise) return 12;
+    if (Array.isArray(exercise.seriesReps) && exercise.seriesReps[setIndex] !== undefined) {
+      return Number(exercise.seriesReps[setIndex]) || Number(exercise.reps) || 12;
+    }
+    return Number(exercise.reps) || 12;
+  }
+
   // Módulo Élite: Catálogo enriquecido de alternativas por categoría (Polea, Máquina, Peso Libre)
   function getExerciseAlternatives(exercise) {
     if (!exercise) return [];
@@ -959,11 +992,23 @@
       targetRir = (goal === 'health') ? 'RIR 2-3' : 'RIR 1-2';
     }
 
+    let repsScheme = 'fixed';
+    let seriesReps = Array.from({ length: targetSets }, () => targetReps);
+    if (goal === 'strength') {
+      seriesReps = targetSets === 5 ? [8, 6, 6, 6, 4] : [8, 6, 6, 6];
+      repsScheme = 'pyramid';
+    } else if (goal === 'fat_loss') {
+      seriesReps = Array.from({ length: targetSets }, (_, i) => Math.max(10, targetReps - i));
+      repsScheme = 'pyramid';
+    }
+
     let finalEx = {
       ...baseEx,
       loadValue: newLoadValue,
       sets: targetSets,
       reps: targetReps,
+      repsScheme: repsScheme,
+      seriesReps: seriesReps,
       restSeconds: targetRest,
       targetRir: targetRir,
       completedSets: Array.from({ length: targetSets }, () => false),
@@ -1462,6 +1507,9 @@
     evaluateAchievements,
     buildConsistencyHeatmap,
     calculateReadinessAndMuscleRecovery,
+    REPS_PRESETS,
+    formatExerciseRepsSummary,
+    getExerciseSetReps,
     generateCsvReportContent,
     computeAnalytics
   };

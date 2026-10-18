@@ -499,10 +499,51 @@ assert.equal(doc.getElementById('profile-onboarding-dialog').hidden, false, 'El 
 const headerProfileTag = doc.getElementById('header-profile-tag');
 assert.ok(headerProfileTag, 'Debe existir el tag de perfil en cabecera');
 
+// 28.7 Verificar Módulo de Series y Repeticiones Dinámicas (6, 8, 10, 12, 15 y Pirámide)
+app.restoreOriginalSchedule();
+app.selectDay('lunes');
+const testExId = 'lun-espalda-polea-estrecho';
+// Ciclo a 6 reps (Fuerza)
+const reps6Res = app.cycleExerciseReps('lunes', testExId, 6);
+assert.equal(reps6Res.reps, 6, 'Debe configurar dinámicamente 6 reps');
+const ex6 = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
+assert.equal(app.getExerciseSetReps(ex6, 0), 6, 'La serie 1 debe ser de 6 reps');
+assert.equal(app.formatExerciseRepsSummary(ex6), '6 reps', 'El resumen debe ser 6 reps');
+
+// Ciclo a 8 reps
+const reps8Res = app.cycleExerciseReps('lunes', testExId, 8);
+assert.equal(reps8Res.reps, 8, 'Debe configurar dinámicamente 8 reps');
+const ex8 = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
+assert.equal(app.getExerciseSetReps(ex8, 1), 8, 'La serie 2 debe ser de 8 reps');
+
+// Ciclo a 10 reps
+const reps10Res = app.cycleExerciseReps('lunes', testExId, 10);
+assert.equal(reps10Res.reps, 10, 'Debe configurar dinámicamente 10 reps');
+
+// Ciclo a Pirámide dinámica (12-10-8-6)
+const repsPyrRes = app.cycleExerciseReps('lunes', testExId, 'pyramid');
+assert.equal(repsPyrRes.repsScheme, 'pyramid', 'El esquema debe ser piramidal');
+const exPyr = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
+assert.equal(app.getExerciseSetReps(exPyr, 0), 12, 'Serie 1 en pirámide debe ser 12 reps');
+assert.equal(app.getExerciseSetReps(exPyr, 1), 10, 'Serie 2 en pirámide debe ser 10 reps');
+assert.equal(app.getExerciseSetReps(exPyr, 2), 8, 'Serie 3 en pirámide debe ser 8 reps');
+assert.equal(app.getExerciseSetReps(exPyr, 3), 6, 'Serie 4 en pirámide debe ser 6 reps');
+assert.equal(app.formatExerciseRepsSummary(exPyr), '12-10-8-6 reps', 'El resumen debe reflejar la pirámide dinámica');
+
+// Ajuste dinámico de cantidad de series (+ / -)
+const seriesCountPlus = app.adjustExerciseSeriesCount('lunes', testExId, 1);
+assert.equal(seriesCountPlus, 5, 'Debe incrementar dinámicamente a 5 series');
+const seriesCountMinus = app.adjustExerciseSeriesCount('lunes', testExId, -2);
+assert.equal(seriesCountMinus, 3, 'Debe reducir dinámicamente a 3 series');
+
+// Verificación de elementos DOM para repeticiones dinámicas
+assert.ok(doc.querySelector('.btn-reps-dynamic-chip'), 'Las tarjetas de ejercicios deben incluir el chip interactivo de repeticiones dinámicas');
+assert.ok(doc.getElementById('btn-focus-reps'), 'La pantalla de entrenamiento activo debe incluir el selector de repeticiones dinámicas #btn-focus-reps');
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9 (Perfil Biométrico, Cargas Dinámicas, Sustitución de Ejercicios, Acomodación Inteligente y 28 módulos verificados) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.1 (Series y Repeticiones Dinámicas 6, 8, 10, 12, 15, Pirámides, Perfil Biométrico y 28 módulos verificados) pasaron con éxito.');
 process.exit(0);
 

@@ -1273,7 +1273,8 @@
 
       const sReps = document.createElement('span');
       sReps.className = 'set-reps';
-      sReps.textContent = `${ex.reps} reps`;
+      const sRepsCount = getExerciseSetReps(ex, s);
+      sReps.textContent = `${sRepsCount} reps`;
 
       setBtn.append(sNum, sReps);
       setBtn.addEventListener('click', () => toggleSetCompletion(dayId, ex.id, s));
@@ -1379,13 +1380,22 @@
     btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
     btnAltSwapChip.addEventListener('click', () => openExerciseSwapModal(dayId, ex.id));
 
+    const repsLabel = formatExerciseRepsSummary(ex);
+    const btnRepsChip = document.createElement('button');
+    btnRepsChip.type = 'button';
+    btnRepsChip.className = 'btn-rir-chip btn-reps-dynamic-chip';
+    btnRepsChip.dataset.exerciseId = ex.id;
+    btnRepsChip.title = 'Repeticiones dinámicas (6, 8, 10, 12, 15 o Pirámide). Toca para alternar.';
+    btnRepsChip.textContent = `🔁 ${repsLabel}`;
+    btnRepsChip.addEventListener('click', () => cycleExerciseReps(dayId, ex.id));
+
     const btnEdit = document.createElement('button');
     btnEdit.type = 'button';
     btnEdit.className = 'btn-edit-ex';
     btnEdit.textContent = '✏️ Editar';
     btnEdit.addEventListener('click', () => openExerciseDialog(ex));
 
-    intensityRow.append(btnModeChip, btnRirChip, btnCalcChip, btnAltSwapChip, btnEdit);
+    intensityRow.append(btnModeChip, btnRirChip, btnRepsChip, btnCalcChip, btnAltSwapChip, btnEdit);
     optionsBody.appendChild(intensityRow);
 
     const tutRow = document.createElement('div');
@@ -1479,6 +1489,102 @@
     renderExercisesList();
     renderWorkoutFocusScreen();
     return nextRir;
+  }
+
+  function formatExerciseRepsSummary(exercise) {
+    if (GYM_VISUALS && typeof GYM_VISUALS.formatExerciseRepsSummary === 'function') {
+      return GYM_VISUALS.formatExerciseRepsSummary(exercise);
+    }
+    if (!exercise) return '12 reps';
+    if (Array.isArray(exercise.seriesReps) && exercise.seriesReps.length > 0) {
+      const allEqual = exercise.seriesReps.every(r => r === exercise.seriesReps[0]);
+      if (!allEqual) return `${exercise.seriesReps.join('-')} reps`;
+      return `${exercise.seriesReps[0]} reps`;
+    }
+    return `${exercise.reps || 12} reps`;
+  }
+
+  function getExerciseSetReps(exercise, setIndex) {
+    if (GYM_VISUALS && typeof GYM_VISUALS.getExerciseSetReps === 'function') {
+      return GYM_VISUALS.getExerciseSetReps(exercise, setIndex);
+    }
+    if (!exercise) return 12;
+    if (Array.isArray(exercise.seriesReps) && exercise.seriesReps[setIndex] !== undefined) {
+      return Number(exercise.seriesReps[setIndex]) || Number(exercise.reps) || 12;
+    }
+    return Number(exercise.reps) || 12;
+  }
+
+  function cycleExerciseReps(dayId, exerciseId, forcePreset = null) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    const presets = [
+      { key: 6, label: '6 reps (Fuerza)', reps: 6, scheme: 'fixed', restSeconds: 90, seriesReps: (s) => Array(s).fill(6) },
+      { key: 8, label: '8 reps (Fuerza/Hipertrofia)', reps: 8, scheme: 'fixed', restSeconds: 90, seriesReps: (s) => Array(s).fill(8) },
+      { key: 10, label: '10 reps (Tensión Media)', reps: 10, scheme: 'fixed', restSeconds: 75, seriesReps: (s) => Array(s).fill(10) },
+      { key: 12, label: '12 reps (Hipertrofia)', reps: 12, scheme: 'fixed', restSeconds: 75, seriesReps: (s) => Array(s).fill(12) },
+      { key: 15, label: '15 reps (Bombeo / Quema)', reps: 15, scheme: 'fixed', restSeconds: 60, seriesReps: (s) => Array(s).fill(15) },
+      { key: 'pyramid', label: 'Pirámide (12-10-8-6)', reps: 12, scheme: 'pyramid', restSeconds: 75, seriesReps: (s) => [12, 10, 8, 6, 6, 6, 6, 6].slice(0, s) }
+    ];
+
+    let nextPreset = null;
+    if (forcePreset !== null && forcePreset !== undefined) {
+      nextPreset = presets.find(p => p.key === forcePreset || p.key === Number(forcePreset)) || presets[3];
+    } else {
+      let currentKey = ex.repsScheme === 'pyramid' ? 'pyramid' : Number(ex.reps) || 12;
+      const currentIdx = presets.findIndex(p => p.key === currentKey);
+      const nextIdx = (currentIdx + 1) % presets.length;
+      nextPreset = presets[nextIdx];
+    }
+
+    const currentSets = Number(ex.sets) || 4;
+    ex.reps = nextPreset.reps;
+    ex.repsScheme = nextPreset.scheme;
+    ex.seriesReps = nextPreset.seriesReps(currentSets);
+    ex.restSeconds = nextPreset.restSeconds;
+
+    triggerHaptic([35, 25]);
+    saveState();
+    renderExercisesList();
+    renderWorkoutFocusScreen();
+    showCelebrationToast(`🔁 Reps dinámicas: ${nextPreset.label}`);
+    return { reps: ex.reps, seriesReps: ex.seriesReps, repsScheme: ex.repsScheme, label: nextPreset.label };
+  }
+
+  function adjustExerciseSeriesCount(dayId, exerciseId, delta) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    const currentSets = Number(ex.sets) || 4;
+    const newSets = Math.max(1, Math.min(8, currentSets + delta));
+    if (newSets === currentSets) return currentSets;
+
+    ex.sets = newSets;
+    const prevDone = Array.isArray(ex.completedSets) ? ex.completedSets : [];
+    ex.completedSets = Array.from({ length: newSets }, (_, i) => Boolean(prevDone[i]));
+
+    if (Array.isArray(ex.seriesReps)) {
+      if (newSets > ex.seriesReps.length) {
+        const lastVal = ex.seriesReps[ex.seriesReps.length - 1] || ex.reps || 12;
+        while (ex.seriesReps.length < newSets) {
+          ex.seriesReps.push(lastVal);
+        }
+      } else {
+        ex.seriesReps = ex.seriesReps.slice(0, newSets);
+      }
+    }
+
+    triggerHaptic([40]);
+    saveState();
+    renderExercisesList();
+    renderWorkoutFocusScreen();
+    showCelebrationToast(`📊 Series actualizadas a ${newSets} series`);
+    return newSets;
   }
 
   function recordBodyMetrics(customMetrics) {
@@ -3162,10 +3268,15 @@
     }
     if (loadMain) loadMain.textContent = badgeInfo.main;
     if (loadSub) loadSub.textContent = badgeInfo.sub;
-    if (setsRepsLabel) setsRepsLabel.textContent = `${ex.sets || 4} series × ${ex.reps || 12} reps`;
+    const repsSummaryText = formatExerciseRepsSummary(ex);
+    if (setsRepsLabel) {
+      setsRepsLabel.textContent = `${ex.sets || 4} series × ${repsSummaryText}`;
+      setsRepsLabel.title = 'Toca para cambiar repeticiones dinámicas (6, 8, 10, 12, 15 o Pirámide)';
+      setsRepsLabel.style.cursor = 'pointer';
+    }
     if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
 
-    // 4. Cuadrícula de las 4 Series × 12 Reps
+    // 4. Cuadrícula de las Series con Repeticiones Dinámicas por Serie
     const setsGrid = document.getElementById('focus-sets-grid');
     const totalSets = Number(ex.sets) || 4;
     const doneCount = (ex.completedSets || []).filter(Boolean).length;
@@ -3186,7 +3297,8 @@
 
         const sReps = document.createElement('span');
         sReps.className = 'set-reps';
-        sReps.textContent = `${ex.reps || 12} repeticiones`;
+        const sRepsCount = getExerciseSetReps(ex, s);
+        sReps.textContent = `${sRepsCount} repeticiones`;
 
         setBtn.append(sNum, sReps);
         setBtn.addEventListener('click', () => toggleSetCompletion(state.selectedDay, ex.id, s));
@@ -3205,7 +3317,7 @@
         const nextLabel = ex.loadType === 'nivel' ? `Nivel ${nextVal}` : `${nextVal} kg`;
 
         const msgSpan = document.createElement('span');
-        msgSpan.textContent = `🚀 ¡${totalSets}×${ex.reps} completado! Sube de nivel con 1 toque:`;
+        msgSpan.textContent = `🚀 ¡${totalSets}×${repsSummaryText} completado! Sube de nivel con 1 toque:`;
 
         const btnApplyOverload = document.createElement('button');
         btnApplyOverload.type = 'button';
@@ -3229,6 +3341,7 @@
 
     // 7. Menú Agrupado de Opciones Secundarias del Ejercicio
     const btnSwap = document.getElementById('btn-focus-swap-alt');
+    const btnRepsFocus = document.getElementById('btn-focus-reps');
     const btnMode = document.getElementById('btn-focus-set-mode');
     const btnRir = document.getElementById('btn-focus-rir');
     const btnTut = document.getElementById('btn-focus-tut');
@@ -3241,6 +3354,9 @@
     if (btnSwap) {
       btnSwap.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
       btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
+    }
+    if (btnRepsFocus) {
+      btnRepsFocus.textContent = `🔁 Reps: ${repsSummaryText}`;
     }
     if (btnMode) {
       btnMode.className = `btn-set-mode-chip mode-${setModeKey}`;
@@ -3902,6 +4018,42 @@
       }
       renderWorkoutFocusScreen();
     });
+    document.getElementById('btn-focus-reps')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) cycleExerciseReps(state.selectedDay, ex.id);
+    });
+    document.getElementById('focus-sets-reps-label')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) cycleExerciseReps(state.selectedDay, ex.id);
+    });
+    document.getElementById('btn-focus-add-set')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) adjustExerciseSeriesCount(state.selectedDay, ex.id, 1);
+    });
+    document.getElementById('btn-focus-remove-set')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (ex) adjustExerciseSeriesCount(state.selectedDay, ex.id, -1);
+    });
+
+    document.querySelectorAll('.btn-quick-rep-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.preset;
+        const repsInput = document.getElementById('edit-reps');
+        const restInput = document.getElementById('edit-rest');
+        if (preset === 'pyramid') {
+          if (repsInput) repsInput.value = '12';
+          if (restInput) restInput.value = '75';
+        } else {
+          const num = Number(preset) || 12;
+          if (repsInput) repsInput.value = String(num);
+          if (restInput) {
+            restInput.value = num <= 8 ? '90' : (num >= 15 ? '60' : '75');
+          }
+        }
+        triggerHaptic([20]);
+      });
+    });
+
     document.getElementById('btn-focus-edit')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
       if (ex) openExerciseDialog(ex);
@@ -4117,7 +4269,12 @@
     saveUserProfile,
     openProfileOnboardingDialog,
     renderUserProfileSummary,
-    accommodateMissedDayAction
+    accommodateMissedDayAction,
+    // APIs Dynamic Series & Reps v1.9.1
+    cycleExerciseReps,
+    adjustExerciseSeriesCount,
+    getExerciseSetReps,
+    formatExerciseRepsSummary
   };
 
   bindEvents();
