@@ -150,18 +150,18 @@
       cssModifier: 'sprite-rdl sprite-row-bottom'
     },
     'hip-adductor': {
-      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
       row: 'top',
       label: 'ADUCTORES',
-      title: 'Aductores en Máquina Sentada',
+      title: 'Aductores y Tren Inferior en Prensa',
       cssModifier: 'sprite-hip-adductor sprite-row-top'
     },
     'hip-abductor': {
-      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
-      row: 'bottom',
+      spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
+      row: 'top',
       label: 'ABDUCCIÓN CADERA',
-      title: 'Abducción de Cadera en Máquina (Glúteo Medio)',
-      cssModifier: 'sprite-hip-abductor sprite-row-bottom'
+      title: 'Abducción y Activación de Cadera / Glúteo',
+      cssModifier: 'sprite-hip-abductor sprite-row-top'
     },
     'shoulder-press': {
       spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
@@ -171,31 +171,31 @@
       cssModifier: 'sprite-shoulder-press sprite-row-bottom'
     },
     'lateral-raise': {
-      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
-      row: 'top',
-      label: 'ELEV. LATERALES',
-      title: 'Elevaciones Laterales de Hombro',
-      cssModifier: 'sprite-lateral-raise sprite-row-top'
+      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
+      row: 'bottom',
+      label: 'ELEV. / DELTOIDES',
+      title: 'Deltoides y Elevaciones de Hombro',
+      cssModifier: 'sprite-lateral-raise sprite-row-bottom'
     },
     'face-pull': {
-      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
-      row: 'bottom',
-      label: 'FACE PULL',
-      title: 'Face Pull en Polea Alta con Cuerda',
-      cssModifier: 'sprite-face-pull sprite-row-bottom'
+      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
+      row: 'top',
+      label: 'FACE PULL / REMO',
+      title: 'Face Pull y Tracción de Hombro Posterior en Polea',
+      cssModifier: 'sprite-face-pull sprite-row-top'
     },
     'rear-delt-shrugs': {
-      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
+      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
       row: 'top',
       label: 'POSTERIOR / TRAP',
-      title: 'Vuelos Posteriores y Encogimientos de Trapecio',
+      title: 'Vuelos Posteriores y Trapecio en Polea',
       cssModifier: 'sprite-rear-delt sprite-row-top'
     },
     'cable-crunch-abs': {
-      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
+      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
       row: 'bottom',
       label: 'CRUNCH CORE',
-      title: 'Crunch Abdominal en Polea Alta / Core',
+      title: 'Crunch y Tracción de Core en Polea Alta',
       cssModifier: 'sprite-cable-crunch sprite-row-bottom'
     }
   };

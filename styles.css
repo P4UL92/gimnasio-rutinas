@@ -648,6 +648,43 @@ body.animations-paused * {
   animation: playSpriteBottom 2.5s linear infinite alternate;
 }
 
+/* Corrección biomecánica preventiva para Sentadilla Hack (evita cuadro con postura flotante) */
+.sprite-hack-squat .exercise-sprite-frame,
+.sprite-hack-squat .focus-sprite-frame {
+  background-position: 0% 8% !important;
+  animation: playSpriteHackFix 2.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes playSpriteHackFix {
+  0%, 40% {
+    background-position: 0% 8%;
+  }
+  60%, 100% {
+    background-position: 50% 8%;
+  }
+}
+
+/* Corrección biomecánica preventiva para Elevación de Talones (enfoca la contracción real en escalón) */
+.sprite-calf-raise .exercise-sprite-frame,
+.sprite-calf-raise .focus-sprite-frame {
+  background-position: 100% 92% !important;
+  animation: playCalfRaisePulse 2.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes playCalfRaisePulse {
+  0% {
+    background-position: 100% 92%;
+    filter: contrast(1.05) brightness(1.0);
+    transform: scale(1.0);
+  }
+  100% {
+    background-position: 100% 92%;
+    filter: contrast(1.15) brightness(1.08);
+    transform: scale(1.03);
+  }
+}
+
+
 /* Control de pausa y accesibilidad para animaciones */
 body.animations-paused .exercise-sprite-frame,
 body.animations-paused .focus-sprite-frame,
