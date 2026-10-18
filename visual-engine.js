@@ -806,6 +806,354 @@
     }
   };
 
+  // Módulo Élite: Catálogo enriquecido de alternativas por categoría (Polea, Máquina, Peso Libre)
+  function getExerciseAlternatives(exercise) {
+    if (!exercise) return [];
+    const detectedKey = detectExerciseAnimationType(exercise);
+    const alt = EXERCISE_ALTERNATIVES_MAP[detectedKey] || EXERCISE_ALTERNATIVES_MAP['back_pulldown_narrow'] || {};
+
+    const loadKg = exercise.loadType === 'kg' ? exercise.loadValue : (exercise.loadValue * 3.5);
+    const dumbbellEq = Math.max(4, Math.round((loadKg * 0.45) / 2) * 2);
+    const pulleyLevelEq = Math.max(1, Math.min(20, Math.round(loadKg / 3.5)));
+
+    return [
+      {
+        id: 'alt-pulley',
+        category: 'cable',
+        categoryType: 'polea',
+        categoryLabel: '⚡ Alternativa en Polea (Tensión Continua)',
+        name: alt.altName && alt.altName.includes('Polea') ? alt.altName : `Variante en Polea para ${exercise.muscle || 'Grupo Muscular'}`,
+        equipment: 'Torre de Poleas Regulable',
+        loadType: 'nivel',
+        loadValue: pulleyLevelEq,
+        loadTransfer: `Carga sugerida: Nivel ${pulleyLevelEq}`,
+        reason: alt.altNote || 'Tensión constante en todo el recorrido biomecánico.',
+        note: alt.altNote || 'Tensión constante en todo el recorrido biomecánico.',
+        spriteType: alt.altSpriteType || detectedKey
+      },
+      {
+        id: 'alt-machine',
+        category: 'machine',
+        categoryType: 'maquina',
+        categoryLabel: '🏢 Alternativa en Máquina (Estabilidad y Trayectoria Fija)',
+        name: alt.altName && !alt.altName.includes('Mancuerna') ? alt.altName : `Máquina Convergente / Guiada para ${exercise.muscle || 'Músculo'}`,
+        equipment: 'Máquina Selectorizada o Smith',
+        loadType: 'kg',
+        loadValue: Math.max(10, Math.round(loadKg / 2.5) * 2.5),
+        loadTransfer: `Carga sugerida: ${Math.max(10, Math.round(loadKg / 2.5) * 2.5)} kg`,
+        reason: 'Ideal cuando necesitas máxima estabilidad muscular sin fatigar estabilizadores.',
+        note: 'Ideal cuando necesitas máxima estabilidad muscular sin fatigar estabilizadores.',
+        spriteType: detectedKey
+      },
+      {
+        id: 'alt-free-weight',
+        category: 'free_weight',
+        categoryType: 'peso_libre',
+        categoryLabel: '🏋️ Alternativa con Mancuernas / Peso Libre',
+        name: alt.altName && alt.altName.includes('Mancuerna') ? alt.altName : `Mancuernas / Banco para ${exercise.muscle || 'Músculo'}`,
+        equipment: 'Par de Mancuernas + Banco',
+        loadType: 'kg',
+        loadValue: dumbbellEq,
+        loadTransfer: `Carga sugerida: ${dumbbellEq} kg por mancuerna`,
+        reason: 'Perfecto si las máquinas y poleas están ocupadas en el gimnasio.',
+        note: 'Perfecto si las máquinas y poleas están ocupadas en el gimnasio.',
+        spriteType: detectedKey
+      }
+    ];
+  }
+
+  // Módulo Élite: Calibración dinámica de ejercicios según Parámetros Biométricos y Objetivos
+  function calculatePersonalizedExercise(baseEx, profile = {}) {
+    const gender = profile.gender || 'male';
+    const weight = Number(profile.weightKg) || 75;
+    const age = Number(profile.age) || 28;
+    const level = profile.fitnessLevel || 'intermediate';
+    const goal = profile.primaryGoal || 'hypertrophy';
+    const limitations = profile.limitations || 'none';
+
+    // 1. Ratio de Peso Corporal base (normalizado a 75kg)
+    const weightRatio = Math.max(0.6, Math.min(1.5, weight / 75));
+
+    // 2. Factor de Género (Mujeres: tren superior calibrado a ~0.65, tren inferior a ~0.90)
+    const isLowerBody = /pierna|femoral|cuádriceps|glúteo|gemelos|aductores|hack|thrust|rdl/i.test(
+      (baseEx.muscle || '') + ' ' + (baseEx.name || '')
+    );
+    let genderFactor = 1.0;
+    if (gender === 'female') {
+      genderFactor = isLowerBody ? 0.90 : 0.65;
+    }
+
+    // 3. Factor de Nivel de Experiencia
+    const levelFactors = {
+      beginner: 0.72,
+      intermediate: 1.0,
+      advanced: 1.25
+    };
+    const levelFactor = levelFactors[level] || 1.0;
+
+    // 4. Factor de Edad
+    let ageFactor = 1.0;
+    if (age > 50) ageFactor = 0.85;
+    else if (age > 40) ageFactor = 0.92;
+    else if (age < 18) ageFactor = 0.88;
+
+    const compoundMultiplier = weightRatio * genderFactor * levelFactor * ageFactor;
+
+    // 5. Ajuste de Series, Repeticiones, Descanso y Cargas según Objetivo
+    let targetSets = baseEx.sets || 4;
+    let targetReps = baseEx.reps || 12;
+    let targetRest = baseEx.restSeconds || 75;
+    let goalMultiplier = 1.0;
+    let goalRir = 'RIR 2';
+
+    if (goal === 'strength') {
+      targetSets = Math.min(5, (baseEx.sets || 4) + 1);
+      targetReps = isLowerBody ? 6 : 8;
+      targetRest = Math.min(120, targetRest + 30);
+      goalMultiplier = 1.15;
+      goalRir = 'RIR 1';
+    } else if (goal === 'fat_loss') {
+      targetSets = Math.max(3, (baseEx.sets || 4));
+      targetReps = 14;
+      targetRest = Math.max(50, targetRest - 15);
+      goalMultiplier = 0.90;
+      goalRir = 'RIR 2';
+    } else if (goal === 'health') {
+      targetSets = 3;
+      targetReps = 12;
+      targetRest = Math.max(60, targetRest);
+      goalMultiplier = 0.80;
+      goalRir = 'RIR 3';
+    } else {
+      // Hipertrofia Estándar
+      targetSets = 4;
+      targetReps = 12;
+      targetRest = isLowerBody ? 90 : 75;
+      goalMultiplier = 1.0;
+      goalRir = 'RIR 1';
+    }
+
+    if (age > 50) {
+      targetRest += 15;
+    }
+
+    const finalMultiplier = compoundMultiplier * goalMultiplier;
+
+    // Cálculo y redondeo de Carga Dinámica
+    let newLoadValue = baseEx.loadValue;
+    if (baseEx.loadType === 'kg') {
+      const rawKg = (baseEx.loadValue || 20) * finalMultiplier;
+      newLoadValue = Math.max(2.5, Math.round(rawKg / 2.5) * 2.5);
+    } else if (baseEx.loadType === 'nivel') {
+      const rawNivel = (baseEx.loadValue || 5) * finalMultiplier;
+      newLoadValue = Math.max(1, Math.min(20, Math.round(rawNivel)));
+    }
+
+    // Ajuste de RIR según Nivel de Experiencia y Objetivo
+    let targetRir = 'RIR 1-2';
+    if (level === 'beginner') {
+      targetRir = 'RIR 3-4';
+    } else if (level === 'advanced') {
+      targetRir = 'RIR 0-1';
+    } else {
+      targetRir = (goal === 'health') ? 'RIR 2-3' : 'RIR 1-2';
+    }
+
+    let finalEx = {
+      ...baseEx,
+      loadValue: newLoadValue,
+      sets: targetSets,
+      reps: targetReps,
+      restSeconds: targetRest,
+      targetRir: targetRir,
+      completedSets: Array.from({ length: targetSets }, () => false),
+      personalized: true
+    };
+
+    // 6. Aplicar Sustituciones automáticas por Limitaciones Articulares
+    if (limitations === 'lower_back') {
+      if (baseEx.id === 'sab-peso-muerto-rumano') {
+        finalEx.name = 'Hip Thrust en Multipower (Apoyo Lumbar Seguro)';
+        finalEx.equipment = 'Banco Acolchado + Máquina Smith';
+        finalEx.note = 'Sustituido por seguridad lumbar: Cero compresión en columna baja, máxima activación glútea.';
+      } else if (baseEx.id === 'mie-sentadilla-goblet-hack') {
+        finalEx.name = 'Prensa 45° Pies Medios (Espalda totalmente apoyada)';
+        finalEx.equipment = 'Prensa Inclinada';
+        finalEx.note = 'Sustituido por seguridad lumbar: Mantén la zona lumbar completamente adherida al respaldo.';
+      }
+    } else if (limitations === 'shoulders') {
+      if (baseEx.id === 'jue-press-hombro-maquina') {
+        finalEx.name = 'Elevaciones Laterales en Polea Baja (Plano Escapular)';
+        finalEx.equipment = 'Polea Baja + Agarre D';
+        finalEx.loadType = 'nivel';
+        finalEx.loadValue = Math.max(1, Math.round(newLoadValue * 0.4));
+        finalEx.note = 'Sustituido por cuidado articular de hombro: Tira a 30° en plano escapular sin dolor.';
+      } else if (baseEx.id === 'mar-fondos-maquina') {
+        finalEx.name = 'Extensión de Tríceps en Polea con Cuerda';
+        finalEx.equipment = 'Polea Alta + Cuerda';
+        finalEx.note = 'Sustituido para evitar estrés en cápsula anterior del hombro.';
+      }
+    } else if (limitations === 'knees') {
+      if (baseEx.id === 'mie-sentadilla-goblet-hack') {
+        finalEx.name = 'Prensa Inclinada con Pies en Parte Alta';
+        finalEx.equipment = 'Prensa de Piernas';
+        finalEx.note = 'Sustituido por protección de rodillas: Pies altos reducen el momento de fuerza sobre el tendón rotuliano.';
+      }
+    }
+
+    return finalEx;
+  }
+
+  // Genera el plan semanal completo y personalizado según el perfil
+  function generatePersonalizedSchedule(profile, baseSchedule) {
+    const schedule = JSON.parse(JSON.stringify(baseSchedule));
+    const daysOrder = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    const daysCount = Number(profile.daysPerWeek) || 6;
+
+    for (const dayKey of daysOrder) {
+      const day = schedule[dayKey];
+      if (!day) continue;
+
+      if (daysCount === 5 && dayKey === 'sabado') {
+        day.status = 'rest_day';
+        day.subtitle = 'Día de Descanso Programado / Recuperación';
+        day.exercises = [];
+        continue;
+      } else if (daysCount === 4 && (dayKey === 'miercoles' || dayKey === 'sabado')) {
+        day.status = 'rest_day';
+        day.subtitle = 'Día de Descanso Programado / Recuperación';
+        day.exercises = [];
+        continue;
+      } else if (daysCount === 3 && (dayKey === 'martes' || dayKey === 'jueves' || dayKey === 'sabado')) {
+        day.status = 'rest_day';
+        day.subtitle = 'Día de Descanso Programado / Recuperación';
+        day.exercises = [];
+        continue;
+      }
+
+      day.exercises = (day.exercises || []).map(ex => calculatePersonalizedExercise(ex, profile));
+    }
+
+    return schedule;
+  }
+
+  // Acomodador Dinámico Inteligente de Días No Completados
+  function accommodateMissedDay(schedule, missedDayKey, strategyKey = 'sunday') {
+    const daysOrder = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    const missedDay = schedule[missedDayKey];
+    if (!missedDay || !missedDay.exercises || missedDay.exercises.length === 0) {
+      return { success: false, schedule, message: 'El día seleccionado no tiene ejercicios pendientes de reacomodar.' };
+    }
+
+    if (strategyKey === 'sunday' || strategyKey === 'move_to_sunday') {
+      const sunday = schedule.domingo;
+      sunday.title = `Recuperación: ${missedDay.title}`;
+      sunday.subtitle = `Trasladado desde ${missedDay.dayName} (${missedDay.subtitle})`;
+      sunday.muscleGroup = missedDay.muscleGroup;
+      sunday.accentHue = missedDay.accentHue;
+      sunday.estimatedMinutes = missedDay.estimatedMinutes;
+      sunday.status = 'shifted';
+      sunday.originalSourceDay = missedDayKey;
+      sunday.exercises = missedDay.exercises.map(ex => ({
+        ...ex,
+        completedSets: Array.from({ length: ex.sets || 4 }, () => false)
+      }));
+
+      missedDay.exercises = [];
+      missedDay.status = 'skipped_to_sunday';
+      missedDay.isRestDay = true;
+      missedDay.exceptionNote = `Sesión trasladada al Domingo (${sunday.dayName})`;
+      missedDay.subtitle = `Sesión trasladada al Domingo (${sunday.dayName})`;
+      return { success: true, schedule, strategy: 'sunday', message: `✅ ${missedDay.dayName} trasladado al Domingo` };
+    }
+
+    if (strategyKey === 'shift' || strategyKey === 'shift_chain_to_sunday') {
+      const startIdx = daysOrder.indexOf(missedDayKey);
+      if (startIdx < 0 || startIdx >= 6) return { success: false, schedule, message: 'No se puede desplazar desde este día.' };
+
+      for (let i = 6; i > startIdx; i--) {
+        const targetKey = daysOrder[i];
+        const prevKey = daysOrder[i - 1];
+        const source = schedule[prevKey];
+        const target = schedule[targetKey];
+
+        target.title = source.title;
+        target.subtitle = source.subtitle;
+        target.muscleGroup = source.muscleGroup;
+        target.accentHue = source.accentHue;
+        target.estimatedMinutes = source.estimatedMinutes;
+        target.status = 'shifted';
+        target.exercises = (source.exercises || []).map(ex => ({
+          ...ex,
+          completedSets: Array.from({ length: ex.sets || 4 }, () => false)
+        }));
+      }
+
+      missedDay.exercises = [];
+      missedDay.status = 'skipped_to_sunday';
+      missedDay.isRestDay = true;
+      missedDay.exceptionNote = `Día libre por excepción. La secuencia se desplazó +1 día hacia adelante.`;
+      missedDay.subtitle = `Día libre por excepción. La secuencia se desplazó +1 día hacia adelante.`;
+      return { success: true, schedule, strategy: 'shift', message: `➡️ Semana rodada +1 día hacia adelante. No perdiste ningún grupo muscular.` };
+    }
+
+    if (strategyKey === 'merge' || strategyKey === 'smart_merge_next') {
+      const startIdx = daysOrder.indexOf(missedDayKey);
+      let nextWorkDayKey = null;
+      for (let i = startIdx + 1; i < 7; i++) {
+        const k = daysOrder[i];
+        if (schedule[k] && schedule[k].exercises && schedule[k].exercises.length > 0) {
+          nextWorkDayKey = k;
+          break;
+        }
+      }
+      if (!nextWorkDayKey) nextWorkDayKey = 'domingo';
+      const targetDay = schedule[nextWorkDayKey];
+
+      const priorityExercises = missedDay.exercises.slice(0, 2).map(ex => ({
+        ...ex,
+        id: `merge-${missedDayKey}-${ex.id}`,
+        name: `[Fusión ${missedDay.shortName}] ${ex.name}`,
+        sets: 3,
+        completedSets: [false, false, false],
+        note: `Ejercicio esencial fusionado desde ${missedDay.dayName} para mantener el volumen semanal.`
+      }));
+
+      targetDay.exercises.unshift(...priorityExercises);
+      targetDay.title = `${targetDay.title} + Fusión ${missedDay.shortName}`;
+      targetDay.subtitle += ` · Incluye ${priorityExercises.length} ejercicios clave de ${missedDay.dayName}`;
+
+      missedDay.exercises = [];
+      missedDay.status = 'skipped_to_sunday';
+      missedDay.isRestDay = true;
+      missedDay.exceptionNote = `Fusión Inteligente: 2 ejercicios clave integrados en ${targetDay.dayName}.`;
+      missedDay.subtitle = `Ejercicios clave fusionados con ${targetDay.dayName}.`;
+      return { success: true, schedule, strategy: 'merge', message: `🧬 Fusión inteligente: Los 2 ejercicios clave de ${missedDay.dayName} se integraron en ${targetDay.dayName}.` };
+    }
+
+    if (strategyKey === 'redistribute' || strategyKey === 'redistribute_volume') {
+      const startIdx = daysOrder.indexOf(missedDayKey);
+      for (let i = startIdx + 1; i < 7; i++) {
+        const k = daysOrder[i];
+        const d = schedule[k];
+        if (d && d.exercises && d.exercises.length > 0) {
+          for (const ex of d.exercises) {
+            ex.sets = (ex.sets || 4) + 1;
+            ex.completedSets = Array.from({ length: ex.sets }, (_, sIdx) => Boolean(ex.completedSets && ex.completedSets[sIdx]));
+          }
+        }
+      }
+      missedDay.exercises = [];
+      missedDay.status = 'skipped_to_sunday';
+      missedDay.isRestDay = true;
+      missedDay.exceptionNote = `Compensación de Volumen Express (+1 serie en días restantes)`;
+      missedDay.subtitle = `Día compensado con volumen express (+1 serie) en los días restantes.`;
+      return { success: true, schedule, strategy: 'redistribute', message: `📊 Volumen compensado: Se añadió +1 serie a tus sesiones restantes para cumplir el volumen semanal.` };
+    }
+
+    return { success: false, schedule, message: 'Estrategia de acomodación no reconocida.' };
+  }
+
   // Módulo Master 3: Gamificación, Medallas Desbloqueables y Heatmap de Constancia
   function evaluateAchievements(state, analytics) {
     const lunesEx = state?.schedule?.lunes?.exercises || [];
@@ -1107,6 +1455,10 @@
     WORKOUT_TEMPLATES,
     calculateNutritionPlan,
     EXERCISE_ALTERNATIVES_MAP,
+    getExerciseAlternatives,
+    calculatePersonalizedExercise,
+    generatePersonalizedSchedule,
+    accommodateMissedDay,
     evaluateAchievements,
     buildConsistencyHeatmap,
     calculateReadinessAndMuscleRecovery,

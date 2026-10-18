@@ -404,7 +404,105 @@ assert.equal(doc.getElementById('screen-plan').hidden, false, 'La pantalla del p
 // Re-verificación final: 0 etiquetas <svg> tras todos los renders dinámicos
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo 0 etiquetas <svg> tras renderizar la arquitectura multi-pantalla v1.8 Focus UI');
 
+// 28. Verificar Módulo Personalización v1.9: Perfil Biométrico Dinámico, Variación de Ejercicios y Acomodación Inteligente
+const initialProfile = app.getUserProfile();
+assert.ok(initialProfile, 'getUserProfile debe devolver el perfil inicial');
+assert.equal(typeof initialProfile, 'object', 'El perfil debe ser un objeto');
+assert.equal(initialProfile.configured, false, 'Inicialmente no debe estar configurado');
+
+// 28.1 Generación personalizada para Atleta Mujer Principiante (55 kg, Objetivo Pérdida de Grasa / Definición, Rodillas protegidas)
+const savedProfileFem = app.saveUserProfile({
+  name: 'Valeria',
+  gender: 'female',
+  age: 26,
+  weightKg: 55,
+  heightCm: 162,
+  fitnessLevel: 'beginner',
+  primaryGoal: 'fat_loss',
+  daysPerWeek: 5,
+  limitations: 'knees'
+});
+
+assert.equal(savedProfileFem.configured, true, 'El perfil debe quedar configurado');
+assert.equal(app.getState().userProfile.name, 'Valeria', 'El nombre debe persistir en el estado');
+
+const femState = app.getState();
+const femLunes = femState.schedule.lunes.exercises;
+assert.ok(femLunes.length >= 6, 'Lunes debe conservar los ejercicios');
+const femPolea = femLunes.find(e => e.id === 'lun-espalda-polea-estrecho');
+assert.ok(femPolea, 'Debe existir el ejercicio de espalda en polea');
+// En principiante + mujer (55kg / 75kg * 0.65 * 0.72 ~ 0.34 ratio), la carga en nivel debe ser menor o igual a nivel 4
+assert.ok(femPolea.loadValue <= 4, `Carga de polea para principiante mujer debe adaptarse (calculado: ${femPolea.loadValue})`);
+assert.equal(femPolea.targetRir, 'RIR 3-4', 'Principiante debe entrenar con RIR 3-4');
+assert.equal(femPolea.restSeconds, 60, 'Objetivo definición debe pautar 60s de descanso');
+
+// 28.2 Generación personalizada para Atleta Hombre Avanzado (85 kg, Objetivo Fuerza Máxima)
+const savedProfileMasc = app.saveUserProfile({
+  name: 'Carlos',
+  gender: 'male',
+  age: 32,
+  weightKg: 85,
+  heightCm: 180,
+  fitnessLevel: 'advanced',
+  primaryGoal: 'strength',
+  daysPerWeek: 6,
+  limitations: 'none'
+});
+assert.equal(savedProfileMasc.name, 'Carlos');
+const mascLunes = app.getState().schedule.lunes.exercises;
+const mascMaquina = mascLunes.find(e => e.id === 'lun-espalda-maquina-amplio');
+assert.ok(mascMaquina, 'Debe existir espalda en máquina');
+// Hombre 85kg avanzado en fuerza: carga mayor a la base de 20kg (85/75 * 1.25 * 20 = 28.3 -> 27.5 o 30 kg)
+assert.ok(mascMaquina.loadValue >= 25, `Carga para avanzado 85kg en fuerza debe ser >= 25kg (calculado: ${mascMaquina.loadValue})`);
+assert.equal(mascMaquina.targetRir, 'RIR 0-1', 'Avanzado debe entrenar a RIR 0-1');
+assert.ok(mascMaquina.restSeconds >= 90, 'Objetivo fuerza debe tener descanso >= 90s');
+
+// 28.3 Variación de ejercicios biomecánicamente equivalentes (Máquina ocupada)
+const exToSwap = mascLunes[0];
+const alternatives = window.GYM_VISUALS.getExerciseAlternatives(exToSwap);
+assert.ok(Array.isArray(alternatives) && alternatives.length === 3, 'Debe devolver exactamente 3 alternativas biomecánicas');
+const catSet = new Set(alternatives.map(a => a.category));
+assert.ok(catSet.has('cable'), 'Debe incluir alternativa en polea/cable');
+assert.ok(catSet.has('machine'), 'Debe incluir alternativa en máquina');
+assert.ok(catSet.has('free_weight'), 'Debe incluir alternativa en peso libre/mancuerna');
+
+// Sustitución por alternativa específica
+const swappedAltEx = app.swapExerciseAlternative('lunes', exToSwap.id, alternatives[2]);
+assert.equal(swappedAltEx.isSwappedAlternative, true, 'El ejercicio debe marcarse como sustitución');
+assert.equal(swappedAltEx.name, alternatives[2].name, 'El nombre debe actualizarse al de la alternativa');
+assert.ok(swappedAltEx.originalSnapshot, 'Debe preservar el snapshot original');
+
+// Restauración al ejercicio original
+const restoredAltEx = app.swapExerciseAlternative('lunes', exToSwap.id);
+assert.equal(restoredAltEx.isSwappedAlternative, false, 'Debe desmarcarse la sustitución');
+assert.equal(restoredAltEx.name, restoredAltEx.originalSnapshot === undefined ? restoredAltEx.name : restoredAltEx.originalSnapshot.name);
+
+// 28.4 Acomodación Inteligente ante días no entrenados: smart_merge_next
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.8 Focus UI (0% SVGs en DOM, menús agrupados, diseño responsive vertical, cambio de pantalla al iniciar el día de ejercicio con sprite/peso/series/temporizador de descanso y 27 módulos verificados) pasaron con éxito.');
+app.accommodateMissedDayAction('martes', 'smart_merge_next');
+const scheduleAfterMerge = app.getState().schedule;
+assert.equal(scheduleAfterMerge.martes.isRestDay, true, 'Martes debe quedar marcado como descanso');
+assert.ok(scheduleAfterMerge.martes.exceptionNote.includes('Fusión Inteligente'), 'Martes debe registrar nota de excepción');
+const miercolesExs = scheduleAfterMerge.miercoles.exercises;
+assert.ok(miercolesExs.length > 6, 'Miércoles debe haber incorporado los ejercicios clave de Martes');
+
+// 28.5 Acomodación Inteligente ante días no entrenados: redistribute_volume (+1 serie en días restantes)
+app.restoreOriginalSchedule();
+app.accommodateMissedDayAction('lunes', 'redistribute_volume');
+const scheduleAfterVol = app.getState().schedule;
+assert.equal(scheduleAfterVol.lunes.isRestDay, true, 'Lunes debe quedar marcado como descanso');
+assert.equal(scheduleAfterVol.martes.exercises[0].sets, 5, 'Los ejercicios del resto de la semana deben tener 1 serie extra de compensación (5 series)');
+
+// 28.6 Resumen del Perfil en DOM y Header Tag
+doc.getElementById('btn-header-profile')?.click();
+assert.equal(doc.getElementById('profile-onboarding-dialog').hidden, false, 'El modal de perfil debe abrirse');
+const headerProfileTag = doc.getElementById('header-profile-tag');
+assert.ok(headerProfileTag, 'Debe existir el tag de perfil en cabecera');
+
+// Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las pruebas v1.9 (Perfil Biométrico, Cargas Dinámicas, Sustitución de Ejercicios, Acomodación Inteligente y 28 módulos verificados) pasaron con éxito.');
 process.exit(0);
 

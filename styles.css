@@ -3776,3 +3776,241 @@ body.animations-paused .focus-sprite-frame {
     flex: 1;
   }
 }
+
+/* ==========================================================================
+   Módulo Biométrico & Personalización v1.9 (Onboarding, Swap Modal & Resumen)
+   ========================================================================== */
+
+.profile-dialog {
+  max-width: 620px;
+  width: 95vw;
+}
+
+.profile-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.profile-fieldset {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-legend {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #38bdf8;
+  padding: 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.profile-preview-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.profile-preview-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 6px;
+}
+
+.profile-preview-text {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.profile-metric-tile {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-metric-tile .pm-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.profile-metric-tile .pm-val {
+  font-size: 0.88rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.profile-metric-tile .pm-sub {
+  font-size: 0.7rem;
+  color: #38bdf8;
+}
+
+/* Modal de Sustitución por Máquina Ocupada */
+.exercise-swap-dialog {
+  max-width: 580px;
+  width: 95vw;
+}
+
+.swap-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.current-exercise-banner {
+  background: rgba(30, 41, 59, 0.7);
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.swap-banner-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  color: #f59e0b;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.swap-banner-meta {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.swap-dialog-desc {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.swap-alternatives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.swap-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.swap-card:hover {
+  transform: translateY(-1px);
+  border-color: #38bdf8;
+}
+
+.swap-card.cat-cable {
+  border-left: 4px solid #f59e0b;
+}
+
+.swap-card.cat-machine {
+  border-left: 4px solid #ef4444;
+}
+
+.swap-card.cat-freeweight {
+  border-left: 4px solid #10b981;
+}
+
+.swap-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swap-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.swap-badge.cat-cable {
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.swap-badge.cat-machine {
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.swap-badge.cat-freeweight {
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.swap-equip {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.swap-name {
+  font-size: 0.95rem;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.swap-reason {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.swap-card-footer {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-apply-this-swap {
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 0.85rem;
+}
+
+.btn-header-profile {
+  font-size: 0.78rem;
+  padding: 5px 10px;
+}

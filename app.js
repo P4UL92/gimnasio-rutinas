@@ -52,6 +52,19 @@
       progressionHistory: [],
       bodyMetrics: [],
       history: [],
+      userProfile: {
+        configured: false,
+        name: 'Atleta',
+        gender: 'male',
+        age: 28,
+        weightKg: 75,
+        heightCm: 175,
+        fitnessLevel: 'intermediate',
+        primaryGoal: 'hypertrophy',
+        daysPerWeek: 6,
+        limitations: 'none',
+        updatedAt: null
+      },
       schedule
     };
   }
@@ -129,6 +142,21 @@
       }
       if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < 0) {
         parsed.activeExerciseIndex = 0;
+      }
+      if (!parsed.userProfile || typeof parsed.userProfile !== 'object') {
+        parsed.userProfile = {
+          configured: false,
+          name: 'Atleta',
+          gender: 'male',
+          age: 28,
+          weightKg: 75,
+          heightCm: 175,
+          fitnessLevel: 'intermediate',
+          primaryGoal: 'hypertrophy',
+          daysPerWeek: 6,
+          limitations: 'none',
+          updatedAt: null
+        };
       }
       parsed.searchQuery = '';
       return parsed;
@@ -1349,7 +1377,7 @@
       ? 'Volver al ejercicio titular original'
       : '¿Máquina o polea ocupada? Toca para cambiar por su ejercicio equivalente biomecánico';
     btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
-    btnAltSwapChip.addEventListener('click', () => swapExerciseAlternative(dayId, ex.id));
+    btnAltSwapChip.addEventListener('click', () => openExerciseSwapModal(dayId, ex.id));
 
     const btnEdit = document.createElement('button');
     btnEdit.type = 'button';
@@ -2210,14 +2238,16 @@
     }
   }
 
-  // Módulo Master: Sustitución Inteligente ("Máquina Ocupada") y Modo Descarga (Deload)
-  function swapExerciseAlternative(dayId, exerciseId) {
+  // Módulo Master: Sustitución Inteligente ("Máquina Ocupada") y Alternativas Biomecánicas
+  let currentSwapTarget = { dayId: null, exerciseId: null };
+
+  function swapExerciseAlternative(dayId, exerciseId, chosenAlt = null) {
     const day = state.schedule[dayId];
-    if (!day || !GYM_VISUALS || !GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP) return null;
+    if (!day) return null;
     const ex = day.exercises.find(e => e.id === exerciseId);
     if (!ex) return null;
 
-    if (ex.isSwappedAlternative && ex.originalSnapshot) {
+    if (!chosenAlt && ex.isSwappedAlternative && ex.originalSnapshot) {
       ex.name = ex.originalSnapshot.name;
       ex.equipment = ex.originalSnapshot.equipment;
       ex.spriteType = ex.originalSnapshot.spriteType;
@@ -2227,33 +2257,339 @@
       triggerHaptic([35]);
       saveState();
       renderExercisesList();
+      if (state.activeScreen === 'workout') {
+        renderWorkoutFocusScreen();
+      }
       showCelebrationToast(`↩️ Ejercicio restaurado: ${ex.name}`);
       return ex;
     }
 
-    const detectedKey = GYM_VISUALS.detectExerciseAnimationType(ex);
-    const altMeta =
-      GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP[detectedKey] ||
-      GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP.back_row_seated;
+    const detectedKey = GYM_VISUALS ? GYM_VISUALS.detectExerciseAnimationType(ex) : 'back_row_seated';
+    let altMeta = chosenAlt;
 
-    ex.originalSnapshot = {
-      name: ex.name,
-      equipment: ex.equipment,
-      spriteType: ex.spriteType || detectedKey,
-      note: ex.note
-    };
+    if (!altMeta) {
+      if (GYM_VISUALS && typeof GYM_VISUALS.getExerciseAlternatives === 'function') {
+        const alts = GYM_VISUALS.getExerciseAlternatives(ex);
+        if (alts && alts.length > 0) {
+          const first = alts[0];
+          altMeta = {
+            altName: first.name,
+            altEquipment: first.equipment,
+            altSpriteType: first.spriteType,
+            altNote: first.reason
+          };
+        }
+      }
+      if (!altMeta && GYM_VISUALS && GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP) {
+        altMeta = GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP[detectedKey] ||
+          GYM_VISUALS.EXERCISE_ALTERNATIVES_MAP.back_row_seated;
+      }
+    }
 
-    ex.name = altMeta.altName;
-    ex.equipment = altMeta.altEquipment;
-    ex.spriteType = altMeta.altSpriteType;
-    ex.note = altMeta.altNote;
+    if (!altMeta) return null;
+
+    if (!ex.originalSnapshot) {
+      ex.originalSnapshot = {
+        name: ex.name,
+        equipment: ex.equipment,
+        spriteType: ex.spriteType || detectedKey,
+        note: ex.note
+      };
+    }
+
+    ex.name = altMeta.altName || altMeta.name;
+    ex.equipment = altMeta.altEquipment || altMeta.equipment;
+    ex.spriteType = altMeta.altSpriteType || altMeta.spriteType;
+    ex.note = altMeta.altNote || altMeta.reason || ex.note;
     ex.isSwappedAlternative = true;
 
     triggerHaptic([45, 35]);
     saveState();
     renderExercisesList();
+    if (state.activeScreen === 'workout') {
+      renderWorkoutFocusScreen();
+    }
     showCelebrationToast(`🔄 Alternativa activada: ${ex.name}`);
     return ex;
+  }
+
+  function openExerciseSwapModal(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    currentSwapTarget = { dayId, exerciseId };
+    const dialog = document.getElementById('exercise-swap-dialog');
+    const nameEl = document.getElementById('swap-current-name');
+    const metaEl = document.getElementById('swap-current-meta');
+    const listEl = document.getElementById('swap-alternatives-list');
+    const btnRestore = document.getElementById('btn-restore-swap-original');
+
+    if (nameEl) nameEl.textContent = ex.name;
+    if (metaEl) {
+      const loadStr = ex.loadType === 'nivel' ? `Nivel ${ex.loadValue}` : `${ex.loadValue} kg`;
+      metaEl.textContent = `${ex.sets || 4} × ${ex.reps || 12} reps · ${loadStr} · ${ex.equipment || 'Máquina'}`;
+    }
+
+    if (btnRestore) {
+      btnRestore.hidden = !Boolean(ex.isSwappedAlternative && ex.originalSnapshot);
+    }
+
+    if (listEl) {
+      listEl.innerHTML = '';
+      const alts = (GYM_VISUALS && typeof GYM_VISUALS.getExerciseAlternatives === 'function')
+        ? GYM_VISUALS.getExerciseAlternatives(ex)
+        : [];
+
+      const categoryLabels = {
+        cable: { badge: '🟡 Polea / Cable', cls: 'cat-cable' },
+        machine: { badge: '🔴 Máquina Guiada', cls: 'cat-machine' },
+        free_weight: { badge: '🟢 Peso Libre / Mancuerna', cls: 'cat-freeweight' }
+      };
+
+      if (alts.length === 0) {
+        listEl.innerHTML = '<p class="swap-empty">No se encontraron alternativas directas para este movimiento.</p>';
+      } else {
+        alts.forEach(alt => {
+          const catInfo = categoryLabels[alt.category] || { badge: '⚡ Alternativa', cls: 'cat-generic' };
+          const card = document.createElement('div');
+          card.className = `swap-card ${catInfo.cls}`;
+          card.innerHTML = `
+            <div class="swap-card-top">
+              <span class="swap-badge ${catInfo.cls}">${catInfo.badge}</span>
+              <span class="swap-equip">${alt.equipment}</span>
+            </div>
+            <h4 class="swap-name">${alt.name}</h4>
+            <p class="swap-reason">${alt.reason}</p>
+            <div class="swap-card-footer">
+              <button type="button" class="btn-primary btn-apply-this-swap">⚡ Usar este Ejercicio</button>
+            </div>
+          `;
+          card.querySelector('.btn-apply-this-swap').addEventListener('click', () => {
+            swapExerciseAlternative(dayId, exerciseId, alt);
+            if (dialog && typeof dialog.close === 'function') {
+              dialog.close();
+            }
+          });
+          listEl.appendChild(card);
+        });
+      }
+    }
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {}
+    }
+  }
+
+  // Módulo de Onboarding y Perfil Biométrico Dinámico
+  function getUserProfile() {
+    return deepClone(state.userProfile);
+  }
+
+  function updateProfilePreviewFromInputs() {
+    const previewEl = document.getElementById('profile-preview-text');
+    if (!previewEl) return;
+
+    const gender = document.getElementById('profile-gender-select')?.value || 'male';
+    const weight = Number(document.getElementById('profile-weight-input')?.value) || 75;
+    const height = Number(document.getElementById('profile-height-input')?.value) || 175;
+    const level = document.getElementById('profile-level-select')?.value || 'intermediate';
+    const goal = document.getElementById('profile-goal-select')?.value || 'hypertrophy';
+    const days = Number(document.getElementById('profile-days-select')?.value) || 6;
+
+    const heightM = height / 100;
+    const bmi = (weight / (heightM * heightM)).toFixed(1);
+
+    const goalDescriptions = {
+      hypertrophy: '4 series × 10-12 reps · 75s descanso (Volumen óptimo y congestión)',
+      strength: '4-5 series × 6-8 reps · 90-120s descanso (Alta tensión mecánica y fuerza)',
+      fat_loss: '3-4 series × 12-15 reps · 60s descanso (Densidad metabólica y definición)',
+      health: '3 series × 12-15 reps · 60-75s descanso (Acondicionamiento y longevidad)'
+    };
+
+    const levelDescriptions = {
+      beginner: 'Principiante: RIR 3-4 (Cargas controladas al 72% para asimilar patrones)',
+      intermediate: 'Intermedio: RIR 1-2 (Cargas base 100% con sobrecarga progresiva)',
+      advanced: 'Avanzado: RIR 0-1 (Cargas altas 125% cerca del fallo muscular)'
+    };
+
+    const genderText = gender === 'female' ? 'Mujer' : 'Hombre';
+    previewEl.innerHTML = `
+      <strong>Perfil:</strong> ${genderText}, ${weight} kg, ${height} cm (IMC ${bmi}).<br>
+      <strong>Intensidad:</strong> ${levelDescriptions[level] || levelDescriptions.intermediate}.<br>
+      <strong>Objetivo:</strong> ${goalDescriptions[goal] || goalDescriptions.hypertrophy}.<br>
+      <strong>Frecuencia:</strong> ${days} días/semana con acomodación inteligente ante imprevistos.
+    `;
+  }
+
+  function openProfileOnboardingDialog(isFirstTime = false) {
+    const dialog = document.getElementById('profile-onboarding-dialog');
+    if (!dialog) return;
+
+    const p = state.userProfile || {};
+    const nameInput = document.getElementById('profile-name-input');
+    const genderSelect = document.getElementById('profile-gender-select');
+    const ageInput = document.getElementById('profile-age-input');
+    const weightInput = document.getElementById('profile-weight-input');
+    const heightInput = document.getElementById('profile-height-input');
+    const levelSelect = document.getElementById('profile-level-select');
+    const goalSelect = document.getElementById('profile-goal-select');
+    const daysSelect = document.getElementById('profile-days-select');
+    const limitsSelect = document.getElementById('profile-limitations-select');
+    const btnCancel = document.getElementById('btn-cancel-profile');
+
+    if (nameInput) nameInput.value = p.name || 'Atleta';
+    if (genderSelect) genderSelect.value = p.gender || 'male';
+    if (ageInput) ageInput.value = p.age || 28;
+    if (weightInput) weightInput.value = p.weightKg || 75;
+    if (heightInput) heightInput.value = p.heightCm || 175;
+    if (levelSelect) levelSelect.value = p.fitnessLevel || 'intermediate';
+    if (goalSelect) goalSelect.value = p.primaryGoal || 'hypertrophy';
+    if (daysSelect) daysSelect.value = String(p.daysPerWeek || 6);
+    if (limitsSelect) limitsSelect.value = p.limitations || 'none';
+
+    if (btnCancel) {
+      btnCancel.hidden = Boolean(isFirstTime && !p.configured);
+    }
+
+    updateProfilePreviewFromInputs();
+
+    if (typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {}
+    }
+  }
+
+  function saveUserProfile(profileData) {
+    state.userProfile = {
+      configured: true,
+      name: (profileData.name || 'Atleta').trim(),
+      gender: profileData.gender || 'male',
+      age: Number(profileData.age) || 28,
+      weightKg: Number(profileData.weightKg) || 75,
+      heightCm: Number(profileData.heightCm) || 175,
+      fitnessLevel: profileData.fitnessLevel || 'intermediate',
+      primaryGoal: profileData.primaryGoal || 'hypertrophy',
+      daysPerWeek: Number(profileData.daysPerWeek) || 6,
+      limitations: profileData.limitations || 'none',
+      updatedAt: new Date().toISOString()
+    };
+
+    if (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function') {
+      state.schedule = GYM_VISUALS.generatePersonalizedSchedule(state.userProfile, GYM_DATA.INITIAL_SCHEDULE);
+    }
+
+    saveState();
+    renderAll();
+    triggerHaptic([60, 40, 80]);
+    showCelebrationToast(`🎯 Rutina personalizada generada para ${state.userProfile.name}`);
+    return state.userProfile;
+  }
+
+  function renderUserProfileSummary() {
+    const p = state.userProfile;
+    const headerTag = document.getElementById('header-profile-tag');
+    if (headerTag) {
+      if (p && p.configured) {
+        const levelEmoji = p.fitnessLevel === 'beginner' ? '🟢' : p.fitnessLevel === 'advanced' ? '🔴' : '🟡';
+        headerTag.textContent = `${levelEmoji} ${p.name || 'Atleta'} (${p.weightKg || 75}kg)`;
+        headerTag.title = `Perfil activo: ${p.primaryGoal} · ${p.fitnessLevel}`;
+      } else {
+        headerTag.textContent = '⚙️ Configurar Perfil';
+      }
+    }
+
+    const summaryEl = document.getElementById('profile-card-summary');
+    if (!summaryEl) return;
+
+    if (!p || !p.configured) {
+      summaryEl.innerHTML = `
+        <div class="profile-empty-state">
+          <p>⚠️ Aún no has configurado tu perfil biométrico inicial.</p>
+          <button type="button" id="btn-quick-onboarding" class="btn-primary" style="margin-top: 8px;">
+            🚀 Configurar mi Perfil Ahora
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-quick-onboarding')?.addEventListener('click', () => {
+        openProfileOnboardingDialog(false);
+      });
+      return;
+    }
+
+    const heightM = (p.heightCm || 175) / 100;
+    const bmi = ((p.weightKg || 75) / (heightM * heightM)).toFixed(1);
+    const genderLabel = p.gender === 'female' ? 'Mujer' : 'Hombre';
+    const goalLabels = {
+      hypertrophy: '💪 Hipertrofia Muscular',
+      strength: '🏋️ Fuerza Máxima y Potencia',
+      fat_loss: '🔥 Definición y Pérdida Grasa',
+      health: '🧘 Salud y Acondicionamiento'
+    };
+    const levelLabels = {
+      beginner: '🟢 Principiante (RIR 3-4)',
+      intermediate: '🟡 Intermedio (RIR 1-2)',
+      advanced: '🔴 Avanzado (RIR 0-1)'
+    };
+    const limitLabels = {
+      none: 'Ninguna (100% móvil)',
+      lower_back: 'Espalda baja protegida',
+      shoulders: 'Hombros protegidos',
+      knees: 'Rodillas protegidas'
+    };
+
+    summaryEl.innerHTML = `
+      <div class="profile-summary-grid">
+        <div class="profile-metric-tile">
+          <span class="pm-label">Atleta</span>
+          <strong class="pm-val">${p.name || 'Atleta'} (${genderLabel})</strong>
+        </div>
+        <div class="profile-metric-tile">
+          <span class="pm-label">Biometría</span>
+          <strong class="pm-val">${p.weightKg} kg · ${p.heightCm} cm · ${p.age} años</strong>
+          <small class="pm-sub">IMC: ${bmi}</small>
+        </div>
+        <div class="profile-metric-tile">
+          <span class="pm-label">Nivel & RIR</span>
+          <strong class="pm-val">${levelLabels[p.fitnessLevel] || p.fitnessLevel}</strong>
+        </div>
+        <div class="profile-metric-tile">
+          <span class="pm-label">Objetivo</span>
+          <strong class="pm-val">${goalLabels[p.primaryGoal] || p.primaryGoal}</strong>
+        </div>
+        <div class="profile-metric-tile">
+          <span class="pm-label">Frecuencia</span>
+          <strong class="pm-val">${p.daysPerWeek} días semanales</strong>
+        </div>
+        <div class="profile-metric-tile">
+          <span class="pm-label">Cuidado Articular</span>
+          <strong class="pm-val">${limitLabels[p.limitations] || 'Estándar'}</strong>
+        </div>
+      </div>
+    `;
+  }
+
+  function accommodateMissedDayAction(missedDayKey, strategyKey) {
+    if (!GYM_VISUALS || typeof GYM_VISUALS.accommodateMissedDay !== 'function') {
+      showCelebrationToast('⚠️ Módulo de acomodación no disponible');
+      return;
+    }
+    const result = GYM_VISUALS.accommodateMissedDay(state.schedule, missedDayKey, strategyKey);
+    if (result && result.schedule) {
+      state.schedule = result.schedule;
+    }
+    saveState();
+    renderExercisesList();
+    renderDayTabs();
+    if (state.activeScreen === 'workout') {
+      renderWorkoutFocusScreen();
+    }
+    triggerHaptic([50, 40, 50]);
+    showCelebrationToast(result.message);
   }
 
   function toggleDeloadMode(forceState) {
@@ -2975,6 +3311,7 @@
     renderNutritionDashboard();
     renderGamificationDashboard();
     renderRecoveryAndReadinessDashboard();
+    renderUserProfileSummary();
     renderWeeklyMatrix();
   }
 
@@ -3317,6 +3654,8 @@
         } else if (selectedMode === 'swap_with_day') {
           const targetDay = document.getElementById('swap-target-day')?.value || 'domingo';
           swapDays(state.selectedDay, targetDay);
+        } else if (selectedMode === 'smart_merge_next' || selectedMode === 'redistribute_volume') {
+          accommodateMissedDayAction(state.selectedDay, selectedMode);
         }
       });
     }
@@ -3534,7 +3873,7 @@
 
     document.getElementById('btn-focus-swap-alt')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
-      if (ex) swapExerciseAlternative(state.selectedDay, ex.id);
+      if (ex) openExerciseSwapModal(state.selectedDay, ex.id);
     });
     document.getElementById('btn-focus-set-mode')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -3631,6 +3970,69 @@
         reader.readAsText(file);
       });
     }
+
+    // Listeners del Onboarding & Perfil Biométrico Dinámico
+    const btnHeaderProfile = document.getElementById('btn-header-profile');
+    if (btnHeaderProfile) {
+      btnHeaderProfile.addEventListener('click', () => openProfileOnboardingDialog(false));
+    }
+    const btnReconfigProfile = document.getElementById('btn-reconfigure-profile');
+    if (btnReconfigProfile) {
+      btnReconfigProfile.addEventListener('click', () => openProfileOnboardingDialog(false));
+    }
+    const btnResetProfile = document.getElementById('btn-reset-profile-default');
+    if (btnResetProfile) {
+      btnResetProfile.addEventListener('click', () => {
+        if (typeof confirm !== 'function' || confirm('¿Restablecer el entrenamiento a la rutina original base?')) {
+          restoreOriginalSchedule();
+          showCelebrationToast('🔄 Rutina restablecida a los valores originales');
+        }
+      });
+    }
+    const btnCancelProfile = document.getElementById('btn-cancel-profile');
+    if (btnCancelProfile) {
+      btnCancelProfile.addEventListener('click', () => {
+        document.getElementById('profile-onboarding-dialog')?.close();
+      });
+    }
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+      profileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const profileData = {
+          name: document.getElementById('profile-name-input')?.value,
+          gender: document.getElementById('profile-gender-select')?.value,
+          age: document.getElementById('profile-age-input')?.value,
+          weightKg: document.getElementById('profile-weight-input')?.value,
+          heightCm: document.getElementById('profile-height-input')?.value,
+          fitnessLevel: document.getElementById('profile-level-select')?.value,
+          primaryGoal: document.getElementById('profile-goal-select')?.value,
+          daysPerWeek: document.getElementById('profile-days-select')?.value,
+          limitations: document.getElementById('profile-limitations-select')?.value
+        };
+        saveUserProfile(profileData);
+        document.getElementById('profile-onboarding-dialog')?.close();
+      });
+      profileForm.addEventListener('input', updateProfilePreviewFromInputs);
+      profileForm.addEventListener('change', updateProfilePreviewFromInputs);
+    }
+
+    // Modal de Sustitución por Máquina Ocupada
+    const btnCloseSwap = document.getElementById('btn-close-swap-dialog');
+    if (btnCloseSwap) {
+      btnCloseSwap.addEventListener('click', () => {
+        document.getElementById('exercise-swap-dialog')?.close();
+      });
+    }
+    const btnRestoreSwap = document.getElementById('btn-restore-swap-original');
+    if (btnRestoreSwap) {
+      btnRestoreSwap.addEventListener('click', () => {
+        if (currentSwapTarget.dayId && currentSwapTarget.exerciseId) {
+          swapExerciseAlternative(currentSwapTarget.dayId, currentSwapTarget.exerciseId);
+          document.getElementById('exercise-swap-dialog')?.close();
+        }
+      });
+    }
   }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -3689,6 +4091,7 @@
     downloadShareableSummaryCard,
     // APIs Master v1.6 (Nutrición/Hidratación, Sustitución Máquina Ocupada, Modo Descarga Deload y Gamificación)
     swapExerciseAlternative,
+    openExerciseSwapModal,
     toggleDeloadMode,
     setNutritionGoal,
     addHydrationWater,
@@ -3708,9 +4111,21 @@
     startDayWorkoutSession,
     exitWorkoutScreen,
     selectFocusExercise,
-    renderWorkoutFocusScreen
+    renderWorkoutFocusScreen,
+    // APIs Dynamic Onboarding & Personalized Training v1.9
+    getUserProfile,
+    saveUserProfile,
+    openProfileOnboardingDialog,
+    renderUserProfileSummary,
+    accommodateMissedDayAction
   };
 
   bindEvents();
   renderAll();
+
+  if (typeof window !== 'undefined' && !window.__TEST_MODE__ && !state.userProfile?.configured) {
+    setTimeout(() => {
+      openProfileOnboardingDialog(true);
+    }, 450);
+  }
 })();

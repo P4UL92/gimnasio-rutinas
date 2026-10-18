@@ -24,6 +24,9 @@
       </div>
 
       <div class="header-quick-actions">
+        <button type="button" id="btn-header-profile" class="btn-ghost btn-header-profile" title="Ver o editar parámetros de tu perfil de entrenamiento">
+          👤 <span id="header-profile-tag">Mi Perfil</span>
+        </button>
         <button type="button" id="btn-header-start-day" class="btn-primary btn-header-start" title="Abrir pantalla de entrenamiento activo del día">
           ▶ Entrenar
         </button>
@@ -460,6 +463,30 @@
           <span class="unit-legend">Opciones complementarias agrupadas</span>
         </div>
 
+      <!-- Acordeón 1: Mi Perfil Personalizado & Parámetros Biométricos -->
+      <details class="overview-accordion is-featured-accordion" name="gym-info" open>
+        <summary>
+          <span class="summary-title">👤 Mi Perfil Personalizado & Parámetros Biométricos</span>
+          <span class="badge badge-user-base" id="hub-profile-status-badge">Configurado</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Tus parámetros físicos determinan dinámicamente las cargas, series, repeticiones y la adaptabilidad de tu rutina.
+          </p>
+          <div class="profile-card-summary" id="profile-card-summary">
+            <!-- Renderizado dinámicamente por app.js -->
+          </div>
+          <div class="profile-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+            <button type="button" id="btn-reconfigure-profile" class="btn-primary">
+              ⚙️ Modificar Parámetros / Recalcular Rutina
+            </button>
+            <button type="button" id="btn-reset-profile" class="btn-ghost">
+              🔄 Resetear a Valores de Fábrica
+            </button>
+          </div>
+        </div>
+      </details>
+
       <details class="overview-accordion" name="gym-info">
         <summary>
           <span class="summary-title">⚖️ Registro Corporal y Medidas Antropométricas</span>
@@ -794,23 +821,170 @@
   <!-- Toast de Celebración -->
   <div id="celebration-toast" class="celebration-toast" role="status" aria-live="polite" hidden></div>
 
-  <!-- Modal Nativo: Excepción de Día / Mover al Domingo -->
+  <!-- Modal Nativo: Perfil de Entrenamiento Personalizado y Calibración Biomecánica -->
+  <dialog id="profile-onboarding-dialog" class="gym-dialog profile-dialog" closedby="any" aria-labelledby="profile-dialog-title">
+    <form method="dialog" id="profile-form" class="dialog-form">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">CALIBRACIÓN BIOMÉTRICA & OBJETIVO PERSONAL</span>
+          <h2 id="profile-dialog-title">Perfil de Entrenamiento Único</h2>
+        </div>
+        <button type="button" id="btn-close-profile-dialog" class="btn-icon-close" aria-label="Cerrar">✕</button>
+      </header>
+
+      <div class="dialog-body profile-dialog-body">
+        <p class="dialog-lead">
+          Configura tus parámetros personales. El sistema calibrará dinámicamente tus cargas en kg y niveles, volumen, repeticiones y descansos adaptados a tu cuerpo:
+        </p>
+
+        <!-- Sección 1: Datos Biométricos -->
+        <fieldset class="profile-fieldset">
+          <legend class="profile-legend">1. Datos Biométricos</legend>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label for="profile-name-input">Nombre o Apodo</label>
+              <input type="text" id="profile-name-input" placeholder="Ej. Eder" value="Atleta" required maxlength="30">
+            </div>
+            <div class="form-field">
+              <label for="profile-gender-select">Sexo Biológico (Calibración de fuerza relativa)</label>
+              <select id="profile-gender-select">
+                <option value="male" selected>Hombre (Calibración base de fuerza tren sup/inf)</option>
+                <option value="female">Mujer (Ratios adaptados: mayor capacidad de volumen)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-field">
+              <label for="profile-age-input">Edad (años)</label>
+              <input type="number" id="profile-age-input" min="14" max="95" value="28" required>
+            </div>
+            <div class="form-field">
+              <label for="profile-weight-input">Peso Corporal (kg)</label>
+              <input type="number" id="profile-weight-input" min="35" max="220" step="0.5" value="75" required>
+            </div>
+            <div class="form-field">
+              <label for="profile-height-input">Altura (cm)</label>
+              <input type="number" id="profile-height-input" min="120" max="230" value="175" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Sección 2: Nivel y Objetivo -->
+        <fieldset class="profile-fieldset">
+          <legend class="profile-legend">2. Nivel y Objetivo de Entrenamiento</legend>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label for="profile-level-select">Nivel de Condición Física</label>
+              <select id="profile-level-select">
+                <option value="beginner">🟢 Principiante (Adaptación neuromuscular, RIR 3-4)</option>
+                <option value="intermediate" selected>🟡 Intermedio (Sobrecarga progresiva estándar, RIR 1-2)</option>
+                <option value="advanced">🔴 Avanzado (Alta intensidad y microcargas, RIR 0-1)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="profile-goal-select">Objetivo Principal</label>
+              <select id="profile-goal-select">
+                <option value="hypertrophy" selected>💪 Hipertrofia Muscular (4×10-12 reps · 75s descanso)</option>
+                <option value="strength">🏋️ Fuerza Máxima y Potencia (4-5×6-8 reps · 90-120s descanso)</option>
+                <option value="fat_loss">🔥 Definición y Pérdida de Grasa (3-4×12-15 reps · 60s descanso)</option>
+                <option value="health">🧘 Salud Articular y Acondicionamiento (3×12-15 reps · 60-75s)</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Sección 3: Días y Limitaciones -->
+        <fieldset class="profile-fieldset">
+          <legend class="profile-legend">3. Frecuencia Semanal y Cuidados Articulares</legend>
+          <div class="form-row-2">
+            <div class="form-field">
+              <label for="profile-days-select">Días Semanales Disponibles</label>
+              <select id="profile-days-select">
+                <option value="6" selected>6 Días (Lunes a Sábado + Domingo Comodín/Descanso)</option>
+                <option value="5">5 Días (Lunes a Viernes + Fin de semana libre/comodín)</option>
+                <option value="4">4 Días (Torso / Pierna A y B)</option>
+                <option value="3">3 Días (Frecuencia Óptima 3x semana)</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="profile-limitations-select">Molestias Articulares o Limitaciones</label>
+              <select id="profile-limitations-select">
+                <option value="none" selected>Ninguna (Entrenamiento 100% completo)</option>
+                <option value="lower_back">Molestia Lumbar / Espalda baja (Sustituye cargas axiales)</option>
+                <option value="shoulders">Molestia en Hombros (Protección articular y plano escapular)</option>
+                <option value="knees">Molestia en Rodillas (Sustituye sentadillas profundas)</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Resumen Informativo Dinámico -->
+        <div class="profile-preview-card" id="profile-preview-card">
+          <div class="profile-preview-title">🎯 Resumen de tu Plan Dinámico</div>
+          <p id="profile-preview-text" class="profile-preview-text">
+            Cargas calibradas automáticamente con descansos y series adaptadas a tu perfil.
+          </p>
+        </div>
+      </div>
+
+      <footer class="dialog-footer profile-dialog-footer">
+        <button type="button" id="btn-cancel-profile" class="btn-secondary">Descartar</button>
+        <button type="submit" id="btn-save-profile" class="btn-primary">✨ Guardar y Generar mi Entrenamiento</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Modal Nativo: Selector Visual de Sustitución de Ejercicio ("Máquina Ocupada") -->
+  <dialog id="exercise-swap-dialog" class="gym-dialog exercise-swap-dialog" closedby="any" aria-labelledby="swap-dialog-title">
+    <div class="dialog-body swap-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">SUSTITUCIÓN POR MÁQUINA OCUPADA O MOLESTIA</span>
+          <h2 id="swap-dialog-title">Variar Ejercicio</h2>
+        </div>
+        <button type="button" id="btn-close-swap-dialog" class="btn-icon-close" aria-label="Cerrar">✕</button>
+      </header>
+
+      <div class="current-exercise-banner">
+        <span class="swap-banner-label">Ejercicio Actual:</span>
+        <strong id="swap-current-name">Espalda en polea con agarre estrecho</strong>
+        <span id="swap-current-meta" class="swap-banner-meta">4 × 12 reps · Nivel 6</span>
+      </div>
+
+      <p class="swap-dialog-desc">
+        Selecciona una de las 3 alternativas con el mismo patrón motor y grupo muscular para no detener tu sesión:
+      </p>
+
+      <div id="swap-alternatives-list" class="swap-alternatives-list">
+        <!-- Alternativas generadas por app.js -->
+      </div>
+
+      <div class="swap-dialog-actions">
+        <button type="button" id="btn-restore-swap-original" class="btn-secondary" hidden>
+          ↩️ Restaurar Ejercicio Original
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Excepción de Día / Mover al Domingo / Acomodación Inteligente -->
   <dialog id="exception-dialog" class="gym-dialog" closedby="any" aria-labelledby="exception-dialog-title">
     <form method="dialog" id="exception-form" class="dialog-form">
       <header class="dialog-header">
-        <h2 id="exception-dialog-title">Reprogramar Día de Entrenamiento</h2>
+        <h2 id="exception-dialog-title">Acomodar Semana / Reprogramar Día</h2>
         <button type="submit" value="cancel" class="btn-icon-close" aria-label="Cerrar ventana">✕</button>
       </header>
       <div class="dialog-body">
         <p id="exception-dialog-desc" class="dialog-lead">
-          ¿No podrás entrenar este día? Elige cómo reorganizar tu semana incluyendo el <strong>Domingo</strong>:
+          ¿No podrás entrenar este día? Elige la estrategia para que tu entrenamiento se adapte a tu vida de la manera más óptima:
         </p>
 
         <div class="exception-options">
           <label class="radio-card">
             <input type="radio" name="exceptionMode" value="move_to_sunday" checked>
             <span class="radio-card-body">
-              <strong>Pasar este entrenamiento al Domingo (Recomendado)</strong>
+              <strong>Pasar este entrenamiento al Domingo (Comodín)</strong>
               <small>Marca este día como descanso por excepción y traslada sus ejercicios íntegros al día Domingo.</small>
             </span>
           </label>
@@ -820,6 +994,22 @@
             <span class="radio-card-body">
               <strong>Recorrer todos los días siguientes (+1 día hasta el Domingo)</strong>
               <small>Este día queda libre y la fila de entrenamientos pendientes se desplaza un día hacia adelante hasta ocupar el Domingo.</small>
+            </span>
+          </label>
+
+          <label class="radio-card">
+            <input type="radio" name="exceptionMode" value="smart_merge_next">
+            <span class="radio-card-body">
+              <strong>🧬 Fusión Inteligente en la siguiente sesión (Mantener Frecuencia)</strong>
+              <small>Integra los 2 ejercicios compuestos clave de hoy en tu siguiente sesión afín para no perder estímulo.</small>
+            </span>
+          </label>
+
+          <label class="radio-card">
+            <input type="radio" name="exceptionMode" value="redistribute_volume">
+            <span class="radio-card-body">
+              <strong>📊 Compensación de Volumen Express (+1 serie en días restantes)</strong>
+              <small>Añade 1 serie extra a tus sesiones restantes para cumplir con el volumen total semanal planificado.</small>
             </span>
           </label>
 
