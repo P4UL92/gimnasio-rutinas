@@ -896,7 +896,7 @@
   }
 
   // Módulo Élite: Calibración dinámica de ejercicios según Parámetros Biométricos y Objetivos
-  function calculatePersonalizedExercise(baseEx, profile = {}) {
+  function calculatePersonalizedExercise(baseEx, profile = {}, exerciseIndex = 0) {
     const gender = profile.gender || 'male';
     const weight = Number(profile.weightKg) || 75;
     const age = Number(profile.age) || 28;
@@ -932,42 +932,90 @@
 
     const compoundMultiplier = weightRatio * genderFactor * levelFactor * ageFactor;
 
-    // 5. Ajuste de Series, Repeticiones, Descanso y Cargas según Objetivo
+    // 5. Prescripción Automática de Series y Repeticiones Dinámicas por la Aplicación
+    // La aplicación establece las series y repeticiones óptimas según biomecánica, objetivo y nivel (no modificables por el usuario)
+    const isPrimaryCompound = (exerciseIndex === 0) || (baseEx.id && (baseEx.id.includes('sentadilla') || baseEx.id.includes('peso-muerto') || baseEx.id.includes('press-banca')));
+    const isAccessory = (exerciseIndex >= 4) || (baseEx.muscle && (baseEx.muscle.includes('Bíceps') || baseEx.muscle.includes('Tríceps') || baseEx.muscle.includes('Abdomen') || baseEx.muscle.includes('Gemelos')));
+
     let targetSets = baseEx.sets || 4;
     let targetReps = baseEx.reps || 12;
     let targetRest = baseEx.restSeconds || 75;
     let goalMultiplier = 1.0;
-    let goalRir = 'RIR 2';
+    let repsScheme = 'fixed';
+    let seriesReps = [];
 
     if (goal === 'strength') {
-      targetSets = Math.min(5, (baseEx.sets || 4) + 1);
-      targetReps = isLowerBody ? 6 : 8;
-      targetRest = Math.min(120, targetRest + 30);
       goalMultiplier = 1.15;
-      goalRir = 'RIR 1';
+      if (isPrimaryCompound) {
+        targetSets = (level === 'advanced') ? 5 : 4;
+        targetReps = 6;
+        targetRest = 120;
+        repsScheme = 'pyramid';
+        seriesReps = targetSets === 5 ? [8, 6, 6, 6, 4] : [8, 6, 6, 6];
+      } else if (isAccessory) {
+        targetSets = 3;
+        targetReps = 10;
+        targetRest = 75;
+        repsScheme = 'fixed';
+        seriesReps = [10, 10, 10];
+      } else {
+        targetSets = 4;
+        targetReps = 8;
+        targetRest = 90;
+        repsScheme = 'fixed';
+        seriesReps = [8, 8, 8, 8];
+      }
     } else if (goal === 'fat_loss') {
-      targetSets = Math.max(3, (baseEx.sets || 4));
-      targetReps = 14;
-      targetRest = Math.max(50, targetRest - 15);
       goalMultiplier = 0.90;
-      goalRir = 'RIR 2';
+      targetSets = 4;
+      targetReps = 14;
+      targetRest = 60;
+      repsScheme = 'pyramid';
+      seriesReps = [15, 14, 13, 12];
     } else if (goal === 'health') {
+      goalMultiplier = 0.80;
       targetSets = 3;
       targetReps = 12;
-      targetRest = Math.max(60, targetRest);
-      goalMultiplier = 0.80;
-      goalRir = 'RIR 3';
+      targetRest = 60;
+      repsScheme = 'fixed';
+      seriesReps = [12, 12, 12];
     } else {
-      // Hipertrofia Estándar
-      targetSets = 4;
-      targetReps = 12;
-      targetRest = isLowerBody ? 90 : 75;
+      // Hipertrofia Estándar: la aplicación calibra dinámicamente según el rol del ejercicio
       goalMultiplier = 1.0;
-      goalRir = 'RIR 1';
+      if (isPrimaryCompound) {
+        targetSets = 4;
+        targetReps = 12;
+        targetRest = isLowerBody ? 90 : 75;
+        repsScheme = 'pyramid';
+        seriesReps = [12, 10, 8, 6];
+      } else if (isAccessory) {
+        targetSets = 4;
+        targetReps = 12;
+        targetRest = 60;
+        repsScheme = 'fixed';
+        seriesReps = [12, 12, 12, 12];
+      } else {
+        targetSets = 4;
+        targetReps = 10;
+        targetRest = 75;
+        repsScheme = 'fixed';
+        seriesReps = [10, 10, 10, 10];
+      }
+    }
+
+    // Adaptación por nivel
+    if (level === 'beginner') {
+      targetReps = Math.max(10, targetReps);
+      seriesReps = seriesReps.map(r => Math.max(10, r));
+      if (repsScheme === 'pyramid') {
+        seriesReps = [12, 12, 10, 10];
+      }
     }
 
     if (age > 50) {
       targetRest += 15;
+      targetReps = Math.max(8, targetReps);
+      seriesReps = seriesReps.map(r => Math.max(8, r));
     }
 
     const finalMultiplier = compoundMultiplier * goalMultiplier;
@@ -990,16 +1038,6 @@
       targetRir = 'RIR 0-1';
     } else {
       targetRir = (goal === 'health') ? 'RIR 2-3' : 'RIR 1-2';
-    }
-
-    let repsScheme = 'fixed';
-    let seriesReps = Array.from({ length: targetSets }, () => targetReps);
-    if (goal === 'strength') {
-      seriesReps = targetSets === 5 ? [8, 6, 6, 6, 4] : [8, 6, 6, 6];
-      repsScheme = 'pyramid';
-    } else if (goal === 'fat_loss') {
-      seriesReps = Array.from({ length: targetSets }, (_, i) => Math.max(10, targetReps - i));
-      repsScheme = 'pyramid';
     }
 
     let finalEx = {
@@ -1076,7 +1114,7 @@
         continue;
       }
 
-      day.exercises = (day.exercises || []).map(ex => calculatePersonalizedExercise(ex, profile));
+      day.exercises = (day.exercises || []).map((ex, exIdx) => calculatePersonalizedExercise(ex, profile, exIdx));
     }
 
     return schedule;

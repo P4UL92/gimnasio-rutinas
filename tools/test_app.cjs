@@ -499,51 +499,79 @@ assert.equal(doc.getElementById('profile-onboarding-dialog').hidden, false, 'El 
 const headerProfileTag = doc.getElementById('header-profile-tag');
 assert.ok(headerProfileTag, 'Debe existir el tag de perfil en cabecera');
 
-// 28.7 Verificar Módulo de Series y Repeticiones Dinámicas (6, 8, 10, 12, 15 y Pirámide)
+// 28.7 Verificar Módulo de Series y Repeticiones Dinámicas Prescritas por la Aplicación (No modificables por el usuario)
 app.restoreOriginalSchedule();
+
+// Caso 1: Objetivo Fuerza (strength), Nivel Avanzado
+app.saveUserProfile({
+  gender: 'male',
+  weightKg: 85,
+  age: 26,
+  fitnessLevel: 'advanced',
+  primaryGoal: 'strength',
+  limitations: 'none'
+});
 app.selectDay('lunes');
-const testExId = 'lun-espalda-polea-estrecho';
-// Ciclo a 6 reps (Fuerza)
-const reps6Res = app.cycleExerciseReps('lunes', testExId, 6);
-assert.equal(reps6Res.reps, 6, 'Debe configurar dinámicamente 6 reps');
-const ex6 = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
-assert.equal(app.getExerciseSetReps(ex6, 0), 6, 'La serie 1 debe ser de 6 reps');
-assert.equal(app.formatExerciseRepsSummary(ex6), '6 reps', 'El resumen debe ser 6 reps');
+const dayExercisesStrength = app.getState().schedule.lunes.exercises;
+const compExStrength = dayExercisesStrength[0]; // Ejercicio primario compuesto
+assert.equal(compExStrength.sets, 5, 'En Fuerza Avanzado el ejercicio primario debe tener 5 series prescritas');
+assert.equal(compExStrength.repsScheme, 'pyramid', 'El ejercicio primario de fuerza debe ser piramidal');
+assert.deepEqual(Array.from(compExStrength.seriesReps), [8, 6, 6, 6, 4], 'El desglose de series debe ser [8, 6, 6, 6, 4]');
+assert.equal(app.formatExerciseRepsSummary(compExStrength), '8-6-6-6-4 reps', 'El resumen de reps debe coincidir');
 
-// Ciclo a 8 reps
-const reps8Res = app.cycleExerciseReps('lunes', testExId, 8);
-assert.equal(reps8Res.reps, 8, 'Debe configurar dinámicamente 8 reps');
-const ex8 = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
-assert.equal(app.getExerciseSetReps(ex8, 1), 8, 'La serie 2 debe ser de 8 reps');
+const secExStrength = dayExercisesStrength[1]; // Secundario
+assert.equal(secExStrength.sets, 4, 'El secundario debe tener 4 series');
+assert.equal(secExStrength.reps, 8, 'El secundario debe prescribir 8 reps');
+assert.deepEqual(Array.from(secExStrength.seriesReps), [8, 8, 8, 8], 'El secundario debe tener [8, 8, 8, 8]');
 
-// Ciclo a 10 reps
-const reps10Res = app.cycleExerciseReps('lunes', testExId, 10);
-assert.equal(reps10Res.reps, 10, 'Debe configurar dinámicamente 10 reps');
+const accExStrength = dayExercisesStrength[dayExercisesStrength.length - 1]; // Accesorio
+assert.equal(accExStrength.sets, 3, 'El accesorio en fuerza debe tener 3 series');
+assert.equal(accExStrength.reps, 10, 'El accesorio en fuerza debe prescribir 10 reps');
+assert.deepEqual(Array.from(accExStrength.seriesReps), [10, 10, 10], 'El accesorio debe tener [10, 10, 10]');
 
-// Ciclo a Pirámide dinámica (12-10-8-6)
-const repsPyrRes = app.cycleExerciseReps('lunes', testExId, 'pyramid');
-assert.equal(repsPyrRes.repsScheme, 'pyramid', 'El esquema debe ser piramidal');
-const exPyr = app.getState().schedule.lunes.exercises.find(e => e.id === testExId);
-assert.equal(app.getExerciseSetReps(exPyr, 0), 12, 'Serie 1 en pirámide debe ser 12 reps');
-assert.equal(app.getExerciseSetReps(exPyr, 1), 10, 'Serie 2 en pirámide debe ser 10 reps');
-assert.equal(app.getExerciseSetReps(exPyr, 2), 8, 'Serie 3 en pirámide debe ser 8 reps');
-assert.equal(app.getExerciseSetReps(exPyr, 3), 6, 'Serie 4 en pirámide debe ser 6 reps');
-assert.equal(app.formatExerciseRepsSummary(exPyr), '12-10-8-6 reps', 'El resumen debe reflejar la pirámide dinámica');
+// Caso 2: Objetivo Hipertrofia (hypertrophy)
+app.saveUserProfile({
+  gender: 'male',
+  weightKg: 78,
+  age: 30,
+  fitnessLevel: 'intermediate',
+  primaryGoal: 'hypertrophy',
+  limitations: 'none'
+});
+const dayExercisesHyp = app.getState().schedule.lunes.exercises;
+const compExHyp = dayExercisesHyp[0];
+assert.equal(compExHyp.repsScheme, 'pyramid', 'Primario en hipertrofia debe ser piramidal');
+assert.deepEqual(Array.from(compExHyp.seriesReps), [12, 10, 8, 6], 'Primario debe prescribir 12-10-8-6 reps');
+assert.equal(app.formatExerciseRepsSummary(compExHyp), '12-10-8-6 reps', 'Resumen de hipertrofia debe ser 12-10-8-6 reps');
 
-// Ajuste dinámico de cantidad de series (+ / -)
-const seriesCountPlus = app.adjustExerciseSeriesCount('lunes', testExId, 1);
-assert.equal(seriesCountPlus, 5, 'Debe incrementar dinámicamente a 5 series');
-const seriesCountMinus = app.adjustExerciseSeriesCount('lunes', testExId, -2);
-assert.equal(seriesCountMinus, 3, 'Debe reducir dinámicamente a 3 series');
+// Caso 3: Objetivo Pérdida de Grasa (fat_loss)
+app.saveUserProfile({
+  gender: 'female',
+  weightKg: 65,
+  age: 28,
+  fitnessLevel: 'intermediate',
+  primaryGoal: 'fat_loss',
+  limitations: 'none'
+});
+const dayExercisesFat = app.getState().schedule.lunes.exercises;
+const exFat = dayExercisesFat[0];
+assert.deepEqual(Array.from(exFat.seriesReps), [15, 14, 13, 12], 'En pérdida de grasa debe prescribir repeticiones metabólicas [15, 14, 13, 12]');
 
-// Verificación de elementos DOM para repeticiones dinámicas
-assert.ok(doc.querySelector('.btn-reps-dynamic-chip'), 'Las tarjetas de ejercicios deben incluir el chip interactivo de repeticiones dinámicas');
-assert.ok(doc.getElementById('btn-focus-reps'), 'La pantalla de entrenamiento activo debe incluir el selector de repeticiones dinámicas #btn-focus-reps');
+// Verificación de elementos DOM:
+// En la tarjeta de ejercicios se debe mostrar el badge de repeticiones prescritas por la app (.badge-reps-prescribed)
+assert.ok(doc.querySelector('.badge-reps-prescribed'), 'Las tarjetas de ejercicios deben incluir el badge informativo de repeticiones prescritas');
+
+// Comprobar que NO existen controles para que el usuario altere arbitrariamente las repeticiones
+assert.equal(doc.getElementById('btn-focus-reps'), null, 'NO debe existir el botón interactivo #btn-focus-reps para modificación del usuario');
+assert.equal(doc.getElementById('btn-focus-add-set'), null, 'NO debe existir el botón #btn-focus-add-set');
+assert.equal(doc.getElementById('btn-focus-remove-set'), null, 'NO debe existir el botón #btn-focus-remove-set');
+assert.equal(doc.querySelectorAll('.btn-quick-rep-preset').length, 0, 'NO deben existir selectores de repeticiones arbitrarias para el usuario');
 
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.1 (Series y Repeticiones Dinámicas 6, 8, 10, 12, 15, Pirámides, Perfil Biométrico y 28 módulos verificados) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.2 (Series y Repeticiones Dinámicas Prescritas por la App sin Modificación Manual, Perfil Biométrico y 28 módulos verificados) pasaron con éxito.');
 process.exit(0);
+
 

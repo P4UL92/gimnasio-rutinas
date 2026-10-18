@@ -1381,13 +1381,10 @@
     btnAltSwapChip.addEventListener('click', () => openExerciseSwapModal(dayId, ex.id));
 
     const repsLabel = formatExerciseRepsSummary(ex);
-    const btnRepsChip = document.createElement('button');
-    btnRepsChip.type = 'button';
-    btnRepsChip.className = 'btn-rir-chip btn-reps-dynamic-chip';
-    btnRepsChip.dataset.exerciseId = ex.id;
-    btnRepsChip.title = 'Repeticiones dinámicas (6, 8, 10, 12, 15 o Pirámide). Toca para alternar.';
-    btnRepsChip.textContent = `🔁 ${repsLabel}`;
-    btnRepsChip.addEventListener('click', () => cycleExerciseReps(dayId, ex.id));
+    const repsBadge = document.createElement('span');
+    repsBadge.className = 'badge-reps-prescribed';
+    repsBadge.title = 'Series y repeticiones dinámicas establecidas por la aplicación';
+    repsBadge.textContent = `📊 ${repsLabel}`;
 
     const btnEdit = document.createElement('button');
     btnEdit.type = 'button';
@@ -1395,7 +1392,7 @@
     btnEdit.textContent = '✏️ Editar';
     btnEdit.addEventListener('click', () => openExerciseDialog(ex));
 
-    intensityRow.append(btnModeChip, btnRirChip, btnRepsChip, btnCalcChip, btnAltSwapChip, btnEdit);
+    intensityRow.append(btnModeChip, btnRirChip, repsBadge, btnCalcChip, btnAltSwapChip, btnEdit);
     optionsBody.appendChild(intensityRow);
 
     const tutRow = document.createElement('div');
@@ -3271,12 +3268,12 @@
     const repsSummaryText = formatExerciseRepsSummary(ex);
     if (setsRepsLabel) {
       setsRepsLabel.textContent = `${ex.sets || 4} series × ${repsSummaryText}`;
-      setsRepsLabel.title = 'Toca para cambiar repeticiones dinámicas (6, 8, 10, 12, 15 o Pirámide)';
-      setsRepsLabel.style.cursor = 'pointer';
+      setsRepsLabel.title = 'Series y repeticiones dinámicas prescritas por la aplicación';
+      setsRepsLabel.style.cursor = 'default';
     }
     if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
 
-    // 4. Cuadrícula de las Series con Repeticiones Dinámicas por Serie
+    // 4. Cuadrícula de las Series con Repeticiones Dinámicas Prescritas por la Aplicación
     const setsGrid = document.getElementById('focus-sets-grid');
     const totalSets = Number(ex.sets) || 4;
     const doneCount = (ex.completedSets || []).filter(Boolean).length;
@@ -3341,7 +3338,6 @@
 
     // 7. Menú Agrupado de Opciones Secundarias del Ejercicio
     const btnSwap = document.getElementById('btn-focus-swap-alt');
-    const btnRepsFocus = document.getElementById('btn-focus-reps');
     const btnMode = document.getElementById('btn-focus-set-mode');
     const btnRir = document.getElementById('btn-focus-rir');
     const btnTut = document.getElementById('btn-focus-tut');
@@ -3354,9 +3350,6 @@
     if (btnSwap) {
       btnSwap.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
       btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
-    }
-    if (btnRepsFocus) {
-      btnRepsFocus.textContent = `🔁 Reps: ${repsSummaryText}`;
     }
     if (btnMode) {
       btnMode.className = `btn-set-mode-chip mode-${setModeKey}`;
@@ -4018,42 +4011,6 @@
       }
       renderWorkoutFocusScreen();
     });
-    document.getElementById('btn-focus-reps')?.addEventListener('click', () => {
-      const ex = getActiveFocusExercise();
-      if (ex) cycleExerciseReps(state.selectedDay, ex.id);
-    });
-    document.getElementById('focus-sets-reps-label')?.addEventListener('click', () => {
-      const ex = getActiveFocusExercise();
-      if (ex) cycleExerciseReps(state.selectedDay, ex.id);
-    });
-    document.getElementById('btn-focus-add-set')?.addEventListener('click', () => {
-      const ex = getActiveFocusExercise();
-      if (ex) adjustExerciseSeriesCount(state.selectedDay, ex.id, 1);
-    });
-    document.getElementById('btn-focus-remove-set')?.addEventListener('click', () => {
-      const ex = getActiveFocusExercise();
-      if (ex) adjustExerciseSeriesCount(state.selectedDay, ex.id, -1);
-    });
-
-    document.querySelectorAll('.btn-quick-rep-preset').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset;
-        const repsInput = document.getElementById('edit-reps');
-        const restInput = document.getElementById('edit-rest');
-        if (preset === 'pyramid') {
-          if (repsInput) repsInput.value = '12';
-          if (restInput) restInput.value = '75';
-        } else {
-          const num = Number(preset) || 12;
-          if (repsInput) repsInput.value = String(num);
-          if (restInput) {
-            restInput.value = num <= 8 ? '90' : (num >= 15 ? '60' : '75');
-          }
-        }
-        triggerHaptic([20]);
-      });
-    });
-
     document.getElementById('btn-focus-edit')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
       if (ex) openExerciseDialog(ex);
