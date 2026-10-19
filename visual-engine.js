@@ -292,20 +292,68 @@
     return renderExerciseSprite(exercise);
   }
 
-  // Determina qué zonas anatómicas se iluminan según el día seleccionado
+  // Determina qué zonas anatómicas se iluminan según el día seleccionado y los músculos trabajados
   function getActiveAnatomyZones(day) {
-    const text = `${day.title} ${day.muscleGroup} ${(day.exercises || []).map(e => e.muscle).join(' ')}`.toLowerCase();
+    if (!day || !day.exercises || day.exercises.length === 0) {
+      return {
+        lats: false, traps: false, biceps: false, chest: false,
+        triceps: false, shoulders: false, core: false, quads: false,
+        glutesHams: false, calves: false
+      };
+    }
+
+    const dayGroup = (day.muscleGroup || '').toLowerCase();
+    const dayTitle = (day.title || '').toLowerCase();
+    const muscles = (day.exercises || []).map(e => (e.muscle || '').toLowerCase());
+
+    const hasMuscle = (regex) => muscles.some(m => regex.test(m));
+
+    // 1. Bíceps Braquial (Brazos) - Excluir bíceps femoral (pierna)
+    const biceps = hasMuscle(/\b(b[ií]ceps\s+(?!femoral)|braquial)\b/i) ||
+      (/\b(b[ií]ceps\b(?!.*femoral)|brazos)\b/i.test(dayGroup) && !dayGroup.includes('pierna'));
+
+    // 2. Tríceps (Brazos)
+    const triceps = hasMuscle(/\btr[ií]ceps\b/i) || dayGroup.includes('tríceps') || dayGroup.includes('triceps');
+
+    // 3. Pectoral / Pecho (Excluir notas de mancuerna al pecho en sentadillas)
+    const chest = hasMuscle(/\b(pecho|pectoral)\b/i) || dayGroup.includes('pecho') || dayGroup.includes('pectoral');
+
+    // 4. Dorsal / Espalda
+    const lats = hasMuscle(/\b(espalda|dorsal|romboides|redondo)\b/i) || dayGroup.includes('espalda') || dayGroup.includes('dorsal');
+
+    // 5. Deltoides / Hombros
+    const shoulders = hasMuscle(/\b(hombro|deltoides)\b/i) || dayGroup.includes('hombro') || dayGroup.includes('deltoides');
+
+    // 6. Trapecio y Espalda Alta
+    const traps = hasMuscle(/\btrapecio\b/i) || dayGroup.includes('trapecio');
+
+    // 7. Core y Abdomen (solo si es grupo muscular primario trabajado)
+    const core = hasMuscle(/\b(abdomen|abdominal|recto\s+abdominal|oblicuos)\b/i) ||
+      dayGroup.includes('abdomen') || dayTitle.includes('core');
+
+    // 8. Cuádriceps (Pierna Anterior)
+    const quads = hasMuscle(/\b(cu[aá]driceps|vasto|recto\s+femoral|aductores)\b/i) ||
+      dayGroup.includes('cuádriceps') || dayGroup.includes('pierna');
+
+    // 9. Glúteo y Femoral (Isquiotibiales / Bíceps Femoral)
+    const glutesHams = hasMuscle(/\b(femoral|isquiotibial|gl[uú]teo|abductor)\b/i) ||
+      dayGroup.includes('glúteo') || dayGroup.includes('femoral');
+
+    // 10. Gemelos y Sóleo (Pantorrilla)
+    const calves = hasMuscle(/\b(gemelos|s[oó]leo|pantorrilla|gastrocnemio|talones)\b/i) ||
+      dayGroup.includes('gemelos') || dayGroup.includes('pantorrilla');
+
     return {
-      lats: text.includes('espalda') || text.includes('dorsal') || text.includes('romboides') || text.includes('torso'),
-      traps: text.includes('trapecio') || text.includes('espalda') || text.includes('posterior'),
-      biceps: text.includes('bíceps') || text.includes('biceps') || text.includes('braquial') || text.includes('brazos'),
-      chest: text.includes('pecho') || text.includes('pectoral') || text.includes('torso'),
-      triceps: text.includes('tríceps') || text.includes('triceps') || text.includes('brazos'),
-      shoulders: text.includes('hombro') || text.includes('deltoides') || text.includes('torso'),
-      core: text.includes('core') || text.includes('abdomen') || text.includes('abdominal'),
-      quads: text.includes('cuádriceps') || text.includes('pierna') || text.includes('aductores'),
-      glutesHams: text.includes('glúteo') || text.includes('femoral') || text.includes('isquiotibiales') || text.includes('pierna'),
-      calves: text.includes('gemelos') || text.includes('pantorrilla') || text.includes('sóleo') || text.includes('talones')
+      lats,
+      traps,
+      biceps,
+      chest,
+      triceps,
+      shoulders,
+      core,
+      quads,
+      glutesHams,
+      calves
     };
   }
 
@@ -315,7 +363,7 @@
     const activeLabels = [];
     if (z.lats) activeLabels.push('Dorsal / Espalda');
     if (z.traps) activeLabels.push('Trapecio');
-    if (z.biceps) activeLabels.push('Bíceps');
+    if (z.biceps) activeLabels.push('Bíceps Braquial');
     if (z.chest) activeLabels.push('Pectoral');
     if (z.triceps) activeLabels.push('Tríceps');
     if (z.shoulders) activeLabels.push('Deltoides');
@@ -330,26 +378,30 @@
       <div class="anatomy-raster-card" role="img" aria-label="Mapa anatómico corporal frontal y dorsal de músculos activos">
         <div class="anatomy-raster-stage">
           <img src="assets/sprites/anatomy_body_map.jpg" alt="Mapa Anatómico Frontal y Dorsal" class="anatomy-raster-img" loading="eager">
-          <!-- Hotspots Vista Frontal (Izquierda ~28% X) -->
-          <span class="${dotClass(z.shoulders)}" style="left: 20%; top: 24%;" title="Deltoides Frontal"></span>
-          <span class="${dotClass(z.shoulders)}" style="left: 36%; top: 24%;" title="Deltoides Frontal"></span>
-          <span class="${dotClass(z.chest)}" style="left: 28%; top: 28%;" title="Pectoral Mayor"></span>
-          <span class="${dotClass(z.biceps)}" style="left: 17%; top: 34%;" title="Bíceps Braquial"></span>
-          <span class="${dotClass(z.biceps)}" style="left: 39%; top: 34%;" title="Bíceps Braquial"></span>
-          <span class="${dotClass(z.core)}" style="left: 28%; top: 41%;" title="Core y Recto Abdominal"></span>
-          <span class="${dotClass(z.quads)}" style="left: 24%; top: 58%;" title="Cuádriceps"></span>
-          <span class="${dotClass(z.quads)}" style="left: 32%; top: 58%;" title="Cuádriceps"></span>
-          <!-- Hotspots Vista Posterior / Dorsal (Derecha ~72% X) -->
-          <span class="${dotClass(z.traps)}" style="left: 72%; top: 22%;" title="Trapecio y Espalda Alta"></span>
-          <span class="${dotClass(z.lats)}" style="left: 67%; top: 33%;" title="Dorsal Ancho"></span>
-          <span class="${dotClass(z.lats)}" style="left: 77%; top: 33%;" title="Dorsal Ancho"></span>
-          <span class="${dotClass(z.triceps)}" style="left: 61%; top: 35%;" title="Tríceps"></span>
-          <span class="${dotClass(z.triceps)}" style="left: 83%; top: 35%;" title="Tríceps"></span>
-          <span class="${dotClass(z.glutesHams)}" style="left: 72%; top: 49%;" title="Glúteos"></span>
-          <span class="${dotClass(z.glutesHams)}" style="left: 68%; top: 62%;" title="Isquiotibiales / Femoral"></span>
-          <span class="${dotClass(z.glutesHams)}" style="left: 76%; top: 62%;" title="Isquiotibiales / Femoral"></span>
-          <span class="${dotClass(z.calves)}" style="left: 68%; top: 78%;" title="Gemelos y Sóleo"></span>
-          <span class="${dotClass(z.calves)}" style="left: 76%; top: 78%;" title="Gemelos y Sóleo"></span>
+          <!-- Hotspots Vista Frontal (Izquierda centrado en ~25% X) -->
+          <span class="${dotClass(z.shoulders)}" style="left: 17%; top: 29%;" title="Deltoides Frontal"></span>
+          <span class="${dotClass(z.shoulders)}" style="left: 33%; top: 29%;" title="Deltoides Frontal"></span>
+          <span class="${dotClass(z.chest)}" style="left: 21%; top: 33%;" title="Pectoral Mayor"></span>
+          <span class="${dotClass(z.chest)}" style="left: 29%; top: 33%;" title="Pectoral Mayor"></span>
+          <span class="${dotClass(z.biceps)}" style="left: 14%; top: 38%;" title="Bíceps Braquial"></span>
+          <span class="${dotClass(z.biceps)}" style="left: 36%; top: 38%;" title="Bíceps Braquial"></span>
+          <span class="${dotClass(z.core)}" style="left: 25%; top: 43%;" title="Core y Recto Abdominal"></span>
+          <span class="${dotClass(z.quads)}" style="left: 21%; top: 62%;" title="Cuádriceps"></span>
+          <span class="${dotClass(z.quads)}" style="left: 29%; top: 62%;" title="Cuádriceps"></span>
+          <!-- Hotspots Vista Posterior / Dorsal (Derecha centrado en ~75% X) -->
+          <span class="${dotClass(z.traps)}" style="left: 75%; top: 24%;" title="Trapecio y Espalda Alta"></span>
+          <span class="${dotClass(z.shoulders)}" style="left: 67%; top: 29%;" title="Deltoides Posterior"></span>
+          <span class="${dotClass(z.shoulders)}" style="left: 83%; top: 29%;" title="Deltoides Posterior"></span>
+          <span class="${dotClass(z.lats)}" style="left: 70%; top: 36%;" title="Dorsal Ancho"></span>
+          <span class="${dotClass(z.lats)}" style="left: 80%; top: 36%;" title="Dorsal Ancho"></span>
+          <span class="${dotClass(z.triceps)}" style="left: 64%; top: 39%;" title="Tríceps"></span>
+          <span class="${dotClass(z.triceps)}" style="left: 86%; top: 39%;" title="Tríceps"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 72%; top: 52%;" title="Glúteo Mayor"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 78%; top: 52%;" title="Glúteo Mayor"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 71%; top: 64%;" title="Isquiotibiales / Femoral"></span>
+          <span class="${dotClass(z.glutesHams)}" style="left: 79%; top: 64%;" title="Isquiotibiales / Femoral"></span>
+          <span class="${dotClass(z.calves)}" style="left: 71%; top: 80%;" title="Gemelos y Sóleo"></span>
+          <span class="${dotClass(z.calves)}" style="left: 79%; top: 80%;" title="Gemelos y Sóleo"></span>
         </div>
         <div class="anatomy-active-tags">
           ${

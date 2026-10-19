@@ -68,6 +68,23 @@ assert.ok(fs.existsSync(path.join(root, 'assets/sprites/anatomy_body_map.jpg')),
 const activeHotspots = doc.querySelectorAll('#day-anatomy-panel .anatomy-hotspot.is-active');
 assert.ok(activeHotspots.length >= 4, 'El mapa anatómico debe iluminar los hotspots musculares activos del día');
 
+// Validación de correspondencia anatómica estricta por día (Cero falsos positivos)
+app.selectDay('miercoles');
+const wedActiveTags = [...doc.querySelectorAll('#day-anatomy-panel .muscle-zone.is-active')].map(el => el.textContent.trim());
+assert.ok(!wedActiveTags.includes('Bíceps Braquial'), 'Miércoles de pierna NO debe tener tag activo de Bíceps Braquial');
+assert.ok(!wedActiveTags.includes('Pectoral'), 'Miércoles de pierna NO debe tener tag activo de Pectoral');
+assert.ok(wedActiveTags.includes('Cuádriceps') && wedActiveTags.includes('Gemelos / Sóleo'), 'Miércoles debe incluir Cuádriceps y Gemelos');
+const wedActiveBicepsDots = doc.querySelectorAll('#day-anatomy-panel .anatomy-hotspot.is-active[title="Bíceps Braquial"]');
+assert.equal(wedActiveBicepsDots.length, 0, 'Miércoles no debe tener hotspots activos de bíceps');
+
+app.selectDay('jueves');
+const thuActiveTags = [...doc.querySelectorAll('#day-anatomy-panel .muscle-zone.is-active')].map(el => el.textContent.trim());
+assert.ok(!thuActiveTags.includes('Pectoral'), 'Jueves de Hombro/Core NO debe incluir Pectoral');
+assert.ok(thuActiveTags.includes('Deltoides') && thuActiveTags.includes('Core / Abdomen'), 'Jueves debe incluir Deltoides y Core');
+const thuActiveChestDots = doc.querySelectorAll('#day-anatomy-panel .anatomy-hotspot.is-active[title="Pectoral Mayor"]');
+assert.equal(thuActiveChestDots.length, 0, 'Jueves no debe tener hotspots activos de pectoral');
+app.selectDay('lunes');
+
 const barCols = doc.querySelectorAll('#daily-bars-chart .bar-col');
 assert.equal(barCols.length, 7, 'El gráfico de barras debe mostrar los 7 días (Lunes a Domingo)');
 
