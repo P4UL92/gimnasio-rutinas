@@ -259,30 +259,13 @@
     return EXERCISE_SPRITE_CATALOG[type] || EXERCISE_SPRITE_CATALOG['shoulder-press'];
   }
 
-  // Genera el contenedor de imagen/sprite rasterizado del ejercicio (Cero SVGs para animaciones)
+  // Genera el contenedor de imagen/sprite rasterizado del ejercicio (Cero SVGs y sin texto superpuesto sobre la imagen)
   function renderExerciseSprite(exercise) {
     const info = getExerciseSpriteInfo(exercise);
-    const loadLabel =
-      exercise.loadType === 'nivel'
-        ? `NIVEL ${exercise.loadValue}`
-        : `${exercise.loadValue} KG`;
 
     return `
       <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="button" tabindex="0" title="Toca para abrir el Visor Técnico de 3 Fases" aria-label="Demostración visual del ejercicio ${exercise.name}. Toca para ampliar las 3 fases">
         <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
-        <div class="sprite-overlay-badge">
-          <span class="sprite-badge-tag" title="${info.label}">${info.label}</span>
-          <span class="sprite-badge-load">${loadLabel}</span>
-        </div>
-        <div class="sprite-overlay-bottom">
-          <span class="sprite-phase-pills" aria-hidden="true">
-            <span class="phase-pill-dot dot-1"></span>
-            <span class="phase-pill-dot dot-2"></span>
-            <span class="phase-pill-dot dot-3"></span>
-            <span class="phase-pill-text">3 FASES</span>
-          </span>
-          <span class="sprite-zoom-hint" aria-hidden="true">🔍 3 Fases</span>
-        </div>
       </div>
     `.trim();
   }

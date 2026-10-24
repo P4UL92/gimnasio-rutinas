@@ -269,18 +269,18 @@
 
       <!-- Tarjeta Principal del Ejercicio en Curso (Optimizada en Vertical) -->
       <article class="focus-exercise-card" id="focus-exercise-card">
-        <!-- 1. Ilustración / Sprite en 3 Fases Grande -->
-        <div id="focus-sprite-stage" class="focus-sprite-stage" role="button" tabindex="0" aria-label="Ampliar demostración biomecánica en 3 fases">
-          <!-- Sprite renderizado por app.js -->
-        </div>
-
-        <!-- 2. Nombre del Ejercicio y Músculo -->
-        <div class="focus-ex-header">
+        <!-- 1. Título del Ejercicio en la Cabecera de la Card -->
+        <header class="focus-ex-header">
+          <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
           <div class="focus-ex-badges">
             <span id="focus-ex-muscle-badge" class="badge badge-muscle">🎯 Espalda</span>
             <span id="focus-ex-equip-badge" class="badge">⚙️ Polea</span>
           </div>
-          <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
+        </header>
+
+        <!-- 2. Ilustración / Sprite en 3 Fases Grande (Solo Imagen sin Texto) -->
+        <div id="focus-sprite-stage" class="focus-sprite-stage" role="button" tabindex="0" aria-label="Ampliar demostración biomecánica en 3 fases">
+          <!-- Sprite renderizado por app.js -->
         </div>
 
         <!-- 3. Controles Esenciales: Peso / Nivel + Meta de Series y Repeticiones -->
@@ -1178,13 +1178,13 @@
         <button type="submit" value="close" class="btn-icon-close" aria-label="Cerrar visor técnico">✕</button>
       </header>
       <div class="dialog-body sprite-viewer-body">
-        <!-- Escenario del Sprite Ampliado -->
+        <!-- Escenario del Sprite Ampliado (Solo Imagen sin Texto Superpuesto) -->
         <div id="sprite-viewer-stage" class="sprite-viewer-stage mode-animated">
           <div id="sprite-viewer-frame" class="sprite-viewer-frame"></div>
-          <div class="sprite-viewer-badges">
-            <span id="sprite-viewer-phase-badge" class="badge badge-muscle">Secuencia Animada (Fases 1 → 2 → 3)</span>
-            <span id="sprite-viewer-load-badge" class="badge badge-user-base">Carga Actual</span>
-          </div>
+        </div>
+        <div class="sprite-viewer-badges">
+          <span id="sprite-viewer-phase-badge" class="badge badge-muscle">Secuencia Animada (Fases 1 → 2 → 3)</span>
+          <span id="sprite-viewer-load-badge" class="badge badge-user-base">Carga Actual</span>
         </div>
 
         <!-- Selector de Fase Individual o Vista Completa -->

@@ -1191,13 +1191,14 @@
     const contentCol = document.createElement('div');
     contentCol.className = 'exercise-content-col';
 
-    const topRow = document.createElement('div');
-    topRow.className = 'exercise-top';
+    const topRow = document.createElement('header');
+    topRow.className = 'exercise-top exercise-card-header';
 
     const titleGroup = document.createElement('div');
     titleGroup.className = 'exercise-title-group';
 
     const h3 = document.createElement('h3');
+    h3.className = 'exercise-card-title';
     h3.textContent = ex.name;
     titleGroup.appendChild(h3);
 
@@ -1254,7 +1255,7 @@
 
     loadBox.append(btnMinus, btnUnit, btnPlus);
     topRow.append(titleGroup, loadBox);
-    contentCol.appendChild(topRow);
+    li.appendChild(topRow);
 
     // CONTROLES ESENCIALES EN PANTALLA: Series y Repeticiones (4 × 12)
     const setsRow = document.createElement('div');
@@ -3218,28 +3219,14 @@
       });
     }
 
-    // 1. Ilustración / Sprite en 3 Fases (usando clases propias para no alterar selectores de #exercises-list)
+    // 1. Ilustración / Sprite en 3 Fases (Solo imagen limpia sin texto superpuesto)
     const spriteStage = document.getElementById('focus-sprite-stage');
     if (spriteStage && GYM_VISUALS) {
       const spriteInfo = GYM_VISUALS.getExerciseSpriteInfo(ex);
-      const loadText = ex.loadType === 'nivel' ? `Nivel ${ex.loadValue}` : `${ex.loadValue} kg`;
       const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
       spriteStage.innerHTML = `
         <div class="focus-sprite-box ${spriteInfo.cssClass || ''} ${rowClass}" data-anim-type="${spriteInfo.typeKey || ''}">
           <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}');"></div>
-          <div class="sprite-overlay-badge">
-            <span class="sprite-badge-tag" title="${spriteInfo.label}">🎬 ${spriteInfo.label}</span>
-            <span class="sprite-badge-load">${loadText}</span>
-          </div>
-          <div class="sprite-overlay-bottom">
-            <span class="sprite-phase-pills" aria-hidden="true">
-              <span class="phase-pill-dot dot-1"></span>
-              <span class="phase-pill-dot dot-2"></span>
-              <span class="phase-pill-dot dot-3"></span>
-              <span class="phase-pill-text">3 FASES</span>
-            </span>
-            <span class="sprite-zoom-hint">🔍 Ampliar 3 Fases</span>
-          </div>
         </div>
       `;
     }

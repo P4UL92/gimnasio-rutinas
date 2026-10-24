@@ -62,6 +62,20 @@ assert.equal(exerciseSprites.length, 6, 'Cada uno de los 6 ejercicios del día d
 const spriteFrames = doc.querySelectorAll('.exercise-sprite-frame');
 assert.equal(spriteFrames.length, 6, 'Cada ejercicio debe tener su fotograma de animación por sprite');
 
+// 2.1 Verificar que el nombre del ejercicio esté como TÍTULO de la card (arriba) y que la imagen NO tenga texto superpuesto
+const renderedCards = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.equal(renderedCards.length, 6, 'Deben renderizarse las 6 cards de ejercicios del día');
+renderedCards.forEach((card, idx) => {
+  const firstChild = card.firstElementChild;
+  assert.ok(firstChild && firstChild.classList.contains('exercise-card-header'), `La card ${idx + 1} debe tener el encabezado con el título en la parte superior`);
+  const titleEl = firstChild.querySelector('h3.exercise-card-title');
+  assert.ok(titleEl && titleEl.textContent.trim().length > 0, `La card ${idx + 1} debe mostrar el nombre del ejercicio como título de la card`);
+  const spriteBox = card.querySelector('.exercise-sprite-box');
+  assert.ok(spriteBox, `La card ${idx + 1} debe incluir el contenedor de imagen del ejercicio`);
+  assert.equal(spriteBox.textContent.trim(), '', `La imagen del ejercicio en la card ${idx + 1} NO debe contener texto superpuesto`);
+  assert.equal(spriteBox.querySelectorAll('.sprite-overlay-badge, .sprite-overlay-bottom').length, 0, 'No deben existir overlays de texto sobre la imagen del ejercicio');
+});
+
 const anatomyRasterImg = doc.querySelector('#day-anatomy-panel .anatomy-raster-img');
 assert.ok(anatomyRasterImg, 'Debe renderizar el mapa anatómico corporal rasterizado');
 assert.ok(fs.existsSync(path.join(root, 'assets/sprites/anatomy_body_map.jpg')), 'El archivo anatomy_body_map.jpg debe existir en disco');
@@ -405,6 +419,8 @@ assert.equal(workoutLaunch.activeScreen, 'workout', 'Al iniciar el día debe cam
 assert.equal(doc.getElementById('workout-focus-screen').hidden, false, 'La pantalla de entrenamiento activo debe mostrarse');
 assert.equal(doc.getElementById('screen-plan').hidden, true, 'La pantalla del plan general debe ocultarse durante el enfoque del ejercicio');
 assert.ok(doc.querySelector('#focus-sprite-stage .focus-sprite-box'), 'La pantalla de entrenamiento debe mostrar la ilustración/sprite de 3 fases del ejercicio activo');
+assert.equal(doc.querySelector('#focus-sprite-stage .focus-sprite-box').textContent.trim(), '', 'La imagen del ejercicio en la pantalla activa NO debe tener texto superpuesto');
+assert.ok(doc.getElementById('focus-exercise-card').firstElementChild.classList.contains('focus-ex-header'), 'El título del ejercicio debe estar en la cabecera superior de la card activa');
 assert.equal(doc.getElementById('focus-load-main').textContent, 'Nivel 6', 'Debe mostrar la carga esencial del primer ejercicio de Lunes (Nivel 6)');
 assert.equal(doc.querySelectorAll('#focus-sets-grid .btn-focus-set').length, 4, 'Debe mostrar los 4 botones grandes de series (4x12 reps)');
 assert.ok(doc.getElementById('focus-rest-digits').textContent.includes(':'), 'Debe mostrar el temporizador de descanso integrado en la pantalla del ejercicio');

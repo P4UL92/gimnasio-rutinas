@@ -841,6 +841,9 @@ body.animations-paused .phase-pill-dot {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -849,9 +852,14 @@ body.animations-paused .phase-pill-dot {
   background: linear-gradient(160deg var(--in-oklab), rgba(16, 185, 129, 0.12), var(--bg-card));
 }
 
+.exercise-card-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
 .exercise-visual-layout {
   display: grid;
-  grid-template-columns: 168px 1fr;
+  grid-template-columns: 180px 1fr;
   gap: 14px;
   align-items: center;
 }
@@ -873,10 +881,13 @@ body.animations-paused .phase-pill-dot {
   gap: 10px;
 }
 
-.exercise-title-group h3 {
+.exercise-title-group h3,
+.exercise-card-title {
   margin: 0 0 4px;
-  font-size: 1.02rem;
-  font-weight: 700;
+  font-size: 1.06rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
 }
 
 .exercise-meta {
