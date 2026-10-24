@@ -241,9 +241,14 @@
          ===================================================================== -->
     <section id="workout-focus-screen" class="app-screen-panel workout-focus-screen" data-screen-panel="workout" aria-labelledby="focus-ex-title" hidden>
       <div class="focus-screen-topbar">
-        <button type="button" id="btn-exit-workout-screen" class="btn-secondary btn-back-plan">
-          ← Volver al Día
-        </button>
+        <div class="focus-topbar-left">
+          <button type="button" id="btn-exit-workout-screen" class="btn-secondary btn-back-plan" title="Volver al plan de entrenamiento">
+            ← Volver
+          </button>
+          <button type="button" id="btn-focus-truncate-top" class="btn-truncate-pill" title="Truncar o finalizar la sesión antes de tiempo">
+            ⚠️ Truncar
+          </button>
+        </div>
         <div class="focus-live-clock" title="Cronómetro de sesión en vivo">
           <span id="focus-clock-dot" class="stopwatch-pulse-dot"></span>
           <strong id="focus-stopwatch-display" class="focus-clock-digits">00:00:00</strong>
@@ -271,7 +276,12 @@
       <article class="focus-exercise-card" id="focus-exercise-card">
         <!-- 1. Título del Ejercicio en la Cabecera de la Card -->
         <header class="focus-ex-header">
-          <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
+          <div class="focus-ex-title-row">
+            <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
+            <button type="button" id="btn-focus-skip-exercise" class="btn-skip-ex-link" title="Omitir o terminar este ejercicio y pasar al siguiente">
+              ⏭️ Saltar Ejercicio
+            </button>
+          </div>
           <div class="focus-ex-badges">
             <span id="focus-ex-muscle-badge" class="badge badge-muscle">🎯 Espalda</span>
             <span id="focus-ex-equip-badge" class="badge">⚙️ Polea</span>
@@ -349,7 +359,10 @@
 
       <div class="focus-screen-footer">
         <button type="button" id="btn-focus-finish-workout" class="btn-primary btn-finish-day-wide">
-          🏆 Terminar y Registrar Sesión del Día
+          🏆 Terminar Sesión
+        </button>
+        <button type="button" id="btn-focus-truncate-workout" class="btn-secondary btn-truncate-workout-wide">
+          ⚠️ Truncar Sesión
         </button>
       </div>
     </section>
@@ -1284,6 +1297,173 @@
         <button type="submit" value="close" class="btn-primary" style="width: 100%;">Listo</button>
       </footer>
     </form>
+  </dialog>
+
+  <!-- Modal Nativo: Truncar o Salir Anticipadamente de la Sesión -->
+  <dialog id="workout-truncate-dialog" class="gym-dialog truncate-dialog" closedby="any" aria-labelledby="truncate-dialog-title">
+    <div class="dialog-body truncate-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">FINALIZACIÓN ANTICIPADA</span>
+          <h2 id="truncate-dialog-title">⚠️ Truncar Sesión de Entrenamiento</h2>
+        </div>
+        <button type="button" id="btn-close-truncate-dialog" class="btn-icon-close" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="truncate-content">
+        <p class="truncate-lead">
+          ¿Deseas dar por terminada la sesión ahora? Puedes guardar el progreso realizado o descartarlo.
+        </p>
+
+        <div class="truncate-summary-box" id="truncate-summary-box">
+          <div class="truncate-stat">
+            <span class="stat-label">Series Realizadas</span>
+            <strong id="trunc-stat-sets">0 / 24 series (0%)</strong>
+          </div>
+          <div class="truncate-stat">
+            <span class="stat-label">Tiempo de Sesión</span>
+            <strong id="trunc-stat-time">00:00</strong>
+          </div>
+          <div class="truncate-stat">
+            <span class="stat-label">Volumen Acumulado</span>
+            <strong id="trunc-stat-vol">0 kg</strong>
+          </div>
+        </div>
+
+        <div class="truncate-actions-list">
+          <button type="button" id="btn-truncate-save-exit" class="btn-primary btn-truncate-save">
+            💾 Guardar Progreso Parcial y Salir
+          </button>
+          <button type="button" id="btn-truncate-discard-exit" class="btn-secondary btn-truncate-discard">
+            🗑️ Descartar y Salir sin Registrar
+          </button>
+          <button type="button" id="btn-truncate-cancel" class="btn-ghost btn-truncate-resume">
+            ↩️ Continuar Entrenando
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Resultados de Entrenamiento y Próxima Proyección Muscular -->
+  <dialog id="workout-results-dialog" class="gym-dialog workout-results-dialog" closedby="any" aria-labelledby="results-dialog-title">
+    <div class="dialog-body results-dialog-body">
+      <!-- 1. Cabecera Triunfal -->
+      <header class="results-dialog-header">
+        <div class="results-trophy-badge">🏆</div>
+        <h2 id="results-dialog-title" class="results-dialog-title">¡Entrenamiento Completado con Éxito!</h2>
+        <p id="results-day-subtitle" class="results-day-subtitle">Lunes · Espalda y Bíceps (Tracción / Pull)</p>
+        <span id="results-adherence-pill" class="badge badge-user-base">100% de Series Completadas · Adherencia Total</span>
+      </header>
+
+      <!-- 2. Resultados del Entrenamiento Realizado -->
+      <section class="results-section" aria-labelledby="results-kpi-heading">
+        <h3 id="results-kpi-heading" class="results-section-title">📊 Resumen del Entrenamiento Realizado</h3>
+        <div class="results-kpi-grid" id="results-kpi-grid">
+          <div class="results-kpi-card">
+            <span class="kpi-icon">⏱️</span>
+            <span class="kpi-label">Tiempo Total</span>
+            <strong id="res-time-val" class="kpi-val">45:20</strong>
+          </div>
+          <div class="results-kpi-card">
+            <span class="kpi-icon">🏋️</span>
+            <span class="kpi-label">Volumen Levantado</span>
+            <strong id="res-vol-val" class="kpi-val">4,850 kg</strong>
+          </div>
+          <div class="results-kpi-card">
+            <span class="kpi-icon">🎯</span>
+            <span class="kpi-label">Series Hechas</span>
+            <strong id="res-sets-val" class="kpi-val">24 / 24</strong>
+          </div>
+          <div class="results-kpi-card">
+            <span class="kpi-icon">🔄</span>
+            <span class="kpi-label">Repeticiones</span>
+            <strong id="res-reps-val" class="kpi-val">288 reps</strong>
+          </div>
+          <div class="results-kpi-card">
+            <span class="kpi-icon">🔥</span>
+            <span class="kpi-label">Calorías Aprox.</span>
+            <strong id="res-cal-val" class="kpi-val">~320 kcal</strong>
+          </div>
+          <div class="results-kpi-card">
+            <span class="kpi-icon">⚡</span>
+            <span class="kpi-label">Intensidad Media</span>
+            <strong id="res-rpe-val" class="kpi-val">RPE 8.0 (Óptimo)</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Actualización para la Siguiente Vez que Entrenarás los Mismos Músculos -->
+      <section class="results-section" aria-labelledby="results-next-heading">
+        <div class="results-next-banner">
+          <div class="results-next-header-row">
+            <div>
+              <span class="eyebrow" id="results-next-eyebrow">PRÓXIMO ESTÍMULO DE ESPALDA Y BÍCEPS</span>
+              <h3 id="results-next-heading" class="results-next-title">Viernes · Torso Completo</h3>
+            </div>
+            <span id="results-recovery-badge" class="badge badge-muscle">⏳ En ~72 horas (Recuperación Óptima)</span>
+          </div>
+          <p class="results-recovery-note" id="results-recovery-note">
+            Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión se aplicarán las siguientes cargas y repeticiones:
+          </p>
+        </div>
+
+        <!-- Tabla / Lista de Sobrecarga Progresiva Ejercicio por Ejercicio -->
+        <h4 class="results-subsection-title">🚀 Cargas y Repeticiones Proyectadas (Sobrecarga Progresiva)</h4>
+        <div id="results-progressions-list" class="results-progressions-list">
+          <!-- Renderizado dinámico por app.js -->
+        </div>
+
+        <!-- Nuevos Ejercicios y Sustituciones Recomendadas -->
+        <h4 class="results-subsection-title">🔄 Nuevas Variaciones y Ejercicios Sugeridos para Rotar</h4>
+        <div id="results-alternatives-list" class="results-alternatives-list">
+          <!-- Alternativas biomecánicas en polea, máquina y peso libre generadas por app.js -->
+        </div>
+
+        <!-- Seguimiento Biométrico y Recuperación -->
+        <div class="results-recovery-box">
+          <h4 class="results-subsection-title">🧬 Seguimiento Biométrico Post-Entrenamiento</h4>
+          <div class="results-recovery-grid">
+            <div class="recovery-item">
+              <span class="rec-icon">🍗</span>
+              <div>
+                <strong>Proteína Sugerida: <span id="res-protein-target">32g</span></strong>
+                <small>Consumir en la ventana anabólica de las próximas 2 horas para maximizar síntesis proteica.</small>
+              </div>
+            </div>
+            <div class="recovery-item">
+              <span class="rec-icon">💧</span>
+              <div>
+                <strong>Hidratación Recomendada: <span id="res-water-target">+600 ml</span></strong>
+                <small>Beber agua fresca o electrolitos para reponer glucógeno muscular y evitar calambres.</small>
+              </div>
+            </div>
+            <div class="recovery-item">
+              <span class="rec-icon">🛌</span>
+              <div>
+                <strong>Descanso Reparador: 7.5 - 8.5 horas</strong>
+                <small>El 95% de la hormona de crecimiento (GH) se libera en la fase profunda del sueño.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Botones de Acción -->
+      <footer class="results-dialog-footer">
+        <button type="button" id="btn-results-apply-progression" class="btn-primary btn-apply-progression-wide">
+          ⚡ Aplicar Cargas Proyectadas al Próximo Día
+        </button>
+        <div class="results-footer-subactions">
+          <button type="button" id="btn-results-view-stats" class="btn-secondary">
+            📊 Ver Estadísticas
+          </button>
+          <button type="button" id="btn-results-close-plan" class="btn-ghost">
+            ✓ Volver al Plan Semanal
+          </button>
+        </div>
+      </footer>
+    </div>
   </dialog>
 
   <footer class="app-footer">

@@ -600,11 +600,89 @@ assert.equal(doc.getElementById('btn-focus-add-set'), null, 'NO debe existir el 
 assert.equal(doc.getElementById('btn-focus-remove-set'), null, 'NO debe existir el botón #btn-focus-remove-set');
 assert.equal(doc.querySelectorAll('.btn-quick-rep-preset').length, 0, 'NO deben existir selectores de repeticiones arbitrarias para el usuario');
 
+// 29. Verificar Modo Inmersivo de Ejercicio Iniciado, Botones de Sesión (Terminar y Truncar), y Pantalla de Resultados con Próxima Proyección Muscular
+app.restoreOriginalSchedule();
+app.selectDay('lunes');
+
+// 29.1 Iniciar el ejercicio: Solo se debe mostrar la pantalla del ejercicio y las funciones necesarias
+app.startDayWorkoutSession('lunes', 0);
+assert.equal(app.getState().activeScreen, 'workout', 'Debe cambiar a la pantalla de entrenamiento');
+assert.ok(doc.body.classList.contains('in-workout-screen'), 'El body debe tener la clase .in-workout-screen');
+assert.equal(doc.querySelector('.app-header').hidden, true, 'La cabecera global debe estar oculta para mostrar solo la pantalla del ejercicio');
+assert.equal(doc.getElementById('bottom-app-nav').hidden, true, 'La barra de navegación inferior debe estar oculta en modo entrenamiento');
+assert.equal(doc.getElementById('day-tabs-nav').hidden, true, 'Las pestañas de días deben estar ocultas en modo entrenamiento');
+assert.equal(doc.getElementById('workout-focus-screen').hidden, false, 'La pantalla del ejercicio debe estar visible');
+
+// 29.2 Verificar existencia de botones requeridos: Terminar sesión, Truncar sesión, Saltar ejercicio
+const btnFinishWorkout = doc.getElementById('btn-focus-finish-workout');
+const btnTruncateWorkout = doc.getElementById('btn-focus-truncate-workout');
+const btnTruncateTop = doc.getElementById('btn-focus-truncate-top');
+const btnSkipExercise = doc.getElementById('btn-focus-skip-exercise');
+
+assert.ok(btnFinishWorkout, 'Debe existir el botón #btn-focus-finish-workout (Terminar Sesión)');
+assert.ok(btnFinishWorkout.textContent.includes('Terminar Sesión'), 'El texto debe indicar Terminar Sesión');
+assert.ok(btnTruncateWorkout, 'Debe existir el botón #btn-focus-truncate-workout (Truncar Sesión en pie)');
+assert.ok(btnTruncateTop, 'Debe existir el botón #btn-focus-truncate-top (Truncar Sesión en barra superior)');
+assert.ok(btnSkipExercise, 'Debe existir el botón #btn-focus-skip-exercise (Saltar Ejercicio)');
+
+// 29.3 Probar Truncar Sesión: apertura de modal, visualización de progreso y registro parcial
+app.openWorkoutTruncateDialog();
+const truncateDialog = doc.getElementById('workout-truncate-dialog');
+assert.ok(truncateDialog, 'Debe existir el modal #workout-truncate-dialog');
+assert.equal(truncateDialog.hidden, false, 'El modal de truncar debe abrirse');
+assert.ok(doc.getElementById('trunc-stat-sets'), 'Debe mostrar estadísticas de series completadas');
+assert.ok(doc.getElementById('trunc-stat-time'), 'Debe mostrar el tiempo de sesión');
+assert.ok(doc.getElementById('trunc-stat-vol'), 'Debe mostrar el volumen acumulado');
+
+// Truncar sesión guardando progreso parcial
+const prevHistoryCount = app.getState().history.length;
+app.truncateWorkoutSession(true);
+assert.equal(app.getState().activeScreen, 'plan', 'Al truncar debe volver a la pantalla del plan');
+assert.equal(doc.body.classList.contains('in-workout-screen'), false, 'Al salir de la pantalla de ejercicio se debe remover la clase');
+assert.equal(doc.querySelector('.app-header').hidden, false, 'Al volver al plan la cabecera debe restaurarse');
+assert.equal(doc.getElementById('bottom-app-nav').hidden, false, 'Al volver al plan la barra inferior debe restaurarse');
+assert.equal(app.getState().history.length, prevHistoryCount + 1, 'Debe registrar la sesión en el historial');
+assert.equal(app.getState().history[0].status, 'truncated', 'La sesión truncada debe registrarse con status truncated');
+
+// 29.4 Probar Terminar Sesión Satisfactoriamente y Pantalla de Resultados con Próxima Proyección
+app.startDayWorkoutSession('lunes', 0);
+// Completar las series del ejercicio
+for (let s = 0; s < 4; s++) {
+  app.toggleSetCompletion('lunes', 'lun-espalda-polea-estrecho', s);
+}
+app.finishWorkoutSession();
+
+const resultsDialog = doc.getElementById('workout-results-dialog');
+assert.ok(resultsDialog, 'Debe existir el modal #workout-results-dialog');
+assert.equal(resultsDialog.hidden, false, 'El modal de resultados del entrenamiento debe abrirse');
+assert.ok(doc.getElementById('res-time-val').textContent.length > 0, 'Debe mostrar tiempo total');
+assert.ok(doc.getElementById('res-vol-val').textContent.includes('kg'), 'Debe mostrar volumen levantado en kg');
+assert.ok(doc.getElementById('res-reps-val').textContent.includes('reps'), 'Debe mostrar repeticiones totales');
+
+// 29.5 Probar Actualización de la Siguiente Vez que se Entrenarán los Mismos Músculos
+const projection = app.calculateNextWorkoutProjection('lunes');
+assert.ok(projection, 'Debe calcular la proyección del próximo entrenamiento');
+assert.equal(projection.currentDayId, 'lunes', 'Día actual debe ser lunes');
+assert.equal(projection.nextDayId, 'viernes', 'Para Lunes (Espalda y Bíceps), el siguiente día en el split con Espalda/Bíceps debe ser Viernes (Torso)');
+assert.ok(projection.hoursUntil > 0, 'Debe proyectar las horas de descanso óptimo');
+assert.ok(projection.exerciseProgressions.length > 0, 'Debe calcular la progresión ejercicio por ejercicio');
+assert.ok(projection.targetProteinGrams >= 25, 'Debe calcular la meta de proteína post-entreno en función del peso');
+
+// Probar botón de Aplicar Progresión al Próximo Día
+const appliedCount = app.applyNextDayProgression();
+assert.ok(appliedCount > 0, 'Debe haber aplicado la sobrecarga progresiva a los ejercicios coincidentes del próximo día');
+const viernesExs = app.getState().schedule.viernes.exercises;
+const viernesPolea = viernesExs.find(e => e.name.includes('estrecho'));
+assert.equal(viernesPolea.loadValue, 7, 'El Jalón en polea en Viernes debe haber subido a Nivel 7 (+1 placa)');
+
+app.closeWorkoutResultsDialog();
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.2 (Series y Repeticiones Dinámicas Prescritas por la App sin Modificación Manual, Perfil Biométrico y 28 módulos verificados) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.8 (Modo Inmersivo de Ejercicio, Terminar/Truncar Sesión, Resultados y Próxima Proyección Muscular con 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 

@@ -4038,3 +4038,506 @@ body.animations-paused .focus-sprite-frame {
   font-size: 0.78rem;
   padding: 5px 10px;
 }
+
+/* ==========================================================================
+   MODO ENTRENAMIENTO ACTIVO INMERSIVO (SOLO PANTALLA DEL EJERCICIO)
+   ========================================================================== */
+body.in-workout-screen .app-header,
+body.in-workout-screen .day-tabs-nav,
+body.in-workout-screen .bottom-app-nav,
+body.in-workout-screen .app-footer {
+  display: none !important;
+}
+
+body.in-workout-screen .app-main-content {
+  padding-top: 8px;
+  padding-bottom: 28px;
+}
+
+.focus-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-truncate-pill {
+  min-height: 34px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-truncate-pill:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fff;
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+.focus-ex-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-skip-ex-link {
+  min-height: 28px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-skip-ex-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.focus-screen-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding-bottom: 16px;
+}
+
+.btn-truncate-workout-wide {
+  width: 100%;
+  min-height: 44px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-truncate-workout-wide:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fff;
+}
+
+/* ==========================================================================
+   MODAL DE TRUNCAR SESIÓN (#workout-truncate-dialog)
+   ========================================================================== */
+.truncate-dialog {
+  max-width: 440px;
+}
+
+.truncate-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.truncate-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.truncate-lead {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.truncate-summary-box {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(9, 13, 22, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  text-align: center;
+}
+
+.truncate-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.truncate-stat .stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.truncate-stat strong {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.truncate-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-truncate-save {
+  width: 100%;
+  min-height: 44px;
+  font-size: 0.88rem;
+}
+
+.btn-truncate-discard {
+  width: 100%;
+  min-height: 42px;
+  font-size: 0.85rem;
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.btn-truncate-discard:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fff;
+}
+
+.btn-truncate-resume {
+  width: 100%;
+  min-height: 38px;
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   MODAL DE RESULTADOS Y PRÓXIMA PROYECCIÓN MUSCULAR (#workout-results-dialog)
+   ========================================================================== */
+.workout-results-dialog {
+  max-width: 620px;
+  max-height: 88vh;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: linear-gradient(180deg, #0d1525 0%, #090e1a 100%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+}
+
+.results-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 4px 0;
+  max-height: calc(88vh - 40px);
+  overflow-y: auto;
+}
+
+.results-dialog-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.results-trophy-badge {
+  font-size: 2.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));
+  animation: bounceTrophy 1.2s ease infinite alternate;
+}
+
+@keyframes bounceTrophy {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-4px) scale(1.08); }
+}
+
+.results-dialog-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+
+.results-day-subtitle {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.results-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.results-subsection-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin: 8px 0 2px 0;
+}
+
+.results-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .results-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.results-kpi-card {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.results-kpi-card .kpi-icon {
+  font-size: 1.15rem;
+}
+
+.results-kpi-card .kpi-label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.results-kpi-card .kpi-val {
+  font-size: 0.96rem;
+  color: #6ee7b7;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Banner de Próximo Estímulo */
+.results-next-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(14, 165, 233, 0.15));
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-next-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.results-next-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 2px 0 0 0;
+}
+
+.results-recovery-note {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Lista de Progresión de Cargas */
+.results-progressions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.res-prog-item {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.res-prog-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.res-prog-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.res-prog-meta {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.res-prog-badge-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.res-curr-load {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.res-next-load {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* Lista de Nuevas Alternativas */
+.results-alternatives-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 540px) {
+  .results-alternatives-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.res-alt-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.res-alt-cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.res-alt-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.res-alt-load {
+  font-size: 0.74rem;
+  color: #a7f3d0;
+  font-weight: 600;
+}
+
+/* Caja de Recuperación Biomecánica */
+.results-recovery-box {
+  background: rgba(9, 13, 22, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-recovery-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recovery-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.recovery-item .rec-icon {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.recovery-item div strong {
+  display: block;
+  font-size: 0.82rem;
+  color: #f1f5f9;
+}
+
+.recovery-item div small {
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Pie del Diálogo de Resultados */
+.results-dialog-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.btn-apply-progression-wide {
+  width: 100%;
+  min-height: 46px;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.results-footer-subactions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

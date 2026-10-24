@@ -693,7 +693,7 @@
     }
   }
 
-  function logCurrentWorkoutSession() {
+  function logCurrentWorkoutSession(options = {}) {
     const day = state.schedule[state.selectedDay];
     if (!day || day.exercises.length === 0) return false;
 
@@ -710,12 +710,37 @@
       0
     );
 
+    const isTruncated = Boolean(options.isTruncated);
     const durationMs = getStopwatchElapsedMs();
     const durationText = formatStopwatchDurationText(durationMs);
     const journalInput = document.getElementById('session-journal-note');
-    const sessionNote =
-      (journalInput?.value || state.journalNotesByDay?.[state.selectedDay] || '').trim() ||
-      '4×12 completado con buena técnica y control excéntrico.';
+    let sessionNote = options.customNote;
+    if (!sessionNote) {
+      sessionNote = (journalInput?.value || state.journalNotesByDay?.[state.selectedDay] || '').trim();
+      if (!sessionNote) {
+        sessionNote = isTruncated
+          ? `Sesión truncada por el usuario tras ${doneSets} de ${totalSets} series completadas.`
+          : '4×12 completado con buena técnica y control excéntrico.';
+      }
+    }
+
+    let totalRepsDone = 0;
+    for (const ex of day.exercises) {
+      const sets = Number(ex.sets) || 4;
+      for (let s = 0; s < sets; s++) {
+        if (isTruncated) {
+          if (ex.completedSets && ex.completedSets[s]) {
+            totalRepsDone += getExerciseSetReps(ex, s);
+          }
+        } else {
+          totalRepsDone += getExerciseSetReps(ex, s);
+        }
+      }
+    }
+
+    const volumeKg = dayStat
+      ? (isTruncated ? (dayStat.doneKg || 0) : (dayStat.doneKg || dayStat.plannedKg))
+      : 0;
 
     const record = {
       id: `session-${Date.now()}`,
@@ -723,9 +748,12 @@
       dayId: state.selectedDay,
       dayName: day.dayName,
       title: day.title,
-      setsDone: doneSets || totalSets,
+      muscleGroup: day.muscleGroup,
+      status: isTruncated ? 'truncated' : 'completed',
+      setsDone: isTruncated ? doneSets : (doneSets || totalSets),
       setsPlanned: totalSets,
-      volumeKg: dayStat ? (dayStat.doneKg || dayStat.plannedKg) : 0,
+      totalRepsDone,
+      volumeKg,
       durationMs: durationMs,
       durationText: durationText,
       sessionNote
@@ -738,8 +766,14 @@
     saveState();
     renderAll();
     const durMsg = durationText ? ` · ⏱️ ${durationText}` : '';
-    showCelebrationToast(`🏆 Sesión de ${day.dayName} registrada en tu historial${durMsg}`);
-    playCompletionTone();
+    if (!options.silent) {
+      if (isTruncated) {
+        showCelebrationToast(`⚠️ Sesión truncada registrada (${doneSets}/${totalSets} series)${durMsg}`);
+      } else {
+        showCelebrationToast(`🏆 Sesión de ${day.dayName} registrada en tu historial${durMsg}`);
+        playCompletionTone();
+      }
+    }
     return true;
   }
 
@@ -3065,6 +3099,9 @@
       mainEl.dataset.activeScreen = activeScreen;
     }
 
+    const isWorkout = activeScreen === 'workout';
+    document.body.classList.toggle('in-workout-screen', isWorkout);
+
     document.querySelectorAll('[data-screen-panel]').forEach(panel => {
       const isCurrent = panel.dataset.screenPanel === activeScreen;
       panel.hidden = !isCurrent;
@@ -3083,7 +3120,22 @@
 
     const dayTabsNav = document.getElementById('day-tabs-nav');
     if (dayTabsNav) {
-      dayTabsNav.hidden = activeScreen === 'workout';
+      dayTabsNav.hidden = isWorkout;
+    }
+
+    const appHeader = document.querySelector('.app-header');
+    if (appHeader) {
+      appHeader.hidden = isWorkout;
+    }
+
+    const bottomNav = document.getElementById('bottom-app-nav');
+    if (bottomNav) {
+      bottomNav.hidden = isWorkout;
+    }
+
+    const appFooter = document.querySelector('.app-footer');
+    if (appFooter) {
+      appFooter.hidden = isWorkout;
     }
   }
 
@@ -3354,7 +3406,362 @@
       noteEl.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
     }
 
+    const skipBtn = document.getElementById('btn-focus-skip-exercise');
+    if (skipBtn) {
+      if (idx >= exercises.length - 1) {
+        skipBtn.textContent = '🏁 Último Ejercicio';
+        skipBtn.disabled = true;
+      } else {
+        skipBtn.textContent = '⏭️ Saltar Ejercicio';
+        skipBtn.disabled = false;
+      }
+    }
+
     return ex;
+  }
+
+  let activeProjectionCache = null;
+
+  function skipCurrentFocusExercise() {
+    const day = state.schedule[state.selectedDay];
+    const exercises = day?.exercises || [];
+    if (exercises.length === 0) return;
+    if (state.activeExerciseIndex < exercises.length - 1) {
+      state.activeExerciseIndex++;
+      saveState();
+      renderWorkoutFocusScreen();
+      showCelebrationToast(`Ejercicio omitido. Pasando a Ejercicio ${state.activeExerciseIndex + 1}: ${exercises[state.activeExerciseIndex].name}`);
+    } else {
+      showCelebrationToast('Has alcanzado el último ejercicio de la sesión.');
+    }
+  }
+
+  function openWorkoutTruncateDialog() {
+    const dialog = document.getElementById('workout-truncate-dialog');
+    if (!dialog) return;
+    const day = state.schedule[state.selectedDay];
+    if (!day) return;
+
+    const totalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+    const doneSets = day.exercises.reduce((acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length, 0);
+    const pct = totalSets > 0 ? Math.round((doneSets / totalSets) * 100) : 0;
+
+    const statSets = document.getElementById('trunc-stat-sets');
+    const statTime = document.getElementById('trunc-stat-time');
+    const statVol = document.getElementById('trunc-stat-vol');
+
+    if (statSets) statSets.textContent = `${doneSets} / ${totalSets} series (${pct}%)`;
+    if (statTime) statTime.textContent = formatStopwatchDurationText(getStopwatchElapsedMs()) || '00:00';
+
+    const analytics = GYM_VISUALS ? GYM_VISUALS.computeAnalytics(state.schedule, DAYS_ORDER) : null;
+    const dayStat = analytics ? analytics.perDay.find(d => d.id === state.selectedDay) : null;
+    const doneKg = dayStat ? (dayStat.doneKg || 0) : 0;
+    if (statVol) statVol.textContent = `${doneKg.toLocaleString()} kg`;
+
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeWorkoutTruncateDialog() {
+    const dialog = document.getElementById('workout-truncate-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function truncateWorkoutSession(savePartial = true) {
+    closeWorkoutTruncateDialog();
+    const day = state.schedule[state.selectedDay];
+    const totalSets = day ? day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0) : 24;
+    const doneSets = day ? day.exercises.reduce((acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length, 0) : 0;
+
+    if (savePartial) {
+      logCurrentWorkoutSession({ isTruncated: true, silent: true });
+      pauseSessionStopwatch();
+      resetSessionStopwatch();
+      exitWorkoutScreen();
+      showCelebrationToast(`⚠️ Sesión truncada guardada (${doneSets}/${totalSets} series) en tu historial.`);
+    } else {
+      pauseSessionStopwatch();
+      resetSessionStopwatch();
+      exitWorkoutScreen();
+      showCelebrationToast('Sesión cancelada sin registrar.');
+    }
+  }
+
+  function calculateNextWorkoutProjection(dayId = state.selectedDay) {
+    const currentDay = state.schedule[dayId];
+    if (!currentDay) return null;
+
+    const currentMuscles = (currentDay.exercises || []).map(e => (e.muscle || '').toLowerCase());
+    const currentDayGroup = (currentDay.muscleGroup || '').toLowerCase();
+
+    // Búsqueda circular del próximo día programado que entrene el mismo grupo muscular
+    const currentIdx = DAYS_ORDER.indexOf(dayId);
+    let nextDayId = null;
+    let daysUntil = 0;
+
+    for (let step = 1; step < DAYS_ORDER.length; step++) {
+      const candIdx = (currentIdx + step) % DAYS_ORDER.length;
+      const candKey = DAYS_ORDER[candIdx];
+      const candDay = state.schedule[candKey];
+      if (!candDay || candDay.isRestDay || candDay.status === 'skipped_to_sunday') continue;
+      if (candKey === 'domingo' && candDay.exercises.length === 0) continue;
+
+      const candGroup = (candDay.muscleGroup || '').toLowerCase();
+      const candMuscles = (candDay.exercises || []).map(e => (e.muscle || '').toLowerCase());
+      const sharesMuscle = candMuscles.some(m => currentMuscles.some(cm => cm.includes(m) || m.includes(cm))) ||
+        (currentDayGroup.includes('espalda') && candGroup.includes('espalda')) ||
+        (currentDayGroup.includes('pecho') && candGroup.includes('pecho')) ||
+        (currentDayGroup.includes('pierna') && candGroup.includes('pierna')) ||
+        (currentDayGroup.includes('hombro') && candGroup.includes('hombro')) ||
+        (currentDayGroup.includes('brazos') && (candGroup.includes('bíceps') || candGroup.includes('tríceps')));
+
+      if (sharesMuscle) {
+        nextDayId = candKey;
+        daysUntil = step;
+        break;
+      }
+    }
+
+    if (!nextDayId) {
+      nextDayId = dayId;
+      daysUntil = 7;
+    }
+
+    const nextDay = state.schedule[nextDayId];
+    const hoursUntil = daysUntil * 24;
+
+    // Proyecciones de sobrecarga progresiva ejercicio por ejercicio
+    const exerciseProgressions = (currentDay.exercises || []).map(ex => {
+      const prevLoad = Number(ex.loadValue) || 0;
+      const isNivel = ex.loadType === 'nivel';
+      const nextLoadValue = isNivel ? prevLoad + 1 : prevLoad + 2.5;
+      const nextLoadLabel = isNivel ? `Nivel ${nextLoadValue} (+1 placa)` : `${nextLoadValue} kg (+2.5 kg)`;
+      const repsSummary = formatExerciseRepsSummary(ex);
+      const alts = (GYM_VISUALS && typeof GYM_VISUALS.getExerciseAlternatives === 'function')
+        ? GYM_VISUALS.getExerciseAlternatives(ex)
+        : [];
+
+      return {
+        id: ex.id,
+        name: ex.name,
+        muscle: ex.muscle || 'Músculo Principal',
+        equipment: ex.equipment || 'Polea / Máquina',
+        currentLoad: isNivel ? `Nivel ${prevLoad}` : `${prevLoad} kg`,
+        nextLoadValue,
+        nextLoadLabel,
+        sets: Number(ex.sets) || 4,
+        repsSummary,
+        alternatives: alts
+      };
+    });
+
+    const profile = getUserProfile();
+    const weightKg = Number(profile.weightKg) || 74;
+    const targetProteinGrams = Math.max(25, Math.round(weightKg * 0.4));
+
+    return {
+      currentDayId: dayId,
+      currentDayName: currentDay.dayName,
+      currentMuscleGroup: currentDay.muscleGroup,
+      nextDayId,
+      nextDayName: nextDay ? nextDay.dayName : dayId,
+      nextDayTitle: nextDay ? nextDay.title : currentDay.title,
+      daysUntil,
+      hoursUntil,
+      exerciseProgressions,
+      targetProteinGrams,
+      recommendedWaterMl: 650
+    };
+  }
+
+  function openWorkoutResultsDialog(sessionRecord, projection) {
+    const dialog = document.getElementById('workout-results-dialog');
+    if (!dialog) return;
+
+    activeProjectionCache = projection;
+    const day = state.schedule[projection?.currentDayId || state.selectedDay];
+
+    const subtitleEl = document.getElementById('results-day-subtitle');
+    const adherenceEl = document.getElementById('results-adherence-pill');
+    if (subtitleEl && day) {
+      subtitleEl.textContent = `${day.dayName} · ${day.title} (${day.muscleGroup})`;
+    }
+
+    const setsDone = sessionRecord?.setsDone || (day ? day.exercises.reduce((a, e) => a + (e.completedSets || []).filter(Boolean).length, 0) : 24);
+    const setsPlanned = sessionRecord?.setsPlanned || (day ? day.exercises.reduce((a, e) => a + (Number(e.sets) || 4), 0) : 24);
+    const adherencePct = setsPlanned > 0 ? Math.round((setsDone / setsPlanned) * 100) : 100;
+    if (adherenceEl) {
+      adherenceEl.textContent = `${setsDone}/${setsPlanned} Series Completadas · ${adherencePct}% Adherencia`;
+    }
+
+    const timeVal = document.getElementById('res-time-val');
+    const volVal = document.getElementById('res-vol-val');
+    const setsVal = document.getElementById('res-sets-val');
+    const repsVal = document.getElementById('res-reps-val');
+    const calVal = document.getElementById('res-cal-val');
+    const rpeVal = document.getElementById('res-rpe-val');
+
+    if (timeVal) timeVal.textContent = sessionRecord?.durationText || '45:00';
+    if (volVal) volVal.textContent = `${(sessionRecord?.volumeKg || 0).toLocaleString()} kg`;
+    if (setsVal) setsVal.textContent = `${setsDone} / ${setsPlanned}`;
+
+    let totalReps = sessionRecord?.totalRepsDone || 0;
+    if (totalReps === 0 && day) {
+      for (const ex of day.exercises) {
+        const sCount = Number(ex.sets) || 4;
+        for (let s = 0; s < sCount; s++) {
+          totalReps += getExerciseSetReps(ex, s);
+        }
+      }
+    }
+    if (repsVal) repsVal.textContent = `${totalReps} reps`;
+
+    const durMs = sessionRecord?.durationMs || 2700000;
+    const estCal = Math.max(80, Math.round((durMs / 60000) * 7.2));
+    if (calVal) calVal.textContent = `~${estCal} kcal`;
+    if (rpeVal) rpeVal.textContent = 'RPE 8.0 (Óptimo)';
+
+    const nextEyebrow = document.getElementById('results-next-eyebrow');
+    const nextHeading = document.getElementById('results-next-heading');
+    const recBadge = document.getElementById('results-recovery-badge');
+    const recNote = document.getElementById('results-recovery-note');
+
+    if (projection) {
+      if (nextEyebrow) nextEyebrow.textContent = `PRÓXIMO ESTÍMULO DE ${projection.currentMuscleGroup.toUpperCase()}`;
+      if (nextHeading) nextHeading.textContent = `${projection.nextDayName} · ${projection.nextDayTitle}`;
+      if (recBadge) recBadge.textContent = `⏳ En ~${projection.hoursUntil}h (${projection.daysUntil} días de descanso)`;
+      if (recNote) {
+        recNote.textContent = `Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión del ${projection.nextDayName} se aplicarán las siguientes cargas y repeticiones dinámicas:`;
+      }
+    }
+
+    const progList = document.getElementById('results-progressions-list');
+    if (progList && projection) {
+      progList.innerHTML = '';
+      projection.exerciseProgressions.forEach(prog => {
+        const item = document.createElement('div');
+        item.className = 'res-prog-item';
+        item.innerHTML = `
+          <div class="res-prog-info">
+            <span class="res-prog-name">${prog.name}</span>
+            <span class="res-prog-meta">🎯 ${prog.muscle} · ${prog.sets} series × ${prog.repsSummary}</span>
+          </div>
+          <div class="res-prog-badge-box">
+            <span class="res-curr-load" title="Carga actual">${prog.currentLoad}</span>
+            <span class="res-next-load" title="Próxima carga proyectada">➔ ${prog.nextLoadLabel}</span>
+          </div>
+        `;
+        progList.appendChild(item);
+      });
+    }
+
+    const altList = document.getElementById('results-alternatives-list');
+    if (altList && projection && projection.exerciseProgressions.length > 0) {
+      altList.innerHTML = '';
+      const firstProg = projection.exerciseProgressions[0];
+      const alts = firstProg.alternatives || [];
+      alts.forEach(alt => {
+        const card = document.createElement('div');
+        card.className = 'res-alt-card';
+        card.innerHTML = `
+          <span class="res-alt-cat">${alt.categoryLabel ? alt.categoryLabel.split(' ')[0] : '⚡'} ${alt.categoryType ? alt.categoryType.replace('_', ' ') : 'variante'}</span>
+          <h5 class="res-alt-name">${alt.name}</h5>
+          <span class="res-alt-load">${alt.loadTransfer}</span>
+        `;
+        altList.appendChild(card);
+      });
+    }
+
+    const proteinTarget = document.getElementById('res-protein-target');
+    const waterTarget = document.getElementById('res-water-target');
+    if (proteinTarget && projection) proteinTarget.textContent = `${projection.targetProteinGrams}g`;
+    if (waterTarget && projection) waterTarget.textContent = `+${projection.recommendedWaterMl} ml`;
+
+    const btnApply = document.getElementById('btn-results-apply-progression');
+    if (btnApply) {
+      btnApply.disabled = false;
+      btnApply.textContent = '⚡ Aplicar Cargas Proyectadas al Próximo Día';
+    }
+
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeWorkoutResultsDialog() {
+    const dialog = document.getElementById('workout-results-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function applyNextDayProgression() {
+    if (!activeProjectionCache) return 0;
+    const { nextDayId, exerciseProgressions } = activeProjectionCache;
+    const targetDay = state.schedule[nextDayId];
+    if (!targetDay || !targetDay.exercises) return 0;
+
+    let appliedCount = 0;
+    for (const prog of exerciseProgressions) {
+      const targetEx = targetDay.exercises.find(e => e.id === prog.id || e.name === prog.name) ||
+        targetDay.exercises.find(e => e.muscle === prog.muscle);
+      if (targetEx) {
+        targetEx.loadValue = prog.nextLoadValue;
+        appliedCount++;
+      }
+    }
+
+    const currDay = state.schedule[activeProjectionCache.currentDayId];
+    if (currDay && currDay.exercises) {
+      for (const prog of exerciseProgressions) {
+        const currEx = currDay.exercises.find(e => e.id === prog.id);
+        if (currEx) {
+          currEx.loadValue = prog.nextLoadValue;
+        }
+      }
+    }
+
+    saveState();
+    renderAll();
+
+    const btnApply = document.getElementById('btn-results-apply-progression');
+    if (btnApply) {
+      btnApply.disabled = true;
+      btnApply.textContent = `✓ ¡Cargas Proyectadas Aplicadas (${appliedCount} ejercicios)!`;
+    }
+    showCelebrationToast(`🚀 ¡Sobrecarga Progresiva aplicada para ${targetDay.dayName}!`);
+    return appliedCount;
+  }
+
+  function finishWorkoutSession() {
+    const day = state.schedule[state.selectedDay];
+    if (!day) return;
+
+    logCurrentWorkoutSession({ silent: true });
+    const sessionRecord = state.history[0];
+    pauseSessionStopwatch();
+    resetSessionStopwatch();
+
+    const projection = calculateNextWorkoutProjection(state.selectedDay);
+    openWorkoutResultsDialog(sessionRecord, projection);
+    playCompletionTone();
   }
 
   function renderAll() {
@@ -4003,8 +4410,61 @@
       if (ex) openExerciseDialog(ex);
     });
     document.getElementById('btn-focus-finish-workout')?.addEventListener('click', () => {
-      logCurrentWorkoutSession();
+      finishWorkoutSession();
+    });
+    document.getElementById('btn-focus-truncate-workout')?.addEventListener('click', () => {
+      openWorkoutTruncateDialog();
+    });
+    document.getElementById('btn-focus-truncate-top')?.addEventListener('click', () => {
+      openWorkoutTruncateDialog();
+    });
+    document.getElementById('btn-close-truncate-dialog')?.addEventListener('click', () => {
+      closeWorkoutTruncateDialog();
+    });
+    document.getElementById('btn-truncate-cancel')?.addEventListener('click', () => {
+      closeWorkoutTruncateDialog();
+    });
+    document.getElementById('btn-truncate-save-exit')?.addEventListener('click', () => {
+      truncateWorkoutSession(true);
+    });
+    document.getElementById('btn-truncate-discard-exit')?.addEventListener('click', () => {
+      truncateWorkoutSession(false);
+    });
+    document.getElementById('btn-focus-skip-exercise')?.addEventListener('click', () => {
+      skipCurrentFocusExercise();
+    });
+
+    document.getElementById('btn-results-apply-progression')?.addEventListener('click', () => {
+      applyNextDayProgression();
+    });
+    document.getElementById('btn-results-view-stats')?.addEventListener('click', () => {
+      closeWorkoutResultsDialog();
       exitWorkoutScreen();
+      switchAppScreen('stats');
+    });
+    document.getElementById('btn-results-close-plan')?.addEventListener('click', () => {
+      closeWorkoutResultsDialog();
+      exitWorkoutScreen();
+    });
+
+    // Fallback de Light Dismiss para navegadores sin closedby nativo
+    ['workout-truncate-dialog', 'workout-results-dialog'].forEach(dlgId => {
+      const dlg = document.getElementById(dlgId);
+      if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
+        dlg.addEventListener('click', event => {
+          if (event.target !== dlg) return;
+          const rect = dlg.getBoundingClientRect();
+          const isInside = (
+            rect.top <= event.clientY &&
+            event.clientY <= rect.top + rect.height &&
+            rect.left <= event.clientX &&
+            event.clientX <= rect.left + rect.width
+          );
+          if (!isInside && typeof dlg.close === 'function') {
+            dlg.close();
+          }
+        });
+      }
     });
 
     document.querySelectorAll('#bottom-app-nav .bottom-nav-btn').forEach(btn => {
@@ -4208,6 +4668,16 @@
     exitWorkoutScreen,
     selectFocusExercise,
     renderWorkoutFocusScreen,
+    // APIs Workout Session Focus & Results v1.9.8
+    openWorkoutTruncateDialog,
+    closeWorkoutTruncateDialog,
+    truncateWorkoutSession,
+    finishWorkoutSession,
+    calculateNextWorkoutProjection,
+    openWorkoutResultsDialog,
+    closeWorkoutResultsDialog,
+    applyNextDayProgression,
+    skipCurrentFocusExercise,
     // APIs Dynamic Onboarding & Personalized Training v1.9
     getUserProfile,
     saveUserProfile,
