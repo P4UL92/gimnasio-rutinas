@@ -265,7 +265,7 @@
 
     return `
       <div class="exercise-sprite-box ${info.cssModifier}" data-sprite-type="${detectExerciseAnimationType(exercise)}" role="button" tabindex="0" title="Toca para abrir el Visor Técnico de 3 Fases" aria-label="Demostración visual del ejercicio ${exercise.name}. Toca para ampliar las 3 fases">
-        <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}');"></div>
+        <div class="exercise-sprite-frame" style="background-image: url('${info.spriteUrl}?v=calibrated');"></div>
       </div>
     `.trim();
   }

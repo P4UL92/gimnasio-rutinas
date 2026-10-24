@@ -10,6 +10,9 @@ const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon'
@@ -29,11 +32,11 @@ const server = http.createServer((req, res) => {
   const ext = path.extname(filePath).toLowerCase();
   res.writeHead(200, {
     'Content-Type': mimeTypes[ext] || 'application/octet-stream',
-    'Cache-Control': 'no-cache'
+    'Cache-Control': 'no-store, no-cache, must-revalidate'
   });
   fs.createReadStream(filePath).pipe(res);
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`Gym Rutinas Pro servidor activo en http://127.0.0.1:${port}`);
+server.listen(port, () => {
+  console.log(`Gym Rutinas Pro servidor activo en http://localhost:${port} y http://127.0.0.1:${port}`);
 });

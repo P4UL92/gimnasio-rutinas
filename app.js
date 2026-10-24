@@ -3226,7 +3226,7 @@
       const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
       spriteStage.innerHTML = `
         <div class="focus-sprite-box ${spriteInfo.cssClass || ''} ${rowClass}" data-anim-type="${spriteInfo.typeKey || ''}">
-          <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}');"></div>
+          <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}?v=calibrated');"></div>
         </div>
       `;
     }

@@ -533,54 +533,54 @@ body.animations-paused * {
   transform: scale(1.03);
 }
 
-/* Animación robusta de 3 fases biomecánicas (Fila Superior) */
+/* Animación robusta de 3 fases biomecánicas (Fila Superior Calibrada al Centro Exacto) */
 @keyframes playSpriteTop {
   0%, 32.99% {
-    background-position: 0% 8%;
+    background-position: 0% 0%;
   }
   33%, 65.99% {
-    background-position: 50% 8%;
+    background-position: 50% 0%;
   }
   66%, 100% {
-    background-position: 100% 8%;
+    background-position: 100% 0%;
   }
 }
 
-/* Animación robusta de 3 fases biomecánicas (Fila Inferior) */
+/* Animación robusta de 3 fases biomecánicas (Fila Inferior Calibrada al Centro Exacto) */
 @keyframes playSpriteBottom {
   0%, 32.99% {
-    background-position: 0% 92%;
+    background-position: 0% 100%;
   }
   33%, 65.99% {
-    background-position: 50% 92%;
+    background-position: 50% 100%;
   }
   66%, 100% {
-    background-position: 100% 92%;
+    background-position: 100% 100%;
   }
 }
 
 /* Diálogo de Visor Técnico (Full Strip y Modal 3 Fases) */
 @keyframes spritePhaseCycle {
   0%, 32.99% {
-    background-position: 0% 4%;
+    background-position: 0% 0%;
   }
   33%, 65.99% {
-    background-position: 50% 4%;
+    background-position: 50% 0%;
   }
   66%, 100% {
-    background-position: 100% 4%;
+    background-position: 100% 0%;
   }
 }
 
 @keyframes spritePhaseCycleBottom {
   0%, 32.99% {
-    background-position: 0% 98%;
+    background-position: 0% 100%;
   }
   33%, 65.99% {
-    background-position: 50% 98%;
+    background-position: 50% 100%;
   }
   66%, 100% {
-    background-position: 100% 98%;
+    background-position: 100% 100%;
   }
 }
 
@@ -635,7 +635,7 @@ body.animations-paused * {
 .sprite-chest-press .exercise-sprite-frame,
 .sprite-leg-press .exercise-sprite-frame,
 .sprite-row-top .focus-sprite-frame {
-  background-position: 0% 8%;
+  background-position: 0% 0%;
   animation: playSpriteTop 2.5s linear infinite alternate;
 }
 
@@ -644,7 +644,7 @@ body.animations-paused * {
 .sprite-tricep-pushdown .exercise-sprite-frame,
 .sprite-shoulder-press .exercise-sprite-frame,
 .sprite-row-bottom .focus-sprite-frame {
-  background-position: 0% 92%;
+  background-position: 0% 100%;
   animation: playSpriteBottom 2.5s linear infinite alternate;
 }
 
@@ -2268,13 +2268,13 @@ body.animations-paused .phase-pill-dot {
   width: 100%;
   height: 100%;
   background-repeat: no-repeat;
-  background-size: 300% 215%;
-  background-position: 0% 4%;
+  background-size: 300% 200%;
+  background-position: 0% 0%;
   animation: spritePhaseCycle 2.4s steps(1) infinite;
 }
 
 .sprite-viewer-stage.row-bottom .sprite-viewer-frame {
-  background-position: 0% 98%;
+  background-position: 0% 100%;
   animation-name: spritePhaseCycleBottom;
 }
 
@@ -2295,19 +2295,15 @@ body.animations-paused .phase-pill-dot {
 
 .sprite-viewer-stage.mode-full-strip .sprite-viewer-frame {
   animation: none !important;
-  background-size: 100% 215% !important;
+  background-size: 100% 200% !important;
   background-position-x: 50% !important;
 }
 
 .sprite-viewer-badges {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  pointer-events: none;
+  flex-wrap: wrap;
 }
 
 .sprite-phase-controls {
@@ -3461,12 +3457,12 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 }
 
 .sprite-row-top .focus-sprite-frame {
-  background-position: 0% 8%;
+  background-position: 0% 0%;
   animation: playSpriteTop 2.5s linear infinite alternate;
 }
 
 .sprite-row-bottom .focus-sprite-frame {
-  background-position: 0% 92%;
+  background-position: 0% 100%;
   animation: playSpriteBottom 2.5s linear infinite alternate;
 }
 
