@@ -3435,9 +3435,9 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 .focus-sprite-box {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  min-height: 175px;
-  max-height: 230px;
+  aspect-ratio: 16 / 9;
+  min-height: 125px;
+  max-height: 160px;
   border-radius: var(--radius-md);
   overflow: hidden;
   background: #0b0f19;
@@ -3530,35 +3530,179 @@ body.animations-paused .focus-sprite-frame {
   color: var(--text-secondary);
 }
 
-.focus-sets-section {
+/* Card de Serie Actual Ultra-Compacta (Muestra ÚNICAMENTE la serie en curso y sus repeticiones calculadas) */
+.focus-active-set-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(9, 13, 22, 0.98));
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s ease;
 }
 
-.focus-section-caption {
-  font-size: 0.76rem;
+.focus-active-set-card.is-resting-mode {
+  border-color: rgba(245, 158, 11, 0.7);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+}
+
+.focus-set-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.15);
+}
+
+.focus-current-set-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-set-eyebrow {
+  font-size: 0.64rem;
+  font-weight: 800;
+  color: var(--accent-emerald);
+  letter-spacing: 0.05em;
+}
+
+.active-set-counter-pill {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.active-set-counter-pill.is-completed-all {
+  background: rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+/* Mini-track horizontal discreto de series 1 a 4 */
+.focus-sets-mini-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.focus-sets-mini-track .btn-focus-set {
+  min-height: 26px;
+  height: 26px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
-  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
-.focus-sets-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+.focus-sets-mini-track .btn-focus-set.is-active-focus {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.25);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
 }
 
-.btn-focus-set {
-  min-height: 56px;
-  padding: 10px;
+.focus-sets-mini-track .btn-focus-set.is-done {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
 }
 
-.btn-focus-set .set-num {
-  font-size: 0.78rem;
+/* Hero Central de Repeticiones Únicas */
+.focus-current-reps-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.btn-focus-set .set-reps {
+.focus-reps-number-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.focus-reps-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.focus-reps-display-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.focus-current-reps-digits {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.focus-reps-unit {
   font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-emerald);
+}
+
+.focus-reps-scheme-note {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+/* Botón Grande de Acción Táctil */
+.btn-focus-action-set {
+  min-height: 48px;
+  padding: 8px 18px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.15s ease;
+  flex: 1 1 auto;
+}
+
+.btn-focus-action-set:active {
+  transform: scale(0.96);
+}
+
+.btn-focus-action-set.is-resting-state {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: rgba(245, 158, 11, 0.8);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  color: #1e1b4b;
+}
+
+.btn-focus-action-set.is-all-completed {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: rgba(16, 185, 129, 0.8);
 }
 
 /* Temporizador de Descanso Integrado en la Pantalla del Ejercicio */

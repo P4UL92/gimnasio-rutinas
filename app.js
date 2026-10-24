@@ -903,6 +903,7 @@
   }
 
   function restoreOriginalSchedule() {
+    stopRestTimer();
     const fresh = createInitialState();
     state.schedule = fresh.schedule;
     saveState();
@@ -919,6 +920,11 @@
     renderAll();
   }
 
+  function getActiveFocusExercise() {
+    const day = state.schedule[state.selectedDay];
+    return day?.exercises?.[state.activeExerciseIndex || 0] || null;
+  }
+
   // Rest Timer with CSS Conic Ring Progress (0% SVG)
   function startRestTimer(seconds, labelText) {
     const bar = document.getElementById('rest-timer-bar');
@@ -931,23 +937,33 @@
     restRemainingSeconds = restTotalSeconds;
     labelEl.textContent = labelText || 'Descanso entre series';
     switchFloatingTimerMode('rest');
-    updateTimerDisplay();
 
     restTimerInterval = setInterval(() => {
       restRemainingSeconds -= 1;
       if (restRemainingSeconds <= 0) {
         restRemainingSeconds = 0;
-        updateTimerDisplay();
         clearInterval(restTimerInterval);
         restTimerInterval = null;
+        updateTimerDisplay();
         labelEl.textContent = '¡Descanso terminado! Lista la siguiente serie 💪';
         playCompletionTone();
         triggerHaptic([120, 60, 120]);
-        sendRestFinishedNotification('⏱️ ¡Descanso terminado!', 'Es hora de iniciar tu siguiente serie de 12 repeticiones 💪');
+
+        // Recalcular y mostrar automáticamente la serie siguiente y sus repeticiones calculadas
+        renderWorkoutFocusScreen();
+        const ex = getActiveFocusExercise();
+        const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+        if (ex && nextIdx !== -1) {
+          const nextReps = getExerciseSetReps(ex, nextIdx);
+          sendRestFinishedNotification('⏱️ ¡Descanso terminado!', `Es hora de tu Serie ${nextIdx + 1}: ${nextReps} repeticiones 💪`);
+          showCelebrationToast(`⏱️ ¡Descanso terminado! Serie ${nextIdx + 1}: realiza ${nextReps} repeticiones.`);
+        }
         return;
       }
       updateTimerDisplay();
     }, 1000);
+
+    updateTimerDisplay();
   }
 
   function updateTimerDisplay() {
@@ -975,6 +991,21 @@
     if (focusRestCardEl) {
       focusRestCardEl.classList.toggle('is-resting', Boolean(restTimerInterval));
     }
+    const activeSetCardEl = document.getElementById('focus-active-set-card');
+    if (activeSetCardEl) {
+      activeSetCardEl.classList.toggle('is-resting-mode', Boolean(restTimerInterval));
+    }
+    const actionBtn = document.getElementById('btn-focus-action-set');
+    const actionIcon = document.getElementById('focus-btn-action-icon');
+    const actionText = document.getElementById('focus-btn-action-text');
+    if (actionBtn && actionText && restTimerInterval) {
+      actionBtn.classList.add('is-resting-state');
+      if (actionIcon) actionIcon.textContent = '⚡';
+      const ex = getActiveFocusExercise();
+      const activeIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+      const repsCount = ex && activeIdx !== -1 ? getExerciseSetReps(ex, activeIdx) : 12;
+      actionText.textContent = `¡Listo! Comenzar Serie ${activeIdx + 1} (${repsCount} reps)`;
+    }
     if (conicRingEl) {
       const ratio = restTotalSeconds > 0 ? Math.max(0, restRemainingSeconds / restTotalSeconds) : 0;
       const pct = Math.round(ratio * 100);
@@ -991,6 +1022,8 @@
     if (bar) bar.hidden = true;
     const focusRestCardEl = document.getElementById('focus-rest-card');
     if (focusRestCardEl) focusRestCardEl.classList.remove('is-resting');
+    const activeSetCardEl = document.getElementById('focus-active-set-card');
+    if (activeSetCardEl) activeSetCardEl.classList.remove('is-resting-mode');
     const focusRestStatusEl = document.getElementById('focus-rest-status-text');
     if (focusRestStatusEl) focusRestStatusEl.textContent = 'Listo para usar';
   }
@@ -3164,6 +3197,7 @@
   }
 
   function startDayWorkoutSession(dayId = state.selectedDay, exerciseIndex = null) {
+    stopRestTimer();
     if (DAYS_ORDER.includes(dayId)) {
       state.selectedDay = dayId;
     }
@@ -3197,6 +3231,7 @@
   }
 
   function exitWorkoutScreen() {
+    stopRestTimer();
     switchAppScreen('plan', { instant: true });
     renderAll();
     return state.activeScreen;
@@ -3305,36 +3340,101 @@
     if (loadMain) loadMain.textContent = badgeInfo.main;
     if (loadSub) loadSub.textContent = badgeInfo.sub;
     const repsSummaryText = formatExerciseRepsSummary(ex);
+    const totalSets = Number(ex.sets) || 4;
+    const doneCount = (ex.completedSets || []).filter(Boolean).length;
+    let activeSetIndex = (ex.completedSets || []).findIndex(done => !done);
+    const isAllDone = doneCount === totalSets && totalSets > 0;
+    if (activeSetIndex === -1) {
+      activeSetIndex = Math.max(0, totalSets - 1);
+    }
+
+    const activeSetReps = getExerciseSetReps(ex, activeSetIndex);
+    const isResting = Boolean(restTimerInterval);
+
+    // Actualizar Contador de Serie Actual
+    const counterBadge = document.getElementById('focus-active-set-counter');
+    if (counterBadge) {
+      if (isAllDone) {
+        counterBadge.textContent = `✓ ${totalSets} DE ${totalSets} SERIES`;
+        counterBadge.classList.add('is-completed-all');
+      } else {
+        counterBadge.textContent = `SERIE ${activeSetIndex + 1} DE ${totalSets}`;
+        counterBadge.classList.remove('is-completed-all');
+      }
+    }
+
+    // Actualizar Dígitos de Repeticiones Únicas para la Serie Actual
+    const repsDigits = document.getElementById('focus-current-set-reps-digits');
+    const repsSchemeNote = document.getElementById('focus-current-set-scheme-note');
+    if (repsDigits) {
+      repsDigits.textContent = isAllDone ? '✓' : String(activeSetReps);
+    }
+    if (repsSchemeNote) {
+      if (isAllDone) {
+        repsSchemeNote.textContent = '¡Excelente trabajo! Todas las series completadas.';
+      } else if (isResting) {
+        repsSchemeNote.textContent = `Descanso activo... Próxima serie: ${activeSetReps} repeticiones.`;
+      } else {
+        repsSchemeNote.textContent = `Meta calculada para Serie ${activeSetIndex + 1}: ${activeSetReps} reps`;
+      }
+    }
+
     if (setsRepsLabel) {
-      setsRepsLabel.textContent = `${ex.sets || 4} series × ${repsSummaryText}`;
-      setsRepsLabel.title = 'Series y repeticiones dinámicas prescritas por la aplicación';
+      setsRepsLabel.textContent = isAllDone
+        ? `✓ ${totalSets} series completadas`
+        : `Serie ${activeSetIndex + 1} de ${totalSets}: ${activeSetReps} reps`;
+      setsRepsLabel.title = 'Repeticiones de la serie activa en curso';
       setsRepsLabel.style.cursor = 'default';
     }
     if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
 
-    // 4. Cuadrícula de las Series con Repeticiones Dinámicas Prescritas por la Aplicación
-    const setsGrid = document.getElementById('focus-sets-grid');
-    const totalSets = Number(ex.sets) || 4;
-    const doneCount = (ex.completedSets || []).filter(Boolean).length;
+    // Botón de Acción Principal de la Serie
+    const actionBtn = document.getElementById('btn-focus-action-set');
+    const actionIcon = document.getElementById('focus-btn-action-icon');
+    const actionText = document.getElementById('focus-btn-action-text');
+    const activeSetCard = document.getElementById('focus-active-set-card');
 
+    if (activeSetCard) {
+      activeSetCard.classList.toggle('is-resting-mode', isResting);
+    }
+
+    if (actionBtn && actionText) {
+      actionBtn.classList.remove('is-resting-state', 'is-all-completed');
+      if (isAllDone) {
+        actionBtn.classList.add('is-all-completed');
+        if (actionIcon) actionIcon.textContent = '🏆';
+        actionText.textContent = `Ejercicio Completado (${totalSets}/${totalSets})`;
+      } else if (isResting) {
+        actionBtn.classList.add('is-resting-state');
+        if (actionIcon) actionIcon.textContent = '⚡';
+        actionText.textContent = `¡Listo! Comenzar Serie ${activeSetIndex + 1} (${activeSetReps} reps)`;
+      } else {
+        if (actionIcon) actionIcon.textContent = '✓';
+        actionText.textContent = `Completar Serie ${activeSetIndex + 1} (${activeSetReps} reps)`;
+      }
+    }
+
+    // 4. Mini-track horizontal discreto de las 4 Series (0% scroll innecesario)
+    const setsGrid = document.getElementById('focus-sets-grid');
     if (setsGrid) {
       setsGrid.innerHTML = '';
       for (let s = 0; s < totalSets; s++) {
         const isDone = Boolean(ex.completedSets && ex.completedSets[s]);
+        const isCurrent = s === activeSetIndex && !isAllDone;
         const setBtn = document.createElement('button');
         setBtn.type = 'button';
-        setBtn.className = `btn-set-check btn-focus-set ${isDone ? 'is-done' : ''}`;
+        setBtn.className = `btn-set-check btn-focus-set ${isDone ? 'is-done' : ''} ${isCurrent ? 'is-active-focus' : ''}`;
         setBtn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
         setBtn.dataset.setIndex = String(s);
 
         const sNum = document.createElement('span');
         sNum.className = 'set-num';
-        sNum.textContent = isDone ? `✓ Serie ${s + 1} Lista` : `Serie ${s + 1}`;
+        sNum.textContent = isDone ? `✓ S${s + 1}` : `S${s + 1}`;
 
         const sReps = document.createElement('span');
-        sReps.className = 'set-reps';
+        sReps.className = 'set-reps sr-only';
         const sRepsCount = getExerciseSetReps(ex, s);
-        sReps.textContent = `${sRepsCount} repeticiones`;
+        sReps.textContent = `${sRepsCount} reps`;
 
         setBtn.append(sNum, sReps);
         setBtn.addEventListener('click', () => toggleSetCompletion(state.selectedDay, ex.id, s));
@@ -3754,6 +3854,7 @@
     const day = state.schedule[state.selectedDay];
     if (!day) return;
 
+    stopRestTimer();
     logCurrentWorkoutSession({ silent: true });
     const sessionRecord = state.history[0];
     pauseSessionStopwatch();
@@ -4332,11 +4433,6 @@
       selectFocusExercise((state.activeExerciseIndex || 0) + 1);
     });
 
-    const getActiveFocusExercise = () => {
-      const day = state.schedule[state.selectedDay];
-      return day?.exercises?.[state.activeExerciseIndex || 0] || null;
-    };
-
     document.getElementById('focus-sprite-stage')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
       if (ex) openSpriteViewerDialog(ex);
@@ -4354,6 +4450,35 @@
       if (ex) toggleExerciseLoadUnit(state.selectedDay, ex.id);
     });
 
+    // Botón de Acción Principal de Serie (Módulo Ultra-Compacto de Serie Actual)
+    document.getElementById('btn-focus-action-set')?.addEventListener('click', () => {
+      const ex = getActiveFocusExercise();
+      if (!ex) return;
+
+      const totalSets = Number(ex.sets) || 4;
+      const doneCount = (ex.completedSets || []).filter(Boolean).length;
+      if (doneCount === totalSets) {
+        showCelebrationToast('🏆 ¡Todas las series de este ejercicio están completadas!');
+        return;
+      }
+
+      // Si estaba en descanso activo, el usuario le da para iniciar la siguiente serie
+      if (restTimerInterval) {
+        stopRestTimer();
+        renderWorkoutFocusScreen();
+        const activeIdx = (ex.completedSets || []).findIndex(done => !done);
+        const repsCount = getExerciseSetReps(ex, activeIdx !== -1 ? activeIdx : 0);
+        showCelebrationToast(`💪 ¡Comenzando Serie ${(activeIdx !== -1 ? activeIdx : 0) + 1}! Objetivo: ${repsCount} repeticiones.`);
+        return;
+      }
+
+      // Completar la serie activa actual e iniciar descanso automáticamente
+      const activeIdx = (ex.completedSets || []).findIndex(done => !done);
+      if (activeIdx !== -1) {
+        toggleSetCompletion(state.selectedDay, ex.id, activeIdx);
+      }
+    });
+
     document.getElementById('btn-focus-rest-start')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
       startRestTimer(ex?.restSeconds || 75, ex ? `${ex.name} (Descanso)` : 'Descanso entre series');
@@ -4369,9 +4494,13 @@
     });
     document.getElementById('btn-focus-rest-skip')?.addEventListener('click', () => {
       stopRestTimer();
+      renderWorkoutFocusScreen();
       const ex = getActiveFocusExercise();
-      restRemainingSeconds = ex?.restSeconds || 75;
-      updateTimerDisplay();
+      const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+      if (ex && nextIdx !== -1) {
+        const nextReps = getExerciseSetReps(ex, nextIdx);
+        showCelebrationToast(`⚡ Descanso terminado. Serie ${nextIdx + 1}: ${nextReps} repeticiones.`);
+      }
     });
 
     document.getElementById('btn-focus-swap-alt')?.addEventListener('click', () => {

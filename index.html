@@ -304,16 +304,40 @@
             <button type="button" id="btn-focus-load-plus" class="btn-step-load btn-focus-step" aria-label="Aumentar carga">+</button>
           </div>
           <div class="focus-reps-summary">
-            <strong id="focus-sets-reps-label">4 series × 12 reps</strong>
+            <strong id="focus-sets-reps-label">Serie 1 de 4: 12 reps</strong>
             <span id="focus-rest-target-label">⏳ Descanso sugerido: 75s</span>
           </div>
         </div>
 
-        <!-- 4. Botones Grandes de Series (1 a 4 × 12 reps) -->
-        <div class="focus-sets-section">
-          <span class="focus-section-caption">Toca cada serie al terminarla (inicia el descanso automáticamente):</span>
-          <div id="focus-sets-grid" class="focus-sets-grid">
-            <!-- 4 botones grandes de series generados por app.js -->
+        <!-- 4. Módulo Ultra-Compacto de Serie Actual (Muestra solo la serie activa y sus repeticiones calculadas) -->
+        <div class="focus-active-set-card" id="focus-active-set-card">
+          <div class="focus-set-header-row">
+            <div class="focus-current-set-meta">
+              <span class="active-set-eyebrow">EN CURSO</span>
+              <strong id="focus-active-set-counter" class="active-set-counter-pill">SERIE 1 DE 4</strong>
+            </div>
+            <!-- Mini-track horizontal discreto de series 1..4 -->
+            <div id="focus-sets-grid" class="focus-sets-grid focus-sets-mini-track" role="tablist" aria-label="Progreso de series">
+              <!-- Botones compactos de series generados por app.js -->
+            </div>
+          </div>
+
+          <!-- Hero Central: Muestra ÚNICAMENTE las repeticiones calculadas para la serie actual -->
+          <div class="focus-current-reps-hero" id="focus-current-reps-hero">
+            <div class="focus-reps-number-box">
+              <span class="focus-reps-label">REPETICIONES A REALIZAR</span>
+              <div class="focus-reps-display-row">
+                <strong id="focus-current-set-reps-digits" class="focus-current-reps-digits">12</strong>
+                <span class="focus-reps-unit">reps</span>
+              </div>
+              <small id="focus-current-set-scheme-note" class="focus-reps-scheme-note">Calculadas según tu descanso y objetivo</small>
+            </div>
+
+            <!-- Botón Grande de Acción Táctil de Serie -->
+            <button type="button" id="btn-focus-action-set" class="btn-primary btn-focus-action-set" title="Completar esta serie e iniciar el descanso">
+              <span id="focus-btn-action-icon">✓</span>
+              <span id="focus-btn-action-text">Completar Serie 1 (12 reps)</span>
+            </button>
           </div>
         </div>
 
@@ -333,7 +357,7 @@
             <button type="button" id="btn-focus-rest-start" class="btn-primary btn-focus-rest-main">▶ Descansar</button>
             <button type="button" id="btn-focus-rest-minus" class="btn-timer-step">-15s</button>
             <button type="button" id="btn-focus-rest-plus" class="btn-timer-step">+15s</button>
-            <button type="button" id="btn-focus-rest-skip" class="btn-ghost">Reiniciar</button>
+            <button type="button" id="btn-focus-rest-skip" class="btn-ghost" title="Saltar descanso y pasar a la siguiente serie">Saltar</button>
           </div>
         </div>
 

@@ -678,11 +678,68 @@ assert.equal(viernesPolea.loadValue, 7, 'El Jalón en polea en Viernes debe habe
 app.closeWorkoutResultsDialog();
 app.exitWorkoutScreen();
 
+// 30. Verificar Pantalla Compacta con Contador de Serie Actual y Repeticiones Calculadas Tras el Descanso
+app.restoreOriginalSchedule();
+app.startDayWorkoutSession('lunes', 0);
+
+// Configurar un ejercicio con repeticiones piramidales dinámicas: [12, 10, 8, 6]
+const testDay = app.getState().schedule.lunes;
+const testEx = testDay.exercises[0];
+testEx.seriesReps = [12, 10, 8, 6];
+testEx.completedSets = [false, false, false, false];
+app.renderWorkoutFocusScreen();
+
+// 30.1 Verificar visualización única de la Serie 1
+const counterPill = doc.getElementById('focus-active-set-counter');
+const repsDigitsEl = doc.getElementById('focus-current-set-reps-digits');
+const actionBtnEl = doc.getElementById('btn-focus-action-set');
+
+assert.ok(counterPill, 'Debe existir el contador de serie actual #focus-active-set-counter');
+assert.equal(counterPill.textContent.trim(), 'SERIE 1 DE 4', 'Al inicio debe mostrar SERIE 1 DE 4');
+assert.equal(repsDigitsEl.textContent.trim(), '12', 'Debe mostrar en grande ÚNICAMENTE las repeticiones de la Serie 1 (12)');
+assert.ok(actionBtnEl.textContent.includes('Serie 1'), 'El botón debe indicar acción para la Serie 1');
+assert.ok(actionBtnEl.textContent.includes('12 reps'), 'El botón debe indicar las 12 reps de la Serie 1');
+
+// 30.2 Completar Serie 1 usando el botón de acción táctil -> debe activar descanso
+actionBtnEl.click();
+assert.equal(testEx.completedSets[0], true, 'Serie 1 debe quedar marcada como completada');
+assert.ok(doc.getElementById('focus-active-set-card').classList.contains('is-resting-mode'), 'La card debe entrar en modo descanso activo');
+
+// 30.3 Al terminar o saltar el tiempo de espera de descanso de la serie anterior
+const skipRestBtn = doc.getElementById('btn-focus-rest-skip');
+assert.ok(skipRestBtn, 'Debe existir el botón para finalizar o saltar el descanso');
+skipRestBtn.click();
+
+// 30.4 Verificar que el contador avanzó automáticamente a Serie 2 y calculó ÚNICAMENTE las reps de la Serie 2 (10)
+assert.equal(counterPill.textContent.trim(), 'SERIE 2 DE 4', 'Tras el descanso de la Serie 1 debe avanzar automáticamente a SERIE 2 DE 4');
+assert.equal(repsDigitsEl.textContent.trim(), '10', 'Debe mostrar ÚNICAMENTE las 10 reps calculadas para la Serie 2');
+assert.ok(actionBtnEl.textContent.includes('Serie 2'), 'El botón debe haber cambiado a la Serie 2');
+assert.ok(actionBtnEl.textContent.includes('10 reps'), 'El botón debe mostrar las 10 reps calculadas para la Serie 2');
+
+// 30.5 Completar Serie 2 y saltar descanso -> debe calcular y mostrar Serie 3 (8 reps)
+actionBtnEl.click();
+skipRestBtn.click();
+assert.equal(counterPill.textContent.trim(), 'SERIE 3 DE 4', 'Debe avanzar a SERIE 3 DE 4');
+assert.equal(repsDigitsEl.textContent.trim(), '8', 'Debe calcular y mostrar ÚNICAMENTE las 8 reps de la Serie 3');
+
+// 30.6 Completar Serie 3 y saltar descanso -> debe calcular y mostrar Serie 4 (6 reps)
+actionBtnEl.click();
+skipRestBtn.click();
+assert.equal(counterPill.textContent.trim(), 'SERIE 4 DE 4', 'Debe avanzar a SERIE 4 DE 4');
+assert.equal(repsDigitsEl.textContent.trim(), '6', 'Debe calcular y mostrar ÚNICAMENTE las 6 reps de la Serie 4');
+
+// 30.7 Completar última serie -> debe mostrar estado de ejercicio completado
+actionBtnEl.click();
+assert.ok(counterPill.textContent.includes('4 DE 4 SERIES'), 'Al terminar todas las series debe indicar completado');
+assert.equal(repsDigitsEl.textContent.trim(), '✓', 'Dígitos deben mostrar el check de finalizado');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.8 (Modo Inmersivo de Ejercicio, Terminar/Truncar Sesión, Resultados y Próxima Proyección Muscular con 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.10 (Pantalla Compacta, Contador de Serie Actual y Repeticiones Dinámicas tras Descanso con 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 
