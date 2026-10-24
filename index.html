@@ -357,6 +357,117 @@
         </details>
       </article>
 
+      <!-- =====================================================================
+           MÓDULO DE MÚSICA DE ENTRENAMIENTO (SPOTIFY PREMIUM & YOUTUBE MUSIC)
+           Optimizado para Android APK y Navegador con controles de canciones
+           ===================================================================== -->
+      <section class="workout-music-dock" id="workout-music-dock" aria-label="Reproductor de música para entrenamiento">
+        <div class="music-dock-header">
+          <div class="music-service-tabs" role="tablist" aria-label="Servicio de música">
+            <button type="button" class="btn-music-tab is-active" id="btn-tab-spotify" data-service="spotify" role="tab" aria-selected="true">
+              <span class="music-tab-dot dot-spotify" aria-hidden="true"></span> Spotify Premium
+            </button>
+            <button type="button" class="btn-music-tab" id="btn-tab-ytmusic" data-service="ytmusic" role="tab" aria-selected="false">
+              <span class="music-tab-dot dot-ytmusic" aria-hidden="true"></span> YouTube Music
+            </button>
+          </div>
+          <div class="music-dock-header-actions">
+            <button type="button" class="btn-music-ghost-link" id="btn-music-open-native" title="Abrir app en Android en segundo plano">
+              📲 Abrir App
+            </button>
+            <button type="button" class="btn-music-ghost-link" id="btn-music-config-toggle" title="Configurar conexión de música">
+              ⚙️ Conexión
+            </button>
+          </div>
+        </div>
+
+        <!-- Panel Principal de Reproducción y Metadatos -->
+        <div class="music-dock-body">
+          <div class="music-track-meta">
+            <div class="music-cover-art" id="music-cover-art" aria-hidden="true">
+              <span class="music-cover-fallback" id="music-cover-fallback">🎧</span>
+            </div>
+            <div class="music-info-text">
+              <strong class="music-track-title" id="music-track-title">Spotify Connect</strong>
+              <span class="music-track-artist" id="music-track-artist">Listo para entrenar</span>
+              <div class="music-eq-visualizer" id="music-eq-visualizer" aria-hidden="true">
+                <span class="eq-bar bar-1"></span>
+                <span class="eq-bar bar-2"></span>
+                <span class="eq-bar bar-3"></span>
+                <span class="eq-bar bar-4"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de Control de Canciones: Anterior, Play/Pausa, Siguiente -->
+          <div class="music-controls-row">
+            <button type="button" class="btn-music-control btn-music-step" id="btn-music-prev" aria-label="Canción anterior" title="Canción anterior">
+              ⏮
+            </button>
+            <button type="button" class="btn-music-control btn-music-main-play" id="btn-music-playpause" aria-label="Reproducir o pausar" title="Reproducir o pausar">
+              ▶
+            </button>
+            <button type="button" class="btn-music-control btn-music-step" id="btn-music-next" aria-label="Siguiente canción" title="Siguiente canción">
+              ⏭
+            </button>
+          </div>
+        </div>
+
+        <!-- Contenedor Embebido para YouTube IFrame Player (en segundo plano) -->
+        <div class="music-embed-container" id="music-embed-container" hidden>
+          <div id="yt-player-target"></div>
+        </div>
+
+        <!-- Desplegable de Configuración y Cuentas -->
+        <div class="music-config-drawer" id="music-config-drawer" hidden>
+          <!-- Configuración Spotify Connect -->
+          <div class="music-config-panel" id="config-panel-spotify">
+            <div class="config-lead">
+              <strong>Control Spotify Connect (Requiere Spotify Premium)</strong>
+              <p class="config-desc">
+                Con Spotify reproduciendo en tu teléfono Android o computadora, esta app toma el control directo en segundo plano sin interrumpir tu entrenamiento.
+              </p>
+            </div>
+            <div class="config-input-group">
+              <label for="spotify-token-input">Token de Acceso Spotify (OAuth):</label>
+              <div class="input-with-action">
+                <input type="password" id="spotify-token-input" placeholder="Pega tu Access Token de Spotify..." autocomplete="off">
+                <button type="button" class="btn-primary btn-save-token" id="btn-save-spotify-token">Guardar</button>
+              </div>
+              <div class="config-links-row">
+                <button type="button" class="btn-ghost-sm" id="btn-spotify-quick-auth">🔑 Conectar con Spotify</button>
+                <button type="button" class="btn-ghost-sm" id="btn-spotify-check-status">🔄 Probar Conexión</button>
+              </div>
+              <small class="config-status-msg" id="spotify-status-msg">Estado: Esperando token o reproducción activa</small>
+            </div>
+          </div>
+
+          <!-- Configuración YouTube Music -->
+          <div class="music-config-panel" id="config-panel-ytmusic" hidden>
+            <div class="config-lead">
+              <strong>Estación de Entrenamiento YouTube Music</strong>
+              <p class="config-desc">
+                Selecciona una lista de alta intensidad para entrenar o introduce una URL / Playlist propia de YouTube:
+              </p>
+            </div>
+            <div class="config-input-group">
+              <label for="yt-playlist-select">Lista de Reproducción:</label>
+              <select id="yt-playlist-select" class="form-select">
+                <option value="PL4fGSI1pDJn6O3Qj9X5d2fRz7Xk0C_2M2">🔥 Gym Phonk & Hardstyle Beast Mode</option>
+                <option value="PL9bw4S5ePsEGg7FqWw9ZqJm1jNqWJqG8o">🎸 Heavy Metal & Rock Workout</option>
+                <option value="PLDIoUOhQQPCZ2mQ9Xy2jS6p5QW8Xv8T4x">⚡ Electronic Gym Pump & EDM</option>
+                <option value="PLmcK56e0v29N4P7ZzXlH4WqGvY0R9zJ2s">🎧 Hip-Hop & Trap Motivation</option>
+                <option value="custom">📝 Otra Playlist / Enlace Personalizado</option>
+              </select>
+              <div id="yt-custom-url-box" class="custom-url-box" hidden>
+                <input type="text" id="yt-custom-url-input" placeholder="URL o ID de playlist de YouTube...">
+                <button type="button" class="btn-secondary btn-apply-yt" id="btn-apply-yt-custom">Cargar Lista</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div class="focus-screen-footer">
         <button type="button" id="btn-focus-finish-workout" class="btn-primary btn-finish-day-wide">
           🏆 Terminar Sesión

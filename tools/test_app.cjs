@@ -678,11 +678,80 @@ assert.equal(viernesPolea.loadValue, 7, 'El Jalón en polea en Viernes debe habe
 app.closeWorkoutResultsDialog();
 app.exitWorkoutScreen();
 
+// 30. Verificar Conector de Música para Entrenamiento (Spotify Premium & YouTube Music para Android APK y Navegador)
+app.startDayWorkoutSession('lunes', 0);
+
+const musicDock = doc.getElementById('workout-music-dock');
+assert.ok(musicDock, 'Debe existir el elemento #workout-music-dock en la pantalla de entrenamiento');
+assert.equal(doc.querySelectorAll('#workout-music-dock svg').length, 0, 'El dock de música debe tener CERO etiquetas <svg> (0% SVGs)');
+
+// Botones de control de canciones
+const btnPrevSong = doc.getElementById('btn-music-prev');
+const btnPlayPauseSong = doc.getElementById('btn-music-playpause');
+const btnNextSong = doc.getElementById('btn-music-next');
+const btnOpenNative = doc.getElementById('btn-music-open-native');
+const btnConfigMusic = doc.getElementById('btn-music-config-toggle');
+
+assert.ok(btnPrevSong, 'Debe existir el botón #btn-music-prev (Canción Anterior)');
+assert.ok(btnPlayPauseSong, 'Debe existir el botón #btn-music-playpause (Play / Pausa)');
+assert.ok(btnNextSong, 'Debe existir el botón #btn-music-next (Siguiente Canción)');
+assert.ok(btnOpenNative, 'Debe existir el botón #btn-music-open-native (Abrir App en Android)');
+assert.ok(btnConfigMusic, 'Debe existir el botón #btn-music-config-toggle (Configurar Conexión)');
+
+// Pestañas de servicio
+const tabSpotify = doc.getElementById('btn-tab-spotify');
+const tabYt = doc.getElementById('btn-tab-ytmusic');
+assert.ok(tabSpotify, 'Debe existir la pestaña Spotify Premium');
+assert.ok(tabYt, 'Debe existir la pestaña YouTube Music');
+
+// Probar cambio a YouTube Music
+app.selectMusicService('ytmusic');
+assert.equal(app.getMusicState().service, 'ytmusic', 'El servicio activo debe ser ytmusic');
+assert.ok(musicDock.classList.contains('service-ytmusic'), 'El dock debe tener la clase service-ytmusic');
+assert.ok(tabYt.classList.contains('is-active'), 'La pestaña YouTube Music debe estar activa');
+
+// Probar reproducción / pausa
+const wasPlaying = app.getMusicState().isPlaying;
+app.toggleMusicPlayPause();
+assert.equal(app.getMusicState().isPlaying, !wasPlaying, 'toggleMusicPlayPause debe alternar el estado isPlaying');
+assert.equal(btnPlayPauseSong.textContent.trim(), '⏸', 'Al reproducir debe mostrar el icono de pausa ⏸');
+assert.ok(musicDock.classList.contains('is-playing'), 'El dock debe tener la clase is-playing');
+
+app.toggleMusicPlayPause();
+assert.equal(app.getMusicState().isPlaying, false, 'Al pausar debe volver a false');
+assert.equal(btnPlayPauseSong.textContent.trim(), '▶', 'Al pausar debe mostrar el icono de play ▶');
+
+// Probar salto de canción
+app.skipMusicNext();
+app.skipMusicPrev();
+
+// Probar selección de playlist de YouTube
+app.setYouTubePlaylist('PL9bw4S5ePsEGg7FqWw9ZqJm1jNqWJqG8o');
+assert.equal(app.getMusicState().ytPlaylistId, 'PL9bw4S5ePsEGg7FqWw9ZqJm1jNqWJqG8o', 'Debe actualizar la playlist de YouTube');
+
+// Probar cambio a Spotify Premium
+app.selectMusicService('spotify');
+assert.equal(app.getMusicState().service, 'spotify', 'El servicio activo debe ser spotify');
+assert.ok(musicDock.classList.contains('service-spotify'), 'El dock debe tener la clase service-spotify');
+assert.ok(tabSpotify.classList.contains('is-active'), 'La pestaña Spotify debe estar activa');
+
+// Probar token de Spotify
+app.setSpotifyToken('BQB_mock_token_12345');
+assert.equal(app.getMusicState().spotifyToken, 'BQB_mock_token_12345', 'Debe almacenar el token de Spotify');
+
+// Probar alternancia de cajón de configuración
+app.toggleMusicConfigDrawer();
+assert.equal(doc.getElementById('music-config-drawer').hidden, false, 'El cajón de configuración debe abrirse');
+app.toggleMusicConfigDrawer(false);
+assert.equal(doc.getElementById('music-config-drawer').hidden, true, 'El cajón de configuración debe cerrarse');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.8 (Modo Inmersivo de Ejercicio, Terminar/Truncar Sesión, Resultados y Próxima Proyección Muscular con 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.9 (Modo Inmersivo de Ejercicio, Conector de Música Spotify Premium & YouTube Music para Android/Navegador con 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 
