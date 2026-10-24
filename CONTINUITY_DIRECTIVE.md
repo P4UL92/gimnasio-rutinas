@@ -8,7 +8,7 @@ Cuando la conversación actual se aproxime al límite de contexto o el usuario s
 
 1. **Guardar y Verificar Estado**:
    - Asegurarse de que todos los archivos estén editados, sin errores de sintaxis (`node --check`).
-   - Ejecutar la suite de pruebas completa: `npm test && npm run test:android-prepare`.
+   - Ejecutar la suite de pruebas en navegador/DOM: `npm test` (NO empaquetar ni ejecutar tareas de Android).
    - Realizar commit y push a la rama `main` en Git.
    - Confirmar que el servidor de depuración local en `http://localhost:8080` continúe activo.
 

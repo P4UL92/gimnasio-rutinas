@@ -7,7 +7,7 @@ El prompt de continuidad debe contener siempre:
 1. **Ruta y Rama del Repositorio**: `/data/data/com.termux/files/home/gimnasio-rutinas` (rama `main`).
 2. **Entorno de Ejecución Local**: Servidor Node `tools/serve.cjs` en `http://127.0.0.1:8080` (localhost).
 3. **Versión y Módulos Activos**: Estado actual del software (v1.9 con perfil biométrico, cargas dinámicas, acomodador inteligente y 0% SVGs).
-4. **Logros de la Sesión Previa**: Resumen conciso de cambios efectuados y tests pasando (`npm test`, `npm run test:android-prepare`).
+4. **Logros de la Sesión Previa**: Resumen conciso de cambios efectuados y tests pasando (`npm test`).
 5. **Próximos Pasos Priorizados**: Lista numerada de tareas concretas a implementar inmediatamente.
 6. **Comando de Arranque Inmediato**: Instrucción para ejecutar las pruebas, verificar el servidor y proseguir el desarrollo sin demoras ni preguntas innecesarias.
 
@@ -15,7 +15,7 @@ El prompt de continuidad debe contener siempre:
 
 ## 2. Pautas Técnicas del Proyecto
 - **Zero SVGs**: Todo el proyecto utiliza exclusivamente imágenes rasterizadas WebP/JPG/PNG con sprites biomecánicos y CSS puro. No utilizar `<svg>`.
-- **Desarrollo en Localhost**: El usuario prueba y depura en tiempo real en este dispositivo a través de `http://localhost:8080`.
+- **Desarrollo y Depuración Exclusivamente en Navegador (Localhost)**: El usuario prueba y depura en tiempo real únicamente a través del navegador en `http://localhost:8080`. **NO empaquetar la aplicación ni ejecutar builds/sync de Android** (`build_web_dist.cjs`, `npx cap sync android`, etc.).
 - **Único Perfil Guardado**: El sistema maneja un único perfil biométrico persistente en almacenamiento interno (`localStorage`).
 - **Cargas y Rangos Dinámicos**: Todo cálculo de peso (kg o nivel), repeticiones, series y descansos es calibrado dinámicamente según la biometría y los objetivos de la persona.
 - **Sustitución Biomecánica**: Ante máquinas ocupadas o molestias articulares, ofrecer siempre alternativas equivalentes de los 3 grupos (polea, máquina guiada y peso libre).
