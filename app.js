@@ -1272,22 +1272,113 @@
     const metaRow = document.createElement('div');
     metaRow.className = 'exercise-meta';
 
-    const muscleSpan = document.createElement('span');
-    muscleSpan.textContent = `🎯 ${ex.muscle}`;
-    metaRow.appendChild(muscleSpan);
-
-    const equipSpan = document.createElement('span');
-    equipSpan.textContent = `⚙️ ${ex.equipment}`;
-    metaRow.appendChild(equipSpan);
+    // Botón de ayuda tipo incógnita para desplegar máquina, músculo y técnica
+    const btnHelp = document.createElement('button');
+    btnHelp.type = 'button';
+    btnHelp.className = 'btn-ex-help-trigger';
+    btnHelp.setAttribute('aria-expanded', 'false');
+    btnHelp.setAttribute('aria-label', `Información de máquina y músculo para ${ex.name}`);
+    btnHelp.title = 'Toca para ver el nombre de la máquina, músculo trabajado y técnica de ejecución';
+    btnHelp.innerHTML = '<span class="help-btn-icon">❓</span><span class="help-btn-label">Máquina & Músculo</span>';
+    metaRow.appendChild(btnHelp);
 
     if (ex.userBase) {
       const baseBadge = document.createElement('span');
       baseBadge.className = 'badge badge-user-base';
-      baseBadge.textContent = '★ Marca actual configurada';
+      baseBadge.textContent = '★ Marca actual';
       metaRow.appendChild(baseBadge);
     }
 
+    if (ex.isSwappedAlternative) {
+      const swappedBadge = document.createElement('span');
+      swappedBadge.className = 'badge badge-swapped-alt';
+      swappedBadge.textContent = '🔄 Sustituto';
+      metaRow.appendChild(swappedBadge);
+    }
+
     titleGroup.appendChild(metaRow);
+
+    // Panel de Ayuda Desplegable (Ficha Técnica e Implementos)
+    const helpPanel = document.createElement('div');
+    helpPanel.className = 'exercise-help-panel is-hidden';
+    helpPanel.setAttribute('role', 'region');
+    helpPanel.setAttribute('aria-label', `Ficha informativa de ${ex.name}`);
+
+    const helpHeader = document.createElement('div');
+    helpHeader.className = 'help-panel-header';
+    const helpTitle = document.createElement('span');
+    helpTitle.className = 'help-panel-title';
+    helpTitle.textContent = 'ℹ️ Implementos, Músculo y Guía';
+    const btnCloseHelp = document.createElement('button');
+    btnCloseHelp.type = 'button';
+    btnCloseHelp.className = 'btn-help-close';
+    btnCloseHelp.setAttribute('aria-label', 'Cerrar ficha informativa');
+    btnCloseHelp.textContent = '✕';
+    helpHeader.append(helpTitle, btnCloseHelp);
+
+    const helpGrid = document.createElement('div');
+    helpGrid.className = 'help-panel-grid';
+
+    const itemMuscle = document.createElement('div');
+    itemMuscle.className = 'help-panel-chip';
+    itemMuscle.innerHTML = `<span class="help-chip-label">🎯 Músculo que se trabajará:</span>`;
+    const strongMuscle = document.createElement('strong');
+    strongMuscle.className = 'help-chip-val';
+    strongMuscle.textContent = ex.muscle || 'Músculo principal';
+    itemMuscle.appendChild(strongMuscle);
+
+    const itemEquip = document.createElement('div');
+    itemEquip.className = 'help-panel-chip';
+    itemEquip.innerHTML = `<span class="help-chip-label">⚙️ Nombre de la Máquina / Implemento:</span>`;
+    const strongEquip = document.createElement('strong');
+    strongEquip.className = 'help-chip-val';
+    strongEquip.textContent = ex.equipment || 'Máquina / Polea';
+    itemEquip.appendChild(strongEquip);
+
+    const itemRest = document.createElement('div');
+    itemRest.className = 'help-panel-chip';
+    itemRest.innerHTML = `<span class="help-chip-label">⏱️ Descanso sugerido:</span><span class="help-chip-val">${ex.restSeconds || 75} segundos entre series</span>`;
+
+    const itemRir = document.createElement('div');
+    itemRir.className = 'help-panel-chip';
+    const rirVal = ex.targetRir || 'RIR 2';
+    itemRir.innerHTML = `<span class="help-chip-label">🎯 Esfuerzo (RIR):</span><span class="help-chip-val">${rirVal}</span>`;
+
+    helpGrid.append(itemMuscle, itemEquip, itemRest, itemRir);
+    helpPanel.append(helpHeader, helpGrid);
+
+    if (ex.note) {
+      const noteBox = document.createElement('div');
+      noteBox.className = 'help-panel-note';
+      const noteIcon = document.createElement('span');
+      noteIcon.className = 'help-note-icon';
+      noteIcon.textContent = '💡';
+      const noteContent = document.createElement('div');
+      noteContent.className = 'help-note-content';
+      const noteTitle = document.createElement('strong');
+      noteTitle.textContent = 'Instrucciones y técnica:';
+      const noteText = document.createElement('p');
+      noteText.textContent = ex.note;
+      noteContent.append(noteTitle, noteText);
+      noteBox.append(noteIcon, noteContent);
+      helpPanel.appendChild(noteBox);
+    }
+
+    const toggleHelp = (e) => {
+      e?.stopPropagation();
+      const isHidden = helpPanel.classList.contains('is-hidden');
+      if (isHidden) {
+        helpPanel.classList.remove('is-hidden');
+        btnHelp.classList.add('is-active');
+        btnHelp.setAttribute('aria-expanded', 'true');
+      } else {
+        helpPanel.classList.add('is-hidden');
+        btnHelp.classList.remove('is-active');
+        btnHelp.setAttribute('aria-expanded', 'false');
+      }
+    };
+    btnHelp.addEventListener('click', toggleHelp);
+    btnCloseHelp.addEventListener('click', toggleHelp);
 
     const loadBox = document.createElement('div');
     loadBox.className = 'load-control-box';
@@ -1322,7 +1413,7 @@
 
     loadBox.append(btnMinus, btnUnit, btnPlus);
     topRow.append(titleGroup, loadBox);
-    li.appendChild(topRow);
+    li.append(topRow, helpPanel);
 
     // CONTROLES ESENCIALES EN PANTALLA: Series y Repeticiones (4 × 12)
     const setsRow = document.createElement('div');
@@ -3318,13 +3409,19 @@
       `;
     }
 
-    // 2. Encabezado del Ejercicio
+    // 2. Encabezado del Ejercicio y Ficha de Ayuda
     const muscleBadge = document.getElementById('focus-ex-muscle-badge');
     const equipBadge = document.getElementById('focus-ex-equip-badge');
     const titleEl = document.getElementById('focus-ex-title');
-    if (muscleBadge) muscleBadge.textContent = `🎯 ${ex.muscle || 'Principal'}`;
-    if (equipBadge) equipBadge.textContent = `⚙️ ${ex.equipment || 'Polea / Máquina'}`;
+    const restEl = document.getElementById('focus-help-rest');
+    const rirEl = document.getElementById('focus-help-rir');
+    const helpNoteEl = document.getElementById('focus-help-note');
+    if (muscleBadge) muscleBadge.textContent = `${ex.muscle || 'Músculo Principal'}`;
+    if (equipBadge) equipBadge.textContent = `${ex.equipment || 'Polea / Máquina'}`;
     if (titleEl) titleEl.textContent = ex.name;
+    if (restEl) restEl.textContent = `${ex.restSeconds || 75}s`;
+    if (rirEl) rirEl.textContent = `${ex.targetRir || 'RIR 2'}`;
+    if (helpNoteEl) helpNoteEl.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
 
     // 3. Control Esencial de Peso / Nivel y Repeticiones
     const badgeInfo = formatLoadBadge(ex);
@@ -3521,6 +3618,25 @@
   }
 
   let activeProjectionCache = null;
+
+  function toggleFocusHelpPanel(forceState) {
+    const panel = document.getElementById('focus-help-panel');
+    const btn = document.getElementById('btn-focus-help');
+    if (!panel || !btn) return;
+    const isCurrentlyHidden = panel.classList.contains('is-hidden');
+    const shouldShow = typeof forceState === 'boolean' ? forceState : isCurrentlyHidden;
+    if (shouldShow) {
+      panel.classList.remove('is-hidden');
+      panel.setAttribute('aria-hidden', 'false');
+      btn.classList.add('is-active');
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      panel.classList.add('is-hidden');
+      panel.setAttribute('aria-hidden', 'true');
+      btn.classList.remove('is-active');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  }
 
   function skipCurrentFocusExercise() {
     const day = state.schedule[state.selectedDay];
@@ -4561,6 +4677,9 @@
     });
     document.getElementById('btn-focus-skip-exercise')?.addEventListener('click', () => {
       skipCurrentFocusExercise();
+    });
+    document.getElementById('btn-focus-help')?.addEventListener('click', () => {
+      toggleFocusHelpPanel();
     });
 
     document.getElementById('btn-results-apply-progression')?.addEventListener('click', () => {

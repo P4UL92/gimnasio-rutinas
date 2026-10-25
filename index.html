@@ -278,13 +278,39 @@
         <header class="focus-ex-header">
           <div class="focus-ex-title-row">
             <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
-            <button type="button" id="btn-focus-skip-exercise" class="btn-skip-ex-link" title="Omitir o terminar este ejercicio y pasar al siguiente">
-              ⏭️ Saltar Ejercicio
-            </button>
+            <div class="focus-ex-header-actions">
+              <button type="button" id="btn-focus-help" class="btn-focus-help" aria-expanded="false" title="Ver máquina, músculo y técnica de ejecución">
+                <span class="help-btn-icon">❓</span> Máquina & Info
+              </button>
+              <button type="button" id="btn-focus-skip-exercise" class="btn-skip-ex-link" title="Omitir o terminar este ejercicio y pasar al siguiente">
+                ⏭️ Saltar
+              </button>
+            </div>
           </div>
-          <div class="focus-ex-badges">
-            <span id="focus-ex-muscle-badge" class="badge badge-muscle">🎯 Espalda</span>
-            <span id="focus-ex-equip-badge" class="badge">⚙️ Polea</span>
+          <!-- Panel Desplegable de Ayuda e Información de Máquina / Músculo -->
+          <div id="focus-help-panel" class="focus-help-panel is-hidden" aria-hidden="true">
+            <div class="focus-help-grid">
+              <div class="focus-help-chip">
+                <span class="focus-help-label">🎯 Músculo:</span>
+                <strong id="focus-ex-muscle-badge" class="focus-help-val">🎯 Espalda</strong>
+              </div>
+              <div class="focus-help-chip">
+                <span class="focus-help-label">⚙️ Máquina / Implemento:</span>
+                <strong id="focus-ex-equip-badge" class="focus-help-val">⚙️ Polea</strong>
+              </div>
+              <div class="focus-help-chip">
+                <span class="focus-help-label">⏱️ Descanso:</span>
+                <span id="focus-help-rest" class="focus-help-val">75s</span>
+              </div>
+              <div class="focus-help-chip">
+                <span class="focus-help-label">🎯 Esfuerzo (RIR):</span>
+                <span id="focus-help-rir" class="focus-help-val">RIR 2</span>
+              </div>
+            </div>
+            <div id="focus-help-note-row" class="focus-help-note-row">
+              <span class="focus-help-note-icon">💡</span>
+              <p id="focus-help-note" class="focus-help-note-text"></p>
+            </div>
           </div>
         </header>
 

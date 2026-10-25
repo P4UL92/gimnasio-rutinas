@@ -846,11 +846,58 @@ for (const [key, config] of Object.entries(spriteCatalog)) {
   assert.ok(fs.existsSync(fullSpritePath), `El sprite ${config.spriteUrl} del patrón ${key} debe existir`);
 }
 
+// --- Suite 33: Botones de Ayuda (Incógnita) para Máquina, Músculo y Ficha Técnica ---
+console.log('Ejecutando Suite 33: Botones de Ayuda (Incógnita) para Máquina y Músculo...');
+
+// 33.1 Seleccionar día lunes y verificar presencia de botón de ayuda en tarjetas de ejercicio
+app.selectDay('lunes');
+const mondayCards = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.ok(mondayCards.length > 0, 'Deben existir tarjetas de ejercicios en la vista de rutina');
+const firstCard = mondayCards[0];
+
+const helpBtn = firstCard.querySelector('.btn-ex-help-trigger');
+assert.ok(helpBtn, 'La tarjeta de ejercicio debe contener el botón de ayuda tipo incógnita (.btn-ex-help-trigger)');
+assert.ok(helpBtn.textContent.includes('❓') || helpBtn.textContent.includes('Máquina'), 'El botón debe mostrar icono de incógnita/ayuda');
+
+const helpPanel = firstCard.querySelector('.exercise-help-panel');
+assert.ok(helpPanel, 'La tarjeta debe tener su panel informativo desplegable (.exercise-help-panel)');
+assert.ok(helpPanel.classList.contains('is-hidden'), 'El panel de ayuda debe comenzar plegado (is-hidden) para mantener la vista limpia');
+
+// 33.2 Simular pulsación del botón de ayuda: debe desplegarse y mostrar máquina y músculo
+helpBtn.click();
+assert.ok(!helpPanel.classList.contains('is-hidden'), 'Al pulsar el botón de ayuda, el panel debe mostrarse');
+assert.ok(helpBtn.classList.contains('is-active'), 'El botón debe marcarse activo al estar abierto el panel');
+
+const helpText = helpPanel.textContent;
+assert.ok(helpText.includes('Músculo') && helpText.includes('Máquina'), 'El panel debe mostrar el nombre del músculo y de la máquina');
+
+// 33.3 Cerrar el panel mediante el botón de cierre
+const closeBtn = helpPanel.querySelector('.btn-help-close');
+assert.ok(closeBtn, 'El panel debe contener botón de cierre (✕)');
+closeBtn.click();
+assert.ok(helpPanel.classList.contains('is-hidden'), 'Al pulsar cerrar, el panel debe ocultarse');
+assert.ok(!helpBtn.classList.contains('is-active'), 'El botón debe desactivarse al cerrar');
+
+// 33.4 Verificar botón de ayuda e información en la pantalla de entrenamiento (Focus Mode)
+const focusHelpBtn = doc.getElementById('btn-focus-help');
+const focusHelpPanel = doc.getElementById('focus-help-panel');
+assert.ok(focusHelpBtn, 'La pantalla de entrenamiento debe incluir el botón de ayuda #btn-focus-help');
+assert.ok(focusHelpPanel, 'La pantalla de entrenamiento debe incluir el panel #focus-help-panel');
+assert.ok(focusHelpPanel.classList.contains('is-hidden'), 'El panel de ayuda en entrenamiento debe iniciar oculto');
+
+focusHelpBtn.click();
+assert.ok(!focusHelpPanel.classList.contains('is-hidden'), 'Al tocar #btn-focus-help, el panel de ayuda debe abrirse');
+assert.ok(doc.getElementById('focus-ex-muscle-badge'), 'Debe existir indicador de músculo en focus');
+assert.ok(doc.getElementById('focus-ex-equip-badge'), 'Debe existir indicador de máquina en focus');
+
+focusHelpBtn.click();
+assert.ok(focusHelpPanel.classList.contains('is-hidden'), 'Al volver a tocar #btn-focus-help, el panel de ayuda debe cerrarse');
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.12 (Auditoría Integral de Sprites, Implementos Completos y 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.13 (Botones de Ayuda e Incógnita, Máquina/Músculo Desplegable y 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 
