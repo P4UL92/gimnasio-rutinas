@@ -491,14 +491,26 @@
     }
   }
 
+  let celebrationToastTimer = null;
   function showCelebrationToast(message) {
     const toast = document.getElementById('celebration-toast');
     if (!toast) return;
     toast.textContent = message;
     toast.hidden = false;
-    setTimeout(() => {
-      toast.hidden = true;
-    }, 3200);
+    toast.classList.remove('is-leaving');
+    // Forzar reflow para reiniciar la animación suavemente si se dispara de forma consecutiva
+    void toast.offsetWidth;
+    toast.classList.add('is-active');
+
+    if (celebrationToastTimer) clearTimeout(celebrationToastTimer);
+    celebrationToastTimer = setTimeout(() => {
+      toast.classList.remove('is-active');
+      toast.classList.add('is-leaving');
+      setTimeout(() => {
+        toast.hidden = true;
+        toast.classList.remove('is-leaving');
+      }, 320);
+    }, 3000);
   }
 
   function triggerHaptic(pattern = [60]) {
@@ -5480,6 +5492,7 @@
     adjustExerciseLoad,
     toggleSetCompletion,
     logCurrentWorkoutSession,
+    showCelebrationToast,
     // Navegación Inteligente de Ejercicios Concluidos
     isExerciseCompleted,
     findNextPendingExerciseIndex,

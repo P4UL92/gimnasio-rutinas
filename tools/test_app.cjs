@@ -1260,11 +1260,47 @@ assert.equal(finishBtn38.disabled, false, 'Cuando todos los ejercicios están co
 
 app.exitWorkoutScreen();
 
+// =========================================================================
+// SUITE 39: Transiciones de Notificaciones, Animaciones en Botones y Arrastre de Paneles
+// =========================================================================
+console.log('Ejecutando Suite 39: Transiciones de Notificaciones, Animaciones en Botones y Arrastre de Paneles...');
+
+// 39.1 Notificación Toast con animación y clase is-active
+const toastEl = doc.getElementById('celebration-toast');
+assert.ok(toastEl, 'Debe existir el contenedor #celebration-toast');
+app.showCelebrationToast('🔥 ¡Prueba de notificación con transición fluida!');
+assert.equal(toastEl.hidden, false, 'El toast no debe estar oculto al dispararse');
+assert.ok(toastEl.classList.contains('is-active'), 'El toast debe tener la clase .is-active para la transición de entrada elástica');
+
+// 39.2 Paneles modales con transición de arrastre desde abajo
+const sampleDialog = doc.getElementById('exercise-setmode-dialog');
+assert.ok(sampleDialog, 'Debe existir el modal de técnicas');
+assert.ok(sampleDialog.classList.contains('gym-dialog'), 'Debe contener la clase .gym-dialog con transition translateY');
+
+// 39.3 Verificación de paneles de serie y descanso en modo workout
+app.restoreOriginalSchedule();
+app.startDayWorkoutSession('lunes', 0);
+const activeSetCard39 = doc.getElementById('focus-active-set-card');
+assert.ok(activeSetCard39, 'Debe existir la tarjeta de serie activa');
+assert.ok(!activeSetCard39.classList.contains('is-hidden'), 'La tarjeta de serie en curso debe estar visible al iniciar');
+
+const actionBtn39 = doc.getElementById('btn-focus-action-set');
+assert.ok(actionBtn39, 'Debe existir el botón principal de serie');
+
+// Completar una serie y verificar que se active el descanso con transición de arrastre
+actionBtn39.click();
+const restCard39 = doc.getElementById('focus-rest-card');
+assert.ok(restCard39, 'Debe existir la tarjeta de descanso');
+assert.ok(!restCard39.classList.contains('is-hidden'), 'La tarjeta de descanso debe mostrarse al descansar');
+
+app.stopRestTimer();
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.18 (Navegación Inteligente de Ejercicios Concluidos) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.19 (Transiciones de Notificaciones, Animaciones de Botones y Paneles Deslizantes) pasaron con éxito.');
 process.exit(0);
 
 
