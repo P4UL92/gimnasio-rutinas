@@ -954,6 +954,68 @@
     renderAll();
   }
 
+  function isExerciseCompleted(ex) {
+    if (!ex) return false;
+    const total = Number(ex.sets) || 4;
+    if (total <= 0) return true;
+    const done = (ex.completedSets || []).filter(Boolean).length;
+    return done >= total;
+  }
+
+  function findNextPendingExerciseIndex(dayId = state.selectedDay, fromIndex = state.activeExerciseIndex) {
+    const day = state.schedule[dayId];
+    const exercises = day?.exercises || [];
+    if (exercises.length === 0) return 0;
+
+    const start = typeof fromIndex === 'number' ? fromIndex : 0;
+
+    // 1. Buscar hacia adelante (desde start + 1 hasta el final)
+    for (let i = start + 1; i < exercises.length; i++) {
+      if (!isExerciseCompleted(exercises[i])) {
+        return i;
+      }
+    }
+
+    // 2. Si hacia adelante todos están concluidos, buscar desde el inicio (de 0 a start - 1)
+    for (let i = 0; i < start; i++) {
+      if (!isExerciseCompleted(exercises[i])) {
+        return i;
+      }
+    }
+
+    // 3. Si no hay ningún otro ejercicio pendiente en todo el día
+    return start;
+  }
+
+  function advanceFromCompletedExercise(dayId = state.selectedDay) {
+    const day = state.schedule[dayId];
+    if (!day) return false;
+    const exercises = day.exercises || [];
+    const currentIdx = state.activeExerciseIndex;
+    const nextIdx = findNextPendingExerciseIndex(dayId, currentIdx);
+
+    if (nextIdx !== currentIdx) {
+      state.activeExerciseIndex = nextIdx;
+      saveState();
+      renderWorkoutFocusScreen();
+      const nextEx = exercises[nextIdx];
+      const isForward = nextIdx > currentIdx;
+      showCelebrationToast(
+        isForward
+          ? `👉 Siguiente ejercicio: ${nextEx.name}`
+          : `👉 Pasando a ejercicio pendiente: ${nextEx.name}`
+      );
+      return true;
+    } else {
+      renderWorkoutFocusScreen();
+      const allDone = exercises.length > 0 && exercises.every(isExerciseCompleted);
+      if (allDone) {
+        showCelebrationToast('🏆 ¡Todas las series completadas! Ya puedes finalizar la sesión.');
+      }
+      return false;
+    }
+  }
+
   function getActiveFocusExercise() {
     const day = state.schedule[state.selectedDay];
     return day?.exercises?.[state.activeExerciseIndex || 0] || null;
@@ -986,19 +1048,17 @@
         // Termina el descanso: se oculta el panel de descanso y se muestra el panel de la serie en curso actualizado
         stopRestTimer();
         const currentEx = getActiveFocusExercise();
-        const day = state.schedule[state.selectedDay];
-        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
-          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
-            state.activeExerciseIndex++;
+        if (currentEx && isExerciseCompleted(currentEx)) {
+          advanceFromCompletedExercise();
+        } else {
+          renderWorkoutFocusScreen();
+          const ex = getActiveFocusExercise();
+          const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+          if (ex && nextIdx !== -1) {
+            const nextReps = getExerciseSetReps(ex, nextIdx);
+            sendRestFinishedNotification('⏱️ ¡Descanso terminado!', `Es hora de ${ex.name} (Serie ${nextIdx + 1}: ${nextReps} reps) 💪`);
+            showCelebrationToast(`⏱️ ¡Descanso terminado! ${ex.name} - Serie ${nextIdx + 1}: ${nextReps} reps.`);
           }
-        }
-        renderWorkoutFocusScreen();
-        const ex = getActiveFocusExercise();
-        const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
-        if (ex && nextIdx !== -1) {
-          const nextReps = getExerciseSetReps(ex, nextIdx);
-          sendRestFinishedNotification('⏱️ ¡Descanso terminado!', `Es hora de ${ex.name} (Serie ${nextIdx + 1}: ${nextReps} reps) 💪`);
-          showCelebrationToast(`⏱️ ¡Descanso terminado! ${ex.name} - Serie ${nextIdx + 1}: ${nextReps} reps.`);
         }
         return;
       }
@@ -4078,11 +4138,12 @@
     const day = state.schedule[state.selectedDay];
     const exercises = day?.exercises || [];
     if (exercises.length === 0) return;
-    if (state.activeExerciseIndex < exercises.length - 1) {
-      state.activeExerciseIndex++;
+    const nextPending = findNextPendingExerciseIndex(state.selectedDay, state.activeExerciseIndex);
+    if (nextPending !== state.activeExerciseIndex) {
+      state.activeExerciseIndex = nextPending;
       saveState();
       renderWorkoutFocusScreen();
-      showCelebrationToast(`Ejercicio omitido. Pasando a Ejercicio ${state.activeExerciseIndex + 1}: ${exercises[state.activeExerciseIndex].name}`);
+      showCelebrationToast(`Ejercicio omitido. Pasando a: ${exercises[state.activeExerciseIndex].name}`);
     } else {
       showCelebrationToast('Has alcanzado el último ejercicio de la sesión.');
     }
@@ -5037,15 +5098,7 @@
       const totalSets = Number(ex.sets) || 4;
       const doneCount = (ex.completedSets || []).filter(Boolean).length;
       if (doneCount === totalSets) {
-        const day = state.schedule[state.selectedDay];
-        if (day && state.activeExerciseIndex < day.exercises.length - 1) {
-          state.activeExerciseIndex++;
-          renderWorkoutFocusScreen();
-          const nextEx = getActiveFocusExercise();
-          showCelebrationToast(`👉 Siguiente ejercicio: ${nextEx.name}`);
-        } else {
-          showCelebrationToast('🏆 ¡Todas las series completadas! Ya puedes finalizar la sesión.');
-        }
+        advanceFromCompletedExercise();
         return;
       }
 
@@ -5053,16 +5106,14 @@
       if (restTimerInterval) {
         stopRestTimer();
         const currentEx = getActiveFocusExercise();
-        const day = state.schedule[state.selectedDay];
-        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
-          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
-            state.activeExerciseIndex++;
-          }
+        if (currentEx && isExerciseCompleted(currentEx)) {
+          advanceFromCompletedExercise();
+        } else {
+          renderWorkoutFocusScreen();
+          const activeIdx = (ex.completedSets || []).findIndex(done => !done);
+          const repsCount = getExerciseSetReps(ex, activeIdx !== -1 ? activeIdx : 0);
+          showCelebrationToast(`💪 ¡Comenzando Serie ${(activeIdx !== -1 ? activeIdx : 0) + 1}! Objetivo: ${repsCount} repeticiones.`);
         }
-        renderWorkoutFocusScreen();
-        const activeIdx = (ex.completedSets || []).findIndex(done => !done);
-        const repsCount = getExerciseSetReps(ex, activeIdx !== -1 ? activeIdx : 0);
-        showCelebrationToast(`💪 ¡Comenzando Serie ${(activeIdx !== -1 ? activeIdx : 0) + 1}! Objetivo: ${repsCount} repeticiones.`);
         return;
       }
 
@@ -5078,18 +5129,16 @@
       if (restTimerInterval || restRemainingSeconds === 0) {
         stopRestTimer();
         const currentEx = getActiveFocusExercise();
-        const day = state.schedule[state.selectedDay];
-        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
-          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
-            state.activeExerciseIndex++;
+        if (currentEx && isExerciseCompleted(currentEx)) {
+          advanceFromCompletedExercise();
+        } else {
+          renderWorkoutFocusScreen();
+          const ex = getActiveFocusExercise();
+          const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+          if (ex && nextIdx !== -1) {
+            const nextReps = getExerciseSetReps(ex, nextIdx);
+            showCelebrationToast(`💪 ¡Comenzando Serie ${nextIdx + 1}! Objetivo: ${nextReps} repeticiones.`);
           }
-        }
-        renderWorkoutFocusScreen();
-        const ex = getActiveFocusExercise();
-        const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
-        if (ex && nextIdx !== -1) {
-          const nextReps = getExerciseSetReps(ex, nextIdx);
-          showCelebrationToast(`💪 ¡Comenzando Serie ${nextIdx + 1}! Objetivo: ${nextReps} repeticiones.`);
         }
       } else {
         const ex = getActiveFocusExercise();
@@ -5108,18 +5157,16 @@
     document.getElementById('btn-focus-rest-skip')?.addEventListener('click', () => {
       stopRestTimer();
       const currentEx = getActiveFocusExercise();
-      const day = state.schedule[state.selectedDay];
-      if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
-        if (day && state.activeExerciseIndex < day.exercises.length - 1) {
-          state.activeExerciseIndex++;
+      if (currentEx && isExerciseCompleted(currentEx)) {
+        advanceFromCompletedExercise();
+      } else {
+        renderWorkoutFocusScreen();
+        const ex = getActiveFocusExercise();
+        const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+        if (ex && nextIdx !== -1) {
+          const nextReps = getExerciseSetReps(ex, nextIdx);
+          showCelebrationToast(`⚡ Descanso terminado. Serie ${nextIdx + 1}: ${nextReps} repeticiones.`);
         }
-      }
-      renderWorkoutFocusScreen();
-      const ex = getActiveFocusExercise();
-      const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
-      if (ex && nextIdx !== -1) {
-        const nextReps = getExerciseSetReps(ex, nextIdx);
-        showCelebrationToast(`⚡ Descanso terminado. Serie ${nextIdx + 1}: ${nextReps} repeticiones.`);
       }
     });
 
@@ -5433,6 +5480,10 @@
     adjustExerciseLoad,
     toggleSetCompletion,
     logCurrentWorkoutSession,
+    // Navegación Inteligente de Ejercicios Concluidos
+    isExerciseCompleted,
+    findNextPendingExerciseIndex,
+    advanceFromCompletedExercise,
     // Modos de Serie y Técnicas
     openSetModeModal,
     closeSetModeModal,

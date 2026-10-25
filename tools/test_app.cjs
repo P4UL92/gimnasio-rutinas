@@ -1202,11 +1202,69 @@ assert.ok(!timerModeSwitcher || timerModeSwitcher.style.display.includes('none')
 app.stopRestTimer();
 app.exitWorkoutScreen();
 
+// =========================================================================
+// SUITE 38: Navegación Inteligente al Siguiente Ejercicio o al Pendiente
+// =========================================================================
+console.log('Ejecutando Suite 38: Navegación Inteligente al Siguiente Ejercicio o al Pendiente...');
+
+app.restoreOriginalSchedule();
+const suite38Exercises = app.getState().schedule['lunes'].exercises;
+assert.ok(suite38Exercises.length >= 4, 'Deben haber al menos 4 ejercicios en Lunes');
+
+// Caso 1: Ejercicio 0 se concluye, Ejercicio 1 está pendiente -> debe ir a Ejercicio 1
+suite38Exercises.forEach(ex => {
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => false);
+});
+// Marcar completado solo el ejercicio 0
+for (let s = 0; s < 4; s++) suite38Exercises[0].completedSets[s] = true;
+
+app.startDayWorkoutSession('lunes', 0);
+assert.equal(app.getState().activeExerciseIndex, 0, 'Debe iniciar en Ejercicio 0');
+const advResult1 = app.advanceFromCompletedExercise('lunes');
+assert.ok(advResult1, 'Debe haber avanzado');
+assert.equal(app.getState().activeExerciseIndex, 1, 'Habiendo completado Ejercicio 0, debe avanzar al siguiente (Ejercicio 1)');
+
+// Caso 2: Ejercicio 0 concluido, Ejercicio 1 YA CULMINADO, Ejercicio 2 pendiente
+// -> al concluirse Ejercicio 0, debe saltar Ejercicio 1 y mostrar Ejercicio 2
+app.selectFocusExercise(0);
+assert.equal(app.getState().activeExerciseIndex, 0);
+for (let s = 0; s < 4; s++) {
+  suite38Exercises[0].completedSets[s] = true;
+  suite38Exercises[1].completedSets[s] = true; // Ejercicio 1 ya culminado
+  suite38Exercises[2].completedSets[s] = false; // Ejercicio 2 pendiente
+}
+const advResult2 = app.advanceFromCompletedExercise('lunes');
+assert.ok(advResult2, 'Debe avanzar');
+assert.equal(app.getState().activeExerciseIndex, 2, 'Si el siguiente (Ejercicio 1) ya fue culminado, debe mostrar el que falte terminar (Ejercicio 2)');
+
+// Caso 3: Ejercicio 2 concluido, Ejercicios 3, 4 y 5 ya culminados, pero Ejercicio 1 quedó pendiente
+// -> al concluirse Ejercicio 2, debe dar la vuelta hacia el que falta terminar (Ejercicio 1)
+suite38Exercises.forEach((ex, idx) => {
+  const isPending = idx === 1; // Solo el ejercicio 1 está incompleto
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => !isPending);
+});
+app.selectFocusExercise(2);
+assert.equal(app.getState().activeExerciseIndex, 2);
+const advResult3 = app.advanceFromCompletedExercise('lunes');
+assert.ok(advResult3, 'Debe avanzar hacia el ejercicio pendiente');
+assert.equal(app.getState().activeExerciseIndex, 1, 'Si los siguientes ya fueron culminados, debe mostrar el ejercicio que falte terminar (Ejercicio 1)');
+
+// Caso 4: Todos los ejercicios del día culminados
+suite38Exercises.forEach(ex => {
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => true);
+});
+app.renderWorkoutFocusScreen();
+const finishBtn38 = doc.getElementById('btn-focus-finish-workout');
+assert.ok(finishBtn38, 'Debe existir el botón de finalizar');
+assert.equal(finishBtn38.disabled, false, 'Cuando todos los ejercicios están concluidos el botón terminar sesión debe estar activo');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.17 (Paneles RIR y TUT + Quitar Cronómetro en Descanso) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.18 (Navegación Inteligente de Ejercicios Concluidos) pasaron con éxito.');
 process.exit(0);
 
 
