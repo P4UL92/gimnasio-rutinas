@@ -1167,15 +1167,20 @@ assert.ok(tutDialog.textContent.includes('3 Segundos de Bajada'), 'Debe detallar
 assert.ok(tutDialog.textContent.includes('1 Segundo de Pausa'), 'Debe detallar la fase isométrica (1s)');
 assert.ok(tutDialog.textContent.includes('1 Segundo de Subida'), 'Debe detallar la fase concéntrica (1s)');
 
-// Probar botón Cerrar sin iniciar TUT
+// Probar botón Cerrar en TUT (debe decir solo Cerrar y tener tono rojo)
 const btnCloseTut = doc.getElementById('btn-tut-close');
 assert.ok(btnCloseTut, 'Debe existir botón de cerrar en TUT');
+assert.ok(btnCloseTut.textContent.includes('Cerrar'), 'El botón debe decir Cerrar');
+assert.ok(!btnCloseTut.textContent.includes('sin Iniciar'), 'El botón de TUT no debe contener "sin Iniciar"');
+assert.ok(btnCloseTut.classList.contains('btn-close-danger'), 'El botón de cerrar debe tener la clase de tono rojo');
 btnCloseTut.click();
 
-// Abrir y presionar continuar para iniciar medición
+// Abrir y presionar iniciar medición (debe decir "▶ Iniciar Medición" sin "Continuar e ")
 btnFocusTut.click();
 const btnProceedTut = doc.getElementById('btn-tut-proceed');
-assert.ok(btnProceedTut, 'Debe existir botón continuar e iniciar medición en TUT');
+assert.ok(btnProceedTut, 'Debe existir botón de iniciar medición en TUT');
+assert.ok(btnProceedTut.textContent.includes('Iniciar Medición'), 'El botón debe decir Iniciar Medición');
+assert.ok(!btnProceedTut.textContent.includes('Continuar e'), 'No debe decir "Continuar e "');
 btnProceedTut.click();
 
 // Verificar que se inició la medición TUT para el ejercicio
