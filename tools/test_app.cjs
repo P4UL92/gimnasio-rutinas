@@ -1034,6 +1034,22 @@ assert.ok(actionBtnCompleted.textContent.includes('Ejercicio completado...'), 'E
 actionBtnCompleted.click();
 assert.equal(app.getState().activeExerciseIndex, 1, 'Debe haber avanzado automáticamente al Ejercicio 2');
 
+// 35.6 Verificación de peso a ambos lados (mancuernas y discos) y etiqueta de reloj de sesión
+const badgeDumbbell = app.formatLoadBadge({ name: 'Elevaciones Laterales con Mancuerna', loadValue: 12, equipment: 'Mancuernas' });
+assert.equal(badgeDumbbell.main, '12 kg');
+assert.ok(badgeDumbbell.sub.includes('c/mancuerna (ambos lados)'), 'Mancuernas deben indicar c/mancuerna (ambos lados)');
+
+const badgeBarbell = app.formatLoadBadge({ name: 'Press de Pecho en Barra', loadValue: 60, equipment: 'Barra' });
+assert.equal(badgeBarbell.main, '60 kg total');
+assert.ok(badgeBarbell.sub.includes('30 kg a cada lado'), 'Barra/discos debe indicar peso a cada lado');
+
+const badgePrensa = app.formatLoadBadge({ name: 'Prensa de piernas (Pies en parte alta)', loadValue: 100, equipment: 'Prensa 45' });
+assert.equal(badgePrensa.main, '100 kg total');
+assert.ok(badgePrensa.sub.includes('50 kg a cada lado'), 'Prensa debe indicar peso a cada lado');
+
+const sessionClockLabel = doc.querySelector('.focus-live-clock .focus-clock-label');
+assert.ok(sessionClockLabel && sessionClockLabel.textContent.includes('SESIÓN'), 'El cronómetro de la barra superior debe tener la etiqueta SESIÓN:');
+
 app.exitWorkoutScreen();
 
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales

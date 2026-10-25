@@ -611,13 +611,16 @@
   }
 
   function formatLoadBadge(ex) {
+    if (!ex) return { main: '0 kg', sub: 'Peso', cssClass: 'unit-kg' };
+
     if (ex.loadType === 'nivel') {
       return {
         main: `Nivel ${ex.loadValue}`,
-        sub: 'Placa / Polea (sin kg)',
+        sub: 'Torre de placas (selector)',
         cssClass: 'unit-nivel'
       };
     }
+
     if (ex.loadType === 'corporal') {
       return {
         main: ex.loadValue > 0 ? `Corporal +${ex.loadValue}kg` : 'Peso Corporal',
@@ -625,9 +628,40 @@
         cssClass: 'unit-corporal'
       };
     }
+
+    const text = `${(ex.name || '')} ${(ex.equipment || '')} ${(ex.id || '')}`.toLowerCase();
+
+    // 1. Mancuernas (especifica peso en cada mano / ambos lados)
+    if (text.includes('mancuerna') || text.includes('mancuernas') || text.includes('dumbbell')) {
+      return {
+        main: `${ex.loadValue} kg`,
+        sub: 'c/mancuerna (ambos lados)',
+        cssClass: 'unit-kg'
+      };
+    }
+
+    // 2. Poleas / Torres en kg (incluso si usan accesorio de barra o cuerda)
+    if (text.includes('polea') || text.includes('cable') || text.includes('crossover')) {
+      return {
+        main: `${ex.loadValue} kg`,
+        sub: 'Carga total en polea',
+        cssClass: 'unit-kg'
+      };
+    }
+
+    // 3. Barra con discos / Multipower / Prensa 45° / Sentadilla Hack
+    if (text.includes('prensa') || text.includes('barra') || text.includes('multipower') || text.includes('smith') || text.includes('hack') || text.includes('disco') || text.includes('peso muerto') || text.includes('hip thrust')) {
+      const half = (Math.round((Number(ex.loadValue) / 2) * 10) / 10);
+      return {
+        main: `${ex.loadValue} kg total`,
+        sub: `(${half} kg a cada lado)`,
+        cssClass: 'unit-kg'
+      };
+    }
+
     return {
       main: `${ex.loadValue} kg`,
-      sub: 'Peso en kilogramos',
+      sub: 'Peso total seleccionado',
       cssClass: 'unit-kg'
     };
   }
@@ -5059,6 +5093,7 @@
     shiftChainToSunday,
     swapDays,
     restoreOriginalSchedule,
+    formatLoadBadge,
     toggleExerciseLoadUnit,
     adjustExerciseLoad,
     toggleSetCompletion,
