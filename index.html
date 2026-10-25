@@ -1566,23 +1566,10 @@
         <span id="results-adherence-pill" class="badge badge-user-base">100% de Series Completadas · Adherencia Total</span>
       </header>
 
-      <!-- Barra de Pestañas de Navegación -->
-      <nav class="results-tabs-bar" role="tablist" aria-label="Pestañas de estadísticas finales">
-        <button type="button" role="tab" class="results-tab-btn is-active" id="tab-btn-metrics" aria-selected="true" aria-controls="results-tab-metrics">
-          📊 Métricas de Sesión
-        </button>
-        <button type="button" role="tab" class="results-tab-btn" id="tab-btn-recovery" aria-selected="false" aria-controls="results-tab-recovery">
-          🧬 Recuperación y Cuidados
-        </button>
-        <button type="button" role="tab" class="results-tab-btn" id="tab-btn-overload" aria-selected="false" aria-controls="results-tab-overload">
-          🚀 Sobrecarga y Próximo Día
-        </button>
-      </nav>
-
-      <!-- Contenedor de Pestañas -->
+      <!-- Contenedor de Paneles por Pasos (Navegación con botones inferiores) -->
       <div class="results-tabs-content">
-        <!-- PESTAÑA 1: Resumen de Métricas del Entrenamiento Realizado -->
-        <section id="results-tab-metrics" class="results-tab-panel is-active" role="tabpanel" aria-labelledby="tab-btn-metrics">
+        <!-- PANEL 1: Resumen de Métricas del Entrenamiento Realizado -->
+        <section id="results-tab-metrics" class="results-tab-panel is-active" role="region" aria-label="Métricas del entrenamiento">
           <h3 class="results-section-title">📊 Resumen del Entrenamiento Realizado</h3>
           <div class="results-kpi-grid" id="results-kpi-grid">
             <div class="results-kpi-card">
@@ -1635,7 +1622,7 @@
               <span id="results-recovery-badge" class="badge badge-muscle">⏳ En ~72 horas (Recuperación Óptima)</span>
             </div>
             <p class="results-recovery-note" id="results-recovery-note">
-              Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión se aplicarán las siguientes cargas y repeticiones:
+              Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas y completar su recuperación fisiológica.
             </p>
           </div>
 

@@ -4470,7 +4470,7 @@
       if (nextHeading) nextHeading.textContent = `${projection.nextDayName} · ${projection.nextDayTitle}`;
       if (recBadge) recBadge.textContent = `⏳ En ~${projection.hoursUntil}h (${projection.daysUntil} días de descanso)`;
       if (recNote) {
-        recNote.textContent = `Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión del ${projection.nextDayName} se aplicarán las siguientes cargas y repeticiones dinámicas:`;
+        recNote.textContent = 'Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas y completar su recuperación fisiológica.';
       }
     }
 

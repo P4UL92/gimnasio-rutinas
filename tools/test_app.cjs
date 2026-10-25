@@ -1346,11 +1346,8 @@ assert.ok(closeResultsTopBtn, 'Debe existir el botón de cierre superior #btn-cl
 assert.ok(cssContent.includes('.results-dialog-header {'), 'Debe existir la regla CSS para .results-dialog-header');
 assert.ok(cssContent.includes('padding-top: 22px;') || cssContent.includes('padding-top:'), 'La cabecera debe contar con padding superior para alejar la copa del límite del panel');
 
-// 41.2 Verificación de Pestañas y Paneles
-const tabMetricsBtn = doc.getElementById('tab-btn-metrics');
-const tabRecoveryBtn = doc.getElementById('tab-btn-recovery');
-const tabOverloadBtn = doc.getElementById('tab-btn-overload');
-assert.ok(tabMetricsBtn && tabRecoveryBtn && tabOverloadBtn, 'Deben existir los 3 botones de pestañas');
+// 41.2 Verificación de Paneles y Navegación Exclusiva por Botones Inferiores (Sin Barra de Pestañas)
+assert.ok(!doc.querySelector('.results-tabs-bar'), 'No debe existir la barra de pestañas superiores en las estadísticas');
 
 const panelMetrics = doc.getElementById('results-tab-metrics');
 const panelRecovery = doc.getElementById('results-tab-recovery');
@@ -1359,32 +1356,37 @@ assert.ok(panelMetrics && panelRecovery && panelOverload, 'Deben existir los 3 p
 
 // Abrir diálogo de resultados
 app.openWorkoutResultsDialog(null, null);
-assert.ok(!panelMetrics.hidden, 'La pestaña de métricas debe estar visible por defecto al abrir');
-assert.ok(panelRecovery.hidden, 'La pestaña de recuperación debe estar oculta inicialmente');
-assert.ok(panelOverload.hidden, 'La pestaña de sobrecarga debe estar oculta inicialmente');
+assert.ok(!panelMetrics.hidden, 'El panel de métricas debe estar visible por defecto al abrir');
+assert.ok(panelRecovery.hidden, 'El panel de recuperación debe estar oculto inicialmente');
+assert.ok(panelOverload.hidden, 'El panel de sobrecarga debe estar oculto inicialmente');
 
-// Navegar a Pestaña 2 mediante botón Siguiente
+// 41.3 Verificación de Texto de Recuperación y Nutrición Limpio
+const recNoteEl = doc.getElementById('results-recovery-note');
+assert.ok(recNoteEl, 'Debe existir el elemento #results-recovery-note');
+assert.ok(!recNoteEl.textContent.includes('se aplicarán las siguientes cargas'), 'El texto de recuperación no debe mencionar cargas proyectadas');
+
+// Navegar a Panel 2 mediante botón Siguiente
 const nextBtn1 = doc.getElementById('btn-results-next-1');
-assert.ok(nextBtn1, 'Debe existir el botón siguiente en pestaña 1');
+assert.ok(nextBtn1, 'Debe existir el botón siguiente en panel 1');
 nextBtn1.click();
-assert.ok(panelMetrics.hidden, 'Pestaña 1 debe ocultarse');
-assert.ok(!panelRecovery.hidden, 'Pestaña 2 debe mostrarse');
+assert.ok(panelMetrics.hidden, 'Panel 1 debe ocultarse');
+assert.ok(!panelRecovery.hidden, 'Panel 2 debe mostrarse');
 
-// Navegar a Pestaña 1 mediante botón Anterior
+// Navegar a Panel 1 mediante botón Anterior
 const prevBtn2 = doc.getElementById('btn-results-prev-2');
-assert.ok(prevBtn2, 'Debe existir el botón anterior en pestaña 2');
+assert.ok(prevBtn2, 'Debe existir el botón anterior en panel 2');
 prevBtn2.click();
-assert.ok(!panelMetrics.hidden, 'Pestaña 1 debe volver a mostrarse');
+assert.ok(!panelMetrics.hidden, 'Panel 1 debe volver a mostrarse');
 
-// Navegar a Pestaña 3 mediante botón Siguiente
+// Navegar a Panel 3 mediante botón Siguiente
 const nextBtn2 = doc.getElementById('btn-results-next-2');
-assert.ok(nextBtn2, 'Debe existir el botón siguiente en pestaña 2');
+assert.ok(nextBtn2, 'Debe existir el botón siguiente en panel 2');
 nextBtn1.click(); // ir a 2
 nextBtn2.click(); // ir a 3
-assert.ok(panelRecovery.hidden, 'Pestaña 2 debe ocultarse');
-assert.ok(!panelOverload.hidden, 'Pestaña 3 debe mostrarse');
+assert.ok(panelRecovery.hidden, 'Panel 2 debe ocultarse');
+assert.ok(!panelOverload.hidden, 'Panel 3 debe mostrarse');
 
-// 41.3 Verificación de Botones de Acción en la Pestaña Final
+// 41.4 Verificación de Botones de Acción en el Panel Final
 const applyProgBtn = doc.getElementById('btn-results-apply-progression');
 const viewStatsBtn = doc.getElementById('btn-results-view-stats');
 const closePlanBtn = doc.getElementById('btn-results-close-plan');
