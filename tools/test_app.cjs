@@ -789,11 +789,68 @@ const abductorFile = path.join(root, 'assets/sprites/sprite_legs_adductor_abduct
 assert.ok(fs.existsSync(hipThrustFile) && fs.statSync(hipThrustFile).size > 50000, 'sprite_glutes_hipthrust_rdl.jpg debe existir y tener peso válido');
 assert.ok(fs.existsSync(abductorFile) && fs.statSync(abductorFile).size > 50000, 'sprite_legs_adductor_abductor.jpg debe existir y tener peso válido');
 
+// --- Suite 32: Auditoría Integral de Sprites, Implementos Visibles y Patrones de Hombro/Core ---
+console.log('Ejecutando Suite 32: Auditoría Integral de Sprites e Implementos...');
+
+// 32.1 Verificación de existencia física de todas las hojas de sprites del catálogo
+const spriteSheets = [
+  'gym_exercise_sprite_sheet_closegrip.jpg',
+  'gym_exercise_sprite_sheet_fullbody.jpg',
+  'gym_exercise_sprite_sheet_chest_triceps.jpg',
+  'gym_exercise_sprite_sheet_legs_shoulders.jpg',
+  'sprite_back_row_pullover.jpg',
+  'sprite_bicep_hammer_incline_chest.jpg',
+  'sprite_chest_pecdeck_cable_crossover.jpg',
+  'sprite_triceps_overhead_dips.jpg',
+  'sprite_legs_quad_ext_hamstring_curl.jpg',
+  'sprite_legs_hack_squat_calves.jpg',
+  'sprite_glutes_hipthrust_rdl.jpg',
+  'sprite_legs_adductor_abductor.jpg',
+  'sprite_shoulders_lateral_facepull.jpg',
+  'sprite_shoulders_reardelt_shrugs_abs.jpg'
+];
+
+spriteSheets.forEach(sheetName => {
+  const filePath = path.join(root, 'assets/sprites', sheetName);
+  assert.ok(fs.existsSync(filePath), `La hoja de sprites ${sheetName} debe existir físicamente en disco`);
+  assert.ok(fs.statSync(filePath).size > 40000, `La hoja ${sheetName} debe tener un peso gráfico válido (>40KB)`);
+});
+
+// 32.2 Verificar mapeo exacto de las nuevas hojas de hombro y core
+assert.equal(spriteCatalog['lateral-raise'].spriteUrl, 'assets/sprites/sprite_shoulders_lateral_facepull.jpg');
+assert.equal(spriteCatalog['lateral-raise'].row, 'top');
+assert.equal(spriteCatalog['face-pull'].spriteUrl, 'assets/sprites/sprite_shoulders_lateral_facepull.jpg');
+assert.equal(spriteCatalog['face-pull'].row, 'bottom');
+
+assert.equal(spriteCatalog['rear-delt-shrugs'].spriteUrl, 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg');
+assert.equal(spriteCatalog['rear-delt-shrugs'].row, 'top');
+assert.equal(spriteCatalog['cable-crunch-abs'].spriteUrl, 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg');
+assert.equal(spriteCatalog['cable-crunch-abs'].row, 'bottom');
+
+// 32.3 Verificar detección de Fondos en Máquina sin interferencia del grupo pectoral
+assert.equal(detectType({ id: 'mar-fondos-maquina', name: 'Fondos de tríceps en máquina sentada', muscle: 'Tríceps y pectoral inferior' }), 'machine-dips');
+assert.equal(spriteCatalog['machine-dips'].spriteUrl, 'assets/sprites/sprite_triceps_overhead_dips.jpg');
+assert.equal(spriteCatalog['machine-dips'].row, 'bottom');
+
+// 32.4 Verificar detección de hombros, trapecio y abdomen
+assert.equal(detectType({ id: 'jue-elevaciones-laterales', name: 'Elevaciones laterales en polea o mancuernas' }), 'lateral-raise');
+assert.equal(detectType({ id: 'jue-face-pull-polea', name: 'Face Pull en polea alta con cuerda' }), 'face-pull');
+assert.equal(detectType({ id: 'jue-pajaros-maquina', name: 'Vuelos posteriores en máquina (Rear Delt)' }), 'rear-delt-shrugs');
+assert.equal(detectType({ id: 'jue-encogimientos-trapecio', name: 'Encogimientos de hombros (Trapecio)' }), 'rear-delt-shrugs');
+assert.equal(detectType({ id: 'jue-crunch-polea', name: 'Crunch abdominal en polea alta' }), 'cable-crunch-abs');
+
+// 32.5 Verificar que todos los 24 patrones biomecánicos del catálogo tienen hoja y fila válida
+for (const [key, config] of Object.entries(spriteCatalog)) {
+  assert.ok(['top', 'bottom'].includes(config.row), `El patrón ${key} debe tener fila 'top' o 'bottom'`);
+  const fullSpritePath = path.join(root, config.spriteUrl);
+  assert.ok(fs.existsSync(fullSpritePath), `El sprite ${config.spriteUrl} del patrón ${key} debe existir`);
+}
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.11 (Ejercicios Distintos de Pierna/Glúteo, Hoja de Abductores Dedicada, Barra Visible en Hip Thrust y 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.12 (Auditoría Integral de Sprites, Implementos Completos y 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 

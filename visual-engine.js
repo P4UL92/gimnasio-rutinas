@@ -171,31 +171,31 @@
       cssModifier: 'sprite-shoulder-press sprite-row-bottom'
     },
     'lateral-raise': {
-      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
-      row: 'bottom',
-      label: 'ELEV. / DELTOIDES',
-      title: 'Deltoides y Elevaciones de Hombro',
-      cssModifier: 'sprite-lateral-raise sprite-row-bottom'
+      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
+      row: 'top',
+      label: 'ELEV. LATERAL',
+      title: 'Elevaciones Laterales con Mancuernas',
+      cssModifier: 'sprite-lateral-raise sprite-row-top'
     },
     'face-pull': {
-      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
-      row: 'top',
-      label: 'FACE PULL / REMO',
-      title: 'Face Pull y Tracción de Hombro Posterior en Polea',
-      cssModifier: 'sprite-face-pull sprite-row-top'
+      spriteUrl: 'assets/sprites/sprite_shoulders_lateral_facepull.jpg',
+      row: 'bottom',
+      label: 'FACE PULL',
+      title: 'Face Pull en Polea Alta con Cuerda',
+      cssModifier: 'sprite-face-pull sprite-row-bottom'
     },
     'rear-delt-shrugs': {
-      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
+      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
       row: 'top',
-      label: 'POSTERIOR / TRAP',
-      title: 'Vuelos Posteriores y Trapecio en Polea',
+      label: 'PÁJAROS / REAR DELT',
+      title: 'Vuelos Posteriores en Máquina (Rear Delt)',
       cssModifier: 'sprite-rear-delt sprite-row-top'
     },
     'cable-crunch-abs': {
-      spriteUrl: 'assets/sprites/sprite_back_row_pullover.jpg',
+      spriteUrl: 'assets/sprites/sprite_shoulders_reardelt_shrugs_abs.jpg',
       row: 'bottom',
-      label: 'CRUNCH CORE',
-      title: 'Crunch y Tracción de Core en Polea Alta',
+      label: 'CRUNCH POLEA',
+      title: 'Crunch Abdominal en Polea Alta con Cuerda',
       cssModifier: 'sprite-cable-crunch sprite-row-bottom'
     }
   };
@@ -225,6 +225,7 @@
     if (id.includes('inclinado') || name.includes('inclinado') || name.includes('clavicular')) return 'incline-chest-press';
     if (id.includes('pec-deck') || name.includes('pec deck') || name.includes('apertura') || name.includes('contractora') || name.includes('mariposa')) return 'pec-deck-fly';
     if (id.includes('cruces') || name.includes('cruces') || name.includes('crossover')) return 'cable-crossover';
+    if (id.includes('fondos') || name.includes('fondos') || name.includes('dip')) return 'machine-dips';
     if (name.includes('pecho') || name.includes('banca') || muscle.includes('pectoral')) return 'chest-press';
 
     // 4. Tríceps
