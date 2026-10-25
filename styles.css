@@ -5001,19 +5001,52 @@ body.in-workout-screen .app-main-content {
 }
 
 .results-dialog-header {
+  position: relative;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding-bottom: 12px;
+  padding-top: 22px; /* Espacio superior para que la copa no toque el límite del panel */
+  padding-bottom: 14px;
+  padding-left: 16px;
+  padding-right: 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.btn-close-results-top {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+}
+
+.btn-close-results-top:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.65);
+  color: #fff;
+  transform: rotate(90deg) scale(1.08);
+}
+
 .results-trophy-badge {
-  font-size: 2.4rem;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  font-size: 2.6rem;
   line-height: 1;
-  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));
+  filter: drop-shadow(0 4px 14px rgba(245, 158, 11, 0.45));
   animation: bounceTrophy 1.2s ease infinite alternate;
 }
 
@@ -5284,12 +5317,98 @@ body.in-workout-screen .app-main-content {
   line-height: 1.4;
 }
 
-/* Pie del Diálogo de Resultados */
+/* Pestañas de Navegación del Diálogo de Resultados */
+.results-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.results-tab-btn {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.results-tab-btn:hover {
+  background: rgba(30, 41, 59, 0.9);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.results-tab-btn.is-active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(14, 165, 233, 0.22));
+  border-color: #34d399;
+  color: #6ee7b7;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+  transform: scale(1.02);
+}
+
+.results-tabs-content {
+  padding: 10px 14px;
+}
+
+.results-tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  animation: panelSlideUpFromBottom 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.results-tab-panel.is-active {
+  display: flex;
+}
+
+.results-step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.results-step-nav-split {
+  justify-content: space-between;
+}
+
+.results-btn-step {
+  min-height: 42px;
+  padding: 8px 18px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Pie del Diálogo de Resultados (Pestaña Final) */
 .results-dialog-footer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 10px;
+  gap: 10px;
+  padding-top: 14px;
+  margin-top: 8px;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -5303,7 +5422,45 @@ body.in-workout-screen .app-main-content {
 .results-footer-subactions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
+}
+
+/* Botón Anaranjado Institucional para Volver al Plan Semanal */
+.btn-results-amber {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  border: 1px solid #fbbf24;
+  font-weight: 800;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  min-height: 42px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-results-amber:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #000;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.55);
+  transform: translateY(-2px);
+}
+
+.btn-results-amber:active {
+  transform: scale(0.97);
+}
+
+/* Estado del Botón Principal de Rutina cuando el día ya está culminado */
+.btn-start-workout-cta.is-day-completed-cta {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(16, 185, 129, 0.35));
+  border-color: #f59e0b;
+  color: #fef3c7;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.28);
 }
 
 /* ==========================================================================

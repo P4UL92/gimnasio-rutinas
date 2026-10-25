@@ -980,6 +980,14 @@
     return done >= total;
   }
 
+  function isDayCompleted(dayId = state.selectedDay) {
+    const targetDay = state.schedule ? state.schedule[dayId] : null;
+    if (!targetDay) return false;
+    const exercises = targetDay.exercises || [];
+    if (exercises.length === 0) return false;
+    return exercises.every(isExerciseCompleted);
+  }
+
   function findNextPendingExerciseIndex(dayId = state.selectedDay, fromIndex = state.activeExerciseIndex) {
     const day = state.schedule[dayId];
     const exercises = day?.exercises || [];
@@ -1364,6 +1372,26 @@
       } else {
         exceptionBtn.hidden = false;
         exceptionLabel.textContent = 'No entrenaré hoy → Mover al Domingo';
+      }
+    }
+
+    const dayCompleted = isDayCompleted(state.selectedDay);
+    const startBtn = document.getElementById('btn-start-day-workout');
+    if (startBtn) {
+      if (dayCompleted) {
+        startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
+        startBtn.classList.add('is-day-completed-cta');
+      } else {
+        startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
+        startBtn.classList.remove('is-day-completed-cta');
+      }
+    }
+    const headerStartBtn = document.getElementById('btn-header-start-day');
+    if (headerStartBtn) {
+      if (dayCompleted) {
+        headerStartBtn.textContent = '📊 Estadísticas';
+      } else {
+        headerStartBtn.textContent = '▶ Iniciar';
       }
     }
   }
@@ -3730,6 +3758,21 @@
     if (DAYS_ORDER.includes(dayId)) {
       state.selectedDay = dayId;
     }
+    const targetDayId = state.selectedDay;
+
+    // Si el día ya está culminado, no abrir la interfaz de entrenamiento sino mostrar directamente las estadísticas
+    if (isDayCompleted(targetDayId)) {
+      const sessionRecord = (state.history || []).find(h => h.dayId === targetDayId) || (state.history && state.history[0]);
+      const projection = calculateNextWorkoutProjection(targetDayId);
+      openWorkoutResultsDialog(sessionRecord, projection);
+      showCelebrationToast('🏆 Entrenamiento del día ya culminado. Mostrando estadísticas.');
+      return {
+        activeScreen: state.activeScreen,
+        dayId: targetDayId,
+        isCompleted: true
+      };
+    }
+
     const day = state.schedule[state.selectedDay];
     const exercises = day?.exercises || [];
 
@@ -3763,6 +3806,16 @@
 
   function openConfirmStartWorkoutDialog(dayId = state.selectedDay, exerciseIndex = null) {
     const targetDayId = DAYS_ORDER.includes(dayId) ? dayId : state.selectedDay;
+
+    // Si el día ya está culminado, no mostrar confirmación de inicio ni interfaz de entrenamiento, sino estadísticas
+    if (isDayCompleted(targetDayId)) {
+      const sessionRecord = (state.history || []).find(h => h.dayId === targetDayId) || (state.history && state.history[0]);
+      const projection = calculateNextWorkoutProjection(targetDayId);
+      openWorkoutResultsDialog(sessionRecord, projection);
+      showCelebrationToast('🏆 Entrenamiento del día ya culminado. Mostrando estadísticas.');
+      return;
+    }
+
     const day = state.schedule[targetDayId];
     if (!day) {
       startDayWorkoutSession(targetDayId, exerciseIndex);
@@ -4315,12 +4368,33 @@
     };
   }
 
+  let activeResultsTabIndex = 0;
+  function setResultsTab(tabIndex) {
+    activeResultsTabIndex = Math.max(0, Math.min(2, tabIndex));
+    const tabKeys = ['metrics', 'recovery', 'overload'];
+    tabKeys.forEach((key, idx) => {
+      const btn = document.getElementById(`tab-btn-${key}`);
+      const panel = document.getElementById(`results-tab-${key}`);
+      const isActive = idx === activeResultsTabIndex;
+      if (btn) {
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      }
+      if (panel) {
+        panel.classList.toggle('is-active', isActive);
+        panel.hidden = !isActive;
+      }
+    });
+  }
+
   function openWorkoutResultsDialog(sessionRecord, projection) {
     const dialog = document.getElementById('workout-results-dialog');
     if (!dialog) return;
 
     activeProjectionCache = projection;
     const day = state.schedule[projection?.currentDayId || state.selectedDay];
+
+    setResultsTab(0);
 
     const subtitleEl = document.getElementById('results-day-subtitle');
     const adherenceEl = document.getElementById('results-adherence-pill');
@@ -4333,6 +4407,30 @@
     const adherencePct = setsPlanned > 0 ? Math.round((setsDone / setsPlanned) * 100) : 100;
     if (adherenceEl) {
       adherenceEl.textContent = `${setsDone}/${setsPlanned} Series Completadas · ${adherencePct}% Adherencia`;
+    }
+
+    if (!sessionRecord && day) {
+      let vol = 0;
+      let reps = 0;
+      for (const ex of day.exercises) {
+        const sets = Number(ex.sets) || 4;
+        const loadKg = Number(ex.load) || 20;
+        for (let s = 0; s < sets; s++) {
+          const r = getExerciseSetReps(ex, s);
+          reps += r;
+          vol += loadKg * r;
+        }
+      }
+      sessionRecord = {
+        dayId: day.id,
+        dayName: day.dayName,
+        durationText: '45:00',
+        durationMs: 2700000,
+        volumeKg: vol,
+        setsDone,
+        setsPlanned,
+        totalRepsDone: reps
+      };
     }
 
     const timeVal = document.getElementById('res-time-val');
@@ -5264,6 +5362,19 @@
       closeWorkoutResultsDialog();
       exitWorkoutScreen();
     });
+    document.getElementById('btn-close-results-top')?.addEventListener('click', () => {
+      closeWorkoutResultsDialog();
+      exitWorkoutScreen();
+    });
+
+    // Pestañas y Navegación Anterior/Siguiente en Diálogo de Resultados
+    document.getElementById('tab-btn-metrics')?.addEventListener('click', () => setResultsTab(0));
+    document.getElementById('tab-btn-recovery')?.addEventListener('click', () => setResultsTab(1));
+    document.getElementById('tab-btn-overload')?.addEventListener('click', () => setResultsTab(2));
+    document.getElementById('btn-results-next-1')?.addEventListener('click', () => setResultsTab(1));
+    document.getElementById('btn-results-prev-2')?.addEventListener('click', () => setResultsTab(0));
+    document.getElementById('btn-results-next-2')?.addEventListener('click', () => setResultsTab(2));
+    document.getElementById('btn-results-prev-3')?.addEventListener('click', () => setResultsTab(1));
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
     ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog'].forEach(dlgId => {
@@ -5289,7 +5400,12 @@
       btn.addEventListener('click', () => {
         const target = btn.dataset.navScreen;
         if (target === 'workout') {
-          if (state.activeScreen !== 'workout') {
+          if (isDayCompleted(state.selectedDay)) {
+            const sessionRecord = (state.history || []).find(h => h.dayId === state.selectedDay) || (state.history && state.history[0]);
+            const projection = calculateNextWorkoutProjection(state.selectedDay);
+            openWorkoutResultsDialog(sessionRecord, projection);
+            showCelebrationToast('🏆 Entrenamiento del día ya culminado. Mostrando estadísticas.');
+          } else if (state.activeScreen !== 'workout') {
             openConfirmStartWorkoutDialog(state.selectedDay, state.activeExerciseIndex || 0);
           }
         } else if (target) {
@@ -5578,6 +5694,8 @@
     calculateNextWorkoutProjection,
     openWorkoutResultsDialog,
     closeWorkoutResultsDialog,
+    setResultsTab,
+    isDayCompleted,
     applyNextDayProgression,
     skipCurrentFocusExercise,
     // APIs Dynamic Onboarding & Personalized Training v1.9

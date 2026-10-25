@@ -1559,119 +1559,160 @@
     <div class="dialog-body results-dialog-body">
       <!-- 1. Cabecera Triunfal -->
       <header class="results-dialog-header">
+        <button type="button" id="btn-close-results-top" class="btn-close-results-top" aria-label="Cerrar modal">✕</button>
         <div class="results-trophy-badge">🏆</div>
         <h2 id="results-dialog-title" class="results-dialog-title">¡Entrenamiento Completado con Éxito!</h2>
         <p id="results-day-subtitle" class="results-day-subtitle">Lunes · Espalda y Bíceps (Tracción / Pull)</p>
         <span id="results-adherence-pill" class="badge badge-user-base">100% de Series Completadas · Adherencia Total</span>
       </header>
 
-      <!-- 2. Resultados del Entrenamiento Realizado -->
-      <section class="results-section" aria-labelledby="results-kpi-heading">
-        <h3 id="results-kpi-heading" class="results-section-title">📊 Resumen del Entrenamiento Realizado</h3>
-        <div class="results-kpi-grid" id="results-kpi-grid">
-          <div class="results-kpi-card">
-            <span class="kpi-icon">⏱️</span>
-            <span class="kpi-label">Tiempo Total</span>
-            <strong id="res-time-val" class="kpi-val">45:20</strong>
-          </div>
-          <div class="results-kpi-card">
-            <span class="kpi-icon">🏋️</span>
-            <span class="kpi-label">Volumen Levantado</span>
-            <strong id="res-vol-val" class="kpi-val">4,850 kg</strong>
-          </div>
-          <div class="results-kpi-card">
-            <span class="kpi-icon">🎯</span>
-            <span class="kpi-label">Series Hechas</span>
-            <strong id="res-sets-val" class="kpi-val">24 / 24</strong>
-          </div>
-          <div class="results-kpi-card">
-            <span class="kpi-icon">🔄</span>
-            <span class="kpi-label">Repeticiones</span>
-            <strong id="res-reps-val" class="kpi-val">288 reps</strong>
-          </div>
-          <div class="results-kpi-card">
-            <span class="kpi-icon">🔥</span>
-            <span class="kpi-label">Calorías Aprox.</span>
-            <strong id="res-cal-val" class="kpi-val">~320 kcal</strong>
-          </div>
-          <div class="results-kpi-card">
-            <span class="kpi-icon">⚡</span>
-            <span class="kpi-label">Intensidad Media</span>
-            <strong id="res-rpe-val" class="kpi-val">RPE 8.0 (Óptimo)</strong>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. Actualización para la Siguiente Vez que Entrenarás los Mismos Músculos -->
-      <section class="results-section" aria-labelledby="results-next-heading">
-        <div class="results-next-banner">
-          <div class="results-next-header-row">
-            <div>
-              <span class="eyebrow" id="results-next-eyebrow">PRÓXIMO ESTÍMULO DE ESPALDA Y BÍCEPS</span>
-              <h3 id="results-next-heading" class="results-next-title">Viernes · Torso Completo</h3>
-            </div>
-            <span id="results-recovery-badge" class="badge badge-muscle">⏳ En ~72 horas (Recuperación Óptima)</span>
-          </div>
-          <p class="results-recovery-note" id="results-recovery-note">
-            Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión se aplicarán las siguientes cargas y repeticiones:
-          </p>
-        </div>
-
-        <!-- Tabla / Lista de Sobrecarga Progresiva Ejercicio por Ejercicio -->
-        <h4 class="results-subsection-title">🚀 Cargas y Repeticiones Proyectadas (Sobrecarga Progresiva)</h4>
-        <div id="results-progressions-list" class="results-progressions-list">
-          <!-- Renderizado dinámico por app.js -->
-        </div>
-
-        <!-- Nuevos Ejercicios y Sustituciones Recomendadas -->
-        <h4 class="results-subsection-title">🔄 Nuevas Variaciones y Ejercicios Sugeridos para Rotar</h4>
-        <div id="results-alternatives-list" class="results-alternatives-list">
-          <!-- Alternativas biomecánicas en polea, máquina y peso libre generadas por app.js -->
-        </div>
-
-        <!-- Seguimiento Biométrico y Recuperación -->
-        <div class="results-recovery-box">
-          <h4 class="results-subsection-title">🧬 Seguimiento Biométrico Post-Entrenamiento</h4>
-          <div class="results-recovery-grid">
-            <div class="recovery-item">
-              <span class="rec-icon">🍗</span>
-              <div>
-                <strong>Proteína Sugerida: <span id="res-protein-target">32g</span></strong>
-                <small>Consumir en la ventana anabólica de las próximas 2 horas para maximizar síntesis proteica.</small>
-              </div>
-            </div>
-            <div class="recovery-item">
-              <span class="rec-icon">💧</span>
-              <div>
-                <strong>Hidratación Recomendada: <span id="res-water-target">+600 ml</span></strong>
-                <small>Beber agua fresca o electrolitos para reponer glucógeno muscular y evitar calambres.</small>
-              </div>
-            </div>
-            <div class="recovery-item">
-              <span class="rec-icon">🛌</span>
-              <div>
-                <strong>Descanso Reparador: 7.5 - 8.5 horas</strong>
-                <small>El 95% de la hormona de crecimiento (GH) se libera en la fase profunda del sueño.</small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Botones de Acción -->
-      <footer class="results-dialog-footer">
-        <button type="button" id="btn-results-apply-progression" class="btn-primary btn-apply-progression-wide">
-          ⚡ Aplicar Cargas Proyectadas al Próximo Día
+      <!-- Barra de Pestañas de Navegación -->
+      <nav class="results-tabs-bar" role="tablist" aria-label="Pestañas de estadísticas finales">
+        <button type="button" role="tab" class="results-tab-btn is-active" id="tab-btn-metrics" aria-selected="true" aria-controls="results-tab-metrics">
+          📊 Métricas de Sesión
         </button>
-        <div class="results-footer-subactions">
-          <button type="button" id="btn-results-view-stats" class="btn-secondary">
-            📊 Ver Estadísticas
-          </button>
-          <button type="button" id="btn-results-close-plan" class="btn-ghost">
-            ✓ Volver al Plan Semanal
-          </button>
-        </div>
-      </footer>
+        <button type="button" role="tab" class="results-tab-btn" id="tab-btn-recovery" aria-selected="false" aria-controls="results-tab-recovery">
+          🧬 Recuperación y Cuidados
+        </button>
+        <button type="button" role="tab" class="results-tab-btn" id="tab-btn-overload" aria-selected="false" aria-controls="results-tab-overload">
+          🚀 Sobrecarga y Próximo Día
+        </button>
+      </nav>
+
+      <!-- Contenedor de Pestañas -->
+      <div class="results-tabs-content">
+        <!-- PESTAÑA 1: Resumen de Métricas del Entrenamiento Realizado -->
+        <section id="results-tab-metrics" class="results-tab-panel is-active" role="tabpanel" aria-labelledby="tab-btn-metrics">
+          <h3 class="results-section-title">📊 Resumen del Entrenamiento Realizado</h3>
+          <div class="results-kpi-grid" id="results-kpi-grid">
+            <div class="results-kpi-card">
+              <span class="kpi-icon">⏱️</span>
+              <span class="kpi-label">Tiempo Total</span>
+              <strong id="res-time-val" class="kpi-val">45:20</strong>
+            </div>
+            <div class="results-kpi-card">
+              <span class="kpi-icon">🏋️</span>
+              <span class="kpi-label">Volumen Levantado</span>
+              <strong id="res-vol-val" class="kpi-val">4,850 kg</strong>
+            </div>
+            <div class="results-kpi-card">
+              <span class="kpi-icon">🎯</span>
+              <span class="kpi-label">Series Hechas</span>
+              <strong id="res-sets-val" class="kpi-val">24 / 24</strong>
+            </div>
+            <div class="results-kpi-card">
+              <span class="kpi-icon">🔄</span>
+              <span class="kpi-label">Repeticiones</span>
+              <strong id="res-reps-val" class="kpi-val">288 reps</strong>
+            </div>
+            <div class="results-kpi-card">
+              <span class="kpi-icon">🔥</span>
+              <span class="kpi-label">Calorías Aprox.</span>
+              <strong id="res-cal-val" class="kpi-val">~320 kcal</strong>
+            </div>
+            <div class="results-kpi-card">
+              <span class="kpi-icon">⚡</span>
+              <span class="kpi-label">Intensidad Media</span>
+              <strong id="res-rpe-val" class="kpi-val">RPE 8.0 (Óptimo)</strong>
+            </div>
+          </div>
+
+          <div class="results-step-nav">
+            <button type="button" class="btn-primary results-btn-step" id="btn-results-next-1">
+              Siguiente: Recuperación y Cuidados ➔
+            </button>
+          </div>
+        </section>
+
+        <!-- PESTAÑA 2: Recuperación, Próximo Estímulo y Seguimiento Biométrico -->
+        <section id="results-tab-recovery" class="results-tab-panel" role="tabpanel" aria-labelledby="tab-btn-recovery" hidden>
+          <div class="results-next-banner">
+            <div class="results-next-header-row">
+              <div>
+                <span class="eyebrow" id="results-next-eyebrow">PRÓXIMO ESTÍMULO DE ESPALDA Y BÍCEPS</span>
+                <h3 id="results-next-heading" class="results-next-title">Viernes · Torso Completo</h3>
+              </div>
+              <span id="results-recovery-badge" class="badge badge-muscle">⏳ En ~72 horas (Recuperación Óptima)</span>
+            </div>
+            <p class="results-recovery-note" id="results-recovery-note">
+              Tus fibras musculares requieren entre 48 y 72 horas para sintetizar nuevas miofibrillas. En tu próxima sesión se aplicarán las siguientes cargas y repeticiones:
+            </p>
+          </div>
+
+          <!-- Seguimiento Biométrico y Recuperación -->
+          <div class="results-recovery-box">
+            <h4 class="results-subsection-title">🧬 Seguimiento Biométrico Post-Entrenamiento</h4>
+            <div class="results-recovery-grid">
+              <div class="recovery-item">
+                <span class="rec-icon">🍗</span>
+                <div>
+                  <strong>Proteína Sugerida: <span id="res-protein-target">32g</span></strong>
+                  <small>Consumir en la ventana anabólica de las próximas 2 horas para maximizar síntesis proteica.</small>
+                </div>
+              </div>
+              <div class="recovery-item">
+                <span class="rec-icon">💧</span>
+                <div>
+                  <strong>Hidratación Recomendada: <span id="res-water-target">+600 ml</span></strong>
+                  <small>Beber agua fresca o electrolitos para reponer glucógeno muscular y evitar calambres.</small>
+                </div>
+              </div>
+              <div class="recovery-item">
+                <span class="rec-icon">🛌</span>
+                <div>
+                  <strong>Descanso Reparador: 7.5 - 8.5 horas</strong>
+                  <small>El 95% de la hormona de crecimiento (GH) se libera en la fase profunda del sueño.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-step-nav results-step-nav-split">
+            <button type="button" class="btn-secondary results-btn-step" id="btn-results-prev-2">
+              ⬅ Anterior: Métricas
+            </button>
+            <button type="button" class="btn-primary results-btn-step" id="btn-results-next-2">
+              Siguiente: Sobrecarga y Próximo Día ➔
+            </button>
+          </div>
+        </section>
+
+        <!-- PESTAÑA 3: Sobrecarga Progresiva, Alternativas y Acciones Finales -->
+        <section id="results-tab-overload" class="results-tab-panel" role="tabpanel" aria-labelledby="tab-btn-overload" hidden>
+          <!-- Tabla / Lista de Sobrecarga Progresiva Ejercicio por Ejercicio -->
+          <h4 class="results-subsection-title">🚀 Cargas y Repeticiones Proyectadas (Sobrecarga Progresiva)</h4>
+          <div id="results-progressions-list" class="results-progressions-list">
+            <!-- Renderizado dinámico por app.js -->
+          </div>
+
+          <!-- Nuevos Ejercicios y Sustituciones Recomendadas -->
+          <h4 class="results-subsection-title">🔄 Nuevas Variaciones y Ejercicios Sugeridos para Rotar</h4>
+          <div id="results-alternatives-list" class="results-alternatives-list">
+            <!-- Alternativas biomecánicas en polea, máquina y peso libre generadas por app.js -->
+          </div>
+
+          <div class="results-step-nav">
+            <button type="button" class="btn-secondary results-btn-step" id="btn-results-prev-3">
+              ⬅ Anterior: Recuperación
+            </button>
+          </div>
+
+          <!-- Botones de Acción de la Pestaña Final -->
+          <footer class="results-dialog-footer">
+            <button type="button" id="btn-results-apply-progression" class="btn-primary btn-apply-progression-wide">
+              ⚡ Aplicar Cargas Proyectadas al Próximo Día
+            </button>
+            <div class="results-footer-subactions">
+              <button type="button" id="btn-results-view-stats" class="btn-secondary">
+                📊 Ver Estadísticas
+              </button>
+              <button type="button" id="btn-results-close-plan" class="btn-results-amber">
+                ✓ Volver al Plan Semanal
+              </button>
+            </div>
+          </footer>
+        </section>
+      </div>
     </div>
   </dialog>
 

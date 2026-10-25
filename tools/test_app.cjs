@@ -1333,8 +1333,102 @@ assert.ok(cssContent.includes('@media (max-width: 480px)'), 'Debe contar con ada
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
+// =========================================================================
+// SUITE 41: Panel de Estadísticas Finales por Pestañas, Copa con Espacio Superior, Botón Anaranjado y Bloqueo de Re-inicio en Días Culminados
+// =========================================================================
+console.log('Ejecutando Suite 41: Panel de Estadísticas Finales por Pestañas, Copa Superior, Botón Anaranjado y Bloqueo de Re-inicio...');
+
+// 41.1 Verificación de Espaciado Superior para la Copa y Botón de Cierre
+const trophyEl = doc.querySelector('.results-trophy-badge');
+assert.ok(trophyEl, 'Debe existir el elemento .results-trophy-badge para la copa triunfal');
+const closeResultsTopBtn = doc.getElementById('btn-close-results-top');
+assert.ok(closeResultsTopBtn, 'Debe existir el botón de cierre superior #btn-close-results-top');
+assert.ok(cssContent.includes('.results-dialog-header {'), 'Debe existir la regla CSS para .results-dialog-header');
+assert.ok(cssContent.includes('padding-top: 22px;') || cssContent.includes('padding-top:'), 'La cabecera debe contar con padding superior para alejar la copa del límite del panel');
+
+// 41.2 Verificación de Pestañas y Paneles
+const tabMetricsBtn = doc.getElementById('tab-btn-metrics');
+const tabRecoveryBtn = doc.getElementById('tab-btn-recovery');
+const tabOverloadBtn = doc.getElementById('tab-btn-overload');
+assert.ok(tabMetricsBtn && tabRecoveryBtn && tabOverloadBtn, 'Deben existir los 3 botones de pestañas');
+
+const panelMetrics = doc.getElementById('results-tab-metrics');
+const panelRecovery = doc.getElementById('results-tab-recovery');
+const panelOverload = doc.getElementById('results-tab-overload');
+assert.ok(panelMetrics && panelRecovery && panelOverload, 'Deben existir los 3 paneles de resultados');
+
+// Abrir diálogo de resultados
+app.openWorkoutResultsDialog(null, null);
+assert.ok(!panelMetrics.hidden, 'La pestaña de métricas debe estar visible por defecto al abrir');
+assert.ok(panelRecovery.hidden, 'La pestaña de recuperación debe estar oculta inicialmente');
+assert.ok(panelOverload.hidden, 'La pestaña de sobrecarga debe estar oculta inicialmente');
+
+// Navegar a Pestaña 2 mediante botón Siguiente
+const nextBtn1 = doc.getElementById('btn-results-next-1');
+assert.ok(nextBtn1, 'Debe existir el botón siguiente en pestaña 1');
+nextBtn1.click();
+assert.ok(panelMetrics.hidden, 'Pestaña 1 debe ocultarse');
+assert.ok(!panelRecovery.hidden, 'Pestaña 2 debe mostrarse');
+
+// Navegar a Pestaña 1 mediante botón Anterior
+const prevBtn2 = doc.getElementById('btn-results-prev-2');
+assert.ok(prevBtn2, 'Debe existir el botón anterior en pestaña 2');
+prevBtn2.click();
+assert.ok(!panelMetrics.hidden, 'Pestaña 1 debe volver a mostrarse');
+
+// Navegar a Pestaña 3 mediante botón Siguiente
+const nextBtn2 = doc.getElementById('btn-results-next-2');
+assert.ok(nextBtn2, 'Debe existir el botón siguiente en pestaña 2');
+nextBtn1.click(); // ir a 2
+nextBtn2.click(); // ir a 3
+assert.ok(panelRecovery.hidden, 'Pestaña 2 debe ocultarse');
+assert.ok(!panelOverload.hidden, 'Pestaña 3 debe mostrarse');
+
+// 41.3 Verificación de Botones de Acción en la Pestaña Final
+const applyProgBtn = doc.getElementById('btn-results-apply-progression');
+const viewStatsBtn = doc.getElementById('btn-results-view-stats');
+const closePlanBtn = doc.getElementById('btn-results-close-plan');
+assert.ok(applyProgBtn, 'Debe existir #btn-results-apply-progression');
+assert.ok(viewStatsBtn, 'Debe existir #btn-results-view-stats');
+assert.ok(closePlanBtn, 'Debe existir #btn-results-close-plan');
+
+// Verificar que los botones residen dentro del panel final #results-tab-overload
+assert.ok(panelOverload.contains(applyProgBtn), 'El botón de aplicar cargas debe estar dentro de la pestaña final');
+assert.ok(panelOverload.contains(viewStatsBtn), 'El botón de ver estadísticas debe estar dentro de la pestaña final');
+assert.ok(panelOverload.contains(closePlanBtn), 'El botón de volver al plan semanal debe estar dentro de la pestaña final');
+
+// Verificar que el botón de volver al plan tiene estilo anaranjado
+assert.ok(closePlanBtn.classList.contains('btn-results-amber'), 'El botón de volver al plan semanal debe tener la clase .btn-results-amber');
+assert.ok(cssContent.includes('.btn-results-amber {'), 'styles.css debe definir el estilo .btn-results-amber');
+
+app.closeWorkoutResultsDialog();
+
+// 41.4 Verificación de Bloqueo de Re-inicio en Días Culminados
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.20 (Transiciones y Notificaciones Responsive Adaptadas) pasaron con éxito.');
+const lunesExs = app.getState().schedule.lunes.exercises;
+lunesExs.forEach(ex => {
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => true);
+});
+assert.equal(app.isDayCompleted('lunes'), true, 'El día Lunes debe ser detectado como culminado');
+
+// Al llamar openConfirmStartWorkoutDialog para un día culminado, NO debe abrir la pantalla de workout
+app.selectDay('lunes');
+app.openConfirmStartWorkoutDialog('lunes');
+assert.notEqual(app.getState().activeScreen, 'workout', 'No debe abrir la pantalla de entrenamiento activa');
+const resultsDlg = doc.getElementById('workout-results-dialog');
+assert.ok(resultsDlg.hasAttribute('open') || !resultsDlg.hidden, 'Debe abrir el diálogo de resultados y estadísticas');
+
+app.closeWorkoutResultsDialog();
+
+// Al llamar startDayWorkoutSession para un día culminado, tampoco debe abrir la pantalla workout
+app.startDayWorkoutSession('lunes');
+assert.notEqual(app.getState().activeScreen, 'workout', 'startDayWorkoutSession tampoco debe abrir la interfaz de workout');
+
+// Re-verificación final absoluta: 0 etiquetas <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las pruebas v1.9.21 (Panel de Estadísticas por Pestañas, Copa Superior, Botón Anaranjado y Protección de Día Culminado) pasaron con éxito.');
 process.exit(0);
 
 
