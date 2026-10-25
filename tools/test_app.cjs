@@ -971,14 +971,27 @@ const finishBtn = doc.getElementById('btn-focus-finish-workout');
 assert.ok(finishBtn, 'Debe existir el botón #btn-focus-finish-workout');
 assert.equal(finishBtn.disabled, true, 'El botón de terminar sesión debe estar bloqueado mientras queden ejercicios pendientes');
 
-// 35.4 Botón de "Máquina Ocupada" en la cabecera y actualización de interfaz alterna
+// 35.4 Botón de "Máquina Ocupada" en la cabecera, previsualizaciones en modal y actualización de interfaz alterna
 const swapBtn = doc.getElementById('btn-focus-swap-alt');
 assert.ok(swapBtn, 'Debe existir el botón #btn-focus-swap-alt');
+assert.ok(swapBtn.textContent.includes('Máquina Ocupada'), 'El texto del botón debe decir "Máquina Ocupada"');
 const origTitle = doc.getElementById('focus-ex-title').textContent.trim();
 const origEquip = doc.getElementById('focus-ex-equip-badge').textContent.trim();
+const origAnimType = doc.querySelector('#focus-sprite-stage .focus-sprite-box')?.dataset.animType;
+
+// Abrir modal de máquina ocupada y verificar imagen de previsualización encima de cada opción
+const currentEx = app.getState().schedule['lunes'].exercises[0];
+app.openExerciseSwapModal('lunes', currentEx.id);
+const swapCards = doc.querySelectorAll('#swap-alternatives-list .swap-card');
+assert.ok(swapCards.length > 0, 'Debe listar alternativas de ejercicio');
+swapCards.forEach(card => {
+  const previewBox = card.querySelector('.swap-card-preview-box');
+  assert.ok(previewBox, 'Cada opción en el panel de máquina ocupada debe tener una caja de imagen de previsualización encima del texto');
+  const previewFrame = card.querySelector('.swap-card-preview-frame');
+  assert.ok(previewFrame, 'Debe contener el marco de imagen del sprite');
+});
 
 // Aplicar alternativa
-const currentEx = app.getState().schedule['lunes'].exercises[0];
 const alts = window.GYM_VISUALS.getExerciseAlternatives(currentEx);
 assert.ok(alts.length > 0, 'Debe haber alternativas para el ejercicio');
 const chosenAlt = alts[0];
@@ -986,13 +999,21 @@ app.swapExerciseAlternative('lunes', currentEx.id, chosenAlt);
 
 const updatedTitle = doc.getElementById('focus-ex-title').textContent.trim();
 const updatedEquip = doc.getElementById('focus-ex-equip-badge').textContent.trim();
-assert.notEqual(updatedTitle, origTitle, 'El título del ejercicio debe actualizarse al de la alternativa');
-assert.ok(updatedTitle.length > 0, 'El nuevo título debe ser válido');
-assert.ok(swapBtn.classList.contains('is-swapped'), 'El botón de máquina ocupada debe indicar estado alternativo');
+const updatedAnimType = doc.querySelector('#focus-sprite-stage .focus-sprite-box')?.dataset.animType;
 
-// Restaurar ejercicio original
-app.swapExerciseAlternative('lunes', currentEx.id, null);
-assert.equal(doc.getElementById('focus-ex-title').textContent.trim(), origTitle, 'Debe restaurarse el título original');
+assert.notEqual(updatedTitle, origTitle, 'El título del ejercicio debe actualizarse al de la alternativa');
+assert.notEqual(updatedAnimType, origAnimType, 'El tipo de animación/sprite del ejercicio debe actualizarse al de la alternativa');
+assert.ok(swapBtn.textContent.includes('Máquina Ocupada'), 'El texto del botón debe mantener "Máquina Ocupada" para poder seleccionar otro ejercicio');
+assert.ok(swapBtn.classList.contains('is-swapped'), 'El botón debe tener la clase de estado alternativo');
+
+// Al abrir el modal nuevamente, la opción de restaurar ejercicio original debe estar presente
+app.openExerciseSwapModal('lunes', currentEx.id);
+const btnRestoreInModal = doc.getElementById('btn-restore-swap-original');
+assert.ok(btnRestoreInModal && !btnRestoreInModal.hidden, 'La opción de restaurar ejercicio original debe estar visible en el panel');
+btnRestoreInModal.click();
+
+assert.equal(doc.getElementById('focus-ex-title').textContent.trim(), origTitle, 'Debe restaurarse el título original tras pulsar restaurar en el panel');
+assert.equal(doc.querySelector('#focus-sprite-stage .focus-sprite-box')?.dataset.animType, origAnimType, 'Debe restaurarse el sprite original');
 
 // 35.5 Culminación de ejercicio: quitar "REPETICIONES A REALIZAR..." y mostrar solo botón "Ejercicio completado..."
 const dayObj35 = app.getState().schedule['lunes'];

@@ -2654,12 +2654,20 @@
       } else {
         alts.forEach(alt => {
           const catInfo = categoryLabels[alt.category] || { badge: '⚡ Alternativa', cls: 'cat-generic' };
+          const spriteInfo = (GYM_VISUALS && typeof GYM_VISUALS.getExerciseSpriteInfo === 'function')
+            ? GYM_VISUALS.getExerciseSpriteInfo(alt)
+            : { spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_closegrip.jpg', cssModifier: 'sprite-pulley-narrow sprite-row-top', row: 'top' };
+          const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
+
           const card = document.createElement('div');
           card.className = `swap-card ${catInfo.cls}`;
           card.innerHTML = `
             <div class="swap-card-top">
               <span class="swap-badge ${catInfo.cls}">${catInfo.badge}</span>
               <span class="swap-equip">${alt.equipment}</span>
+            </div>
+            <div class="swap-card-preview-box ${spriteInfo.cssModifier || ''} ${rowClass}" title="${alt.name}">
+              <div class="swap-card-preview-frame" style="background-image: url('${spriteInfo.spriteUrl}?v=calibrated');"></div>
             </div>
             <h4 class="swap-name">${alt.name}</h4>
             <p class="swap-reason">${alt.reason}</p>
@@ -3484,8 +3492,9 @@
     if (spriteStage && GYM_VISUALS) {
       const spriteInfo = GYM_VISUALS.getExerciseSpriteInfo(ex);
       const rowClass = spriteInfo.row === 'bottom' ? 'sprite-row-bottom' : 'sprite-row-top';
+      const animType = GYM_VISUALS.detectExerciseAnimationType(ex);
       spriteStage.innerHTML = `
-        <div class="focus-sprite-box ${spriteInfo.cssClass || ''} ${rowClass}" data-anim-type="${spriteInfo.typeKey || ''}">
+        <div class="focus-sprite-box ${spriteInfo.cssModifier || ''} ${rowClass}" data-anim-type="${animType}">
           <div class="focus-sprite-frame" style="background-image: url('${spriteInfo.spriteUrl}?v=calibrated');"></div>
         </div>
       `;
@@ -3683,9 +3692,9 @@
 
     if (btnSwap) {
       btnSwap.className = `btn-focus-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
-      btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Restaurar Original' : '🔄 Máquina Ocupada';
+      btnSwap.textContent = '🔄 Máquina Ocupada';
       btnSwap.title = ex.isSwappedAlternative
-        ? 'Restaurar ejercicio original programado'
+        ? 'Ejercicio alternativo activo (Toca para cambiar o restaurar)'
         : 'Ver alternativas si la máquina está ocupada';
     }
     if (btnMode) {
@@ -4804,11 +4813,7 @@
     document.getElementById('btn-focus-swap-alt')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
       if (!ex) return;
-      if (ex.isSwappedAlternative) {
-        swapExerciseAlternative(state.selectedDay, ex.id, null);
-      } else {
-        openExerciseSwapModal(state.selectedDay, ex.id);
-      }
+      openExerciseSwapModal(state.selectedDay, ex.id);
     });
     document.getElementById('btn-focus-set-mode')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -5011,18 +5016,24 @@
     }
 
     // Modal de Sustitución por Máquina Ocupada
+    const closeSwapDialog = () => {
+      const dlg = document.getElementById('exercise-swap-dialog');
+      if (dlg) {
+        if (typeof dlg.close === 'function') dlg.close();
+        else dlg.hidden = true;
+      }
+    };
+
     const btnCloseSwap = document.getElementById('btn-close-swap-dialog');
     if (btnCloseSwap) {
-      btnCloseSwap.addEventListener('click', () => {
-        document.getElementById('exercise-swap-dialog')?.close();
-      });
+      btnCloseSwap.addEventListener('click', closeSwapDialog);
     }
     const btnRestoreSwap = document.getElementById('btn-restore-swap-original');
     if (btnRestoreSwap) {
       btnRestoreSwap.addEventListener('click', () => {
         if (currentSwapTarget.dayId && currentSwapTarget.exerciseId) {
-          swapExerciseAlternative(currentSwapTarget.dayId, currentSwapTarget.exerciseId);
-          document.getElementById('exercise-swap-dialog')?.close();
+          swapExerciseAlternative(currentSwapTarget.dayId, currentSwapTarget.exerciseId, null);
+          closeSwapDialog();
         }
       });
     }

@@ -881,45 +881,158 @@
     return Number(exercise.reps) || 12;
   }
 
+  // Catálogo integral de alternativas biomecánicas por categoría (Polea, Máquina Guiada, Peso Libre)
+  const CATEGORY_ALTERNATIVES_MAP = {
+    'pulley-narrow-back': {
+      pulley: { name: 'Pull-Over en Polea Alta con Barra', equip: 'Torre de Poleas', sprite: 'cable-pullover', reason: 'Tensión constante en dorsal ancho con mínimo impacto articular.' },
+      machine: { name: 'Remo en Máquina Convergente Prono', equip: 'Máquina Hammer / Guiada', sprite: 'machine-wide-back', reason: 'Gran soporte pectoral para máxima activación de romboides y dorsal.' },
+      free_weight: { name: 'Remo con Mancuerna a Una Mano (Serrucho)', equip: 'Mancuerna + Banco', sprite: 'seated-cable-row', reason: 'Excelente variante unilateral libre para corregir asimetrías de espalda.' }
+    },
+    'machine-wide-back': {
+      pulley: { name: 'Jalón al Pecho en Polea Agarre Estrecho', equip: 'Torre de Poleas', sprite: 'pulley-narrow-back', reason: 'Tracción vertical continua con gran estiramiento dorsal.' },
+      machine: { name: 'Remo Sentado en Máquina Guiada', equip: 'Máquina de Remo', sprite: 'seated-cable-row', reason: 'Trayectoria fija para aislar la zona media de la espalda.' },
+      free_weight: { name: 'Pull-Over con Mancuerna en Banco', equip: 'Mancuerna + Banco', sprite: 'cable-pullover', reason: 'Expansión de la caja torácica y estiramiento profundo del dorsal.' }
+    },
+    'seated-cable-row': {
+      pulley: { name: 'Jalón al Pecho en Polea Alta', equip: 'Torre de Poleas', sprite: 'pulley-narrow-back', reason: 'Cambio de plano de tracción manteniendo tensión continua.' },
+      machine: { name: 'Remo en Máquina Convergente Prono', equip: 'Máquina Hammer', sprite: 'machine-wide-back', reason: 'Soporte torácico rígido para sobrecarga progresiva segura.' },
+      free_weight: { name: 'Pull-Over con Mancuerna en Banco', equip: 'Mancuerna + Banco', sprite: 'cable-pullover', reason: 'Trabajo libre con énfasis en la inserción inferior del dorsal.' }
+    },
+    'cable-pullover': {
+      pulley: { name: 'Jalón al Pecho en Polea Estrecho', equip: 'Torre de Poleas', sprite: 'pulley-narrow-back', reason: 'Tracción vertical directa para dorsales.' },
+      machine: { name: 'Jalón en Máquina Convergente Amplio', equip: 'Máquina Hammer', sprite: 'machine-wide-back', reason: 'Estabilidad total en trayectoria fija.' },
+      free_weight: { name: 'Remo Sentado con Apoyo Pectoral', equip: 'Mancuernas + Banco', sprite: 'seated-cable-row', reason: 'Aislamiento puro de espalda sin fatiga lumbar.' }
+    },
+    'cable-bicep-curl': {
+      pulley: { name: 'Curl en Polea Alta Hércules', equip: 'Torre de Poleas Doble', sprite: 'cable-bicep-curl', reason: 'Pico de contracción máxima en cabeza corta del bíceps.' },
+      machine: { name: 'Curl de Bíceps en Máquina / Scott', equip: 'Máquina Predicador', sprite: 'cable-bicep-curl', reason: 'Aislamiento estricto impidiendo el balanceo de hombros.' },
+      free_weight: { name: 'Curl Martillo Cruzado con Mancuernas', equip: 'Par de Mancuernas', sprite: 'hammer-curl', reason: 'Estimula el braquial anterior y braquiorradial.' }
+    },
+    'hammer-curl': {
+      pulley: { name: 'Curl de Bíceps en Polea Baja Supino', equip: 'Polea Baja + Barra Z', sprite: 'cable-bicep-curl', reason: 'Tensión mecánica continua en supinación.' },
+      machine: { name: 'Curl de Bíceps en Máquina Sentada', equip: 'Máquina Guiada', sprite: 'cable-bicep-curl', reason: 'Trayectoria fija para fatigar bíceps sin sobrecargar antebrazo.' },
+      free_weight: { name: 'Curl Concentrado con Mancuerna', equip: 'Mancuerna', sprite: 'cable-bicep-curl', reason: 'Aislamiento unilateral estricto con máximo control excéntrico.' }
+    },
+    'chest-press': {
+      pulley: { name: 'Cruces en Polea Media para Pecho', equip: 'Torre de Poleas Doble', sprite: 'cable-crossover', reason: 'Tensión constante en aducción horizontal de pectorales.' },
+      machine: { name: 'Aperturas en Máquina Pec Deck / Contractora', equip: 'Máquina Pec Deck', sprite: 'pec-deck-fly', reason: 'Aislamiento directo de fibras esternales sin fatiga de tríceps.' },
+      free_weight: { name: 'Press Inclinado con Mancuernas', equip: 'Banco Inclinado + Mancuernas', sprite: 'incline-chest-press', reason: 'Empuje libre con mayor activación de porción clavicular.' }
+    },
+    'incline-chest-press': {
+      pulley: { name: 'Cruces en Polea Baja hacia Arriba', equip: 'Torre de Poleas', sprite: 'cable-crossover', reason: 'Enfoque biomecánico ascendente para haz clavicular.' },
+      machine: { name: 'Press de Pecho en Máquina Convergente', equip: 'Máquina Hammer', sprite: 'chest-press', reason: 'Permite mover cargas pesadas con seguridad y estabilidad articular.' },
+      free_weight: { name: 'Aperturas Inclinadas con Mancuernas', equip: 'Banco 30° + Mancuernas', sprite: 'pec-deck-fly', reason: 'Estiramiento profundo en fibras superiores del pecho.' }
+    },
+    'pec-deck-fly': {
+      pulley: { name: 'Cruces en Polea Alta para Pectoral', equip: 'Torre de Poleas', sprite: 'cable-crossover', reason: 'Aducción continua con tensión constante en el pico de contracción.' },
+      machine: { name: 'Press de Pecho en Máquina Horizontal', equip: 'Máquina de Pecho', sprite: 'chest-press', reason: 'Empuje guiado para continuar el volumen pectoral.' },
+      free_weight: { name: 'Press Inclinado con Mancuernas', equip: 'Banco Inclinado + Mancuernas', sprite: 'incline-chest-press', reason: 'Sobrecarga de fibras superiores del pectoral con peso libre.' }
+    },
+    'cable-crossover': {
+      pulley: { name: 'Aperturas Unilaterales en Polea', equip: 'Polea Regulable', sprite: 'pec-deck-fly', reason: 'Foco en la simetría y tensión pico de contracción.' },
+      machine: { name: 'Fondos Asistidos en Máquina', equip: 'Máquina de Fondos', sprite: 'machine-dips', reason: 'Empuje descendente con gran reclutamiento de pectoral inferior.' },
+      free_weight: { name: 'Press con Mancuernas en Banco Plano', equip: 'Mancuernas + Banco', sprite: 'chest-press', reason: 'Sustituto básico de masa pectoral y tríceps.' }
+    },
+    'tricep-pushdown': {
+      pulley: { name: 'Extensión de Tríceps en Polea con Cuerda', equip: 'Polea Alta + Cuerda', sprite: 'tricep-overhead', reason: 'Apertura final de muñecas para reclutar la cabeza lateral.' },
+      machine: { name: 'Fondos de Tríceps en Máquina Sentada', equip: 'Máquina de Fondos', sprite: 'machine-dips', reason: 'Empuje vertical compuesto con trayectoria guiada.' },
+      free_weight: { name: 'Extensión Copa Tras Nuca con Mancuerna', equip: 'Mancuerna Pesada', sprite: 'tricep-overhead', reason: 'Estiramiento máximo de la cabeza larga del tríceps.' }
+    },
+    'tricep-overhead': {
+      pulley: { name: 'Extensión en Polea Alta con Barra Recta', equip: 'Polea Alta', sprite: 'tricep-pushdown', reason: 'Alta tensión mecánica para cabeza medial y lateral.' },
+      machine: { name: 'Fondos de Tríceps en Máquina Sentada', equip: 'Máquina de Fondos', sprite: 'machine-dips', reason: 'Excelente opción si el hombro sufre con extensiones tras nuca.' },
+      free_weight: { name: 'Press Francés con Barra Z o Mancuernas', equip: 'Banco Plano + Barra Z', sprite: 'tricep-pushdown', reason: 'Clásico ejercicio de construcción de masa para tríceps.' }
+    },
+    'machine-dips': {
+      pulley: { name: 'Extensión de Tríceps en Polea Alta', equip: 'Torre de Poleas', sprite: 'tricep-pushdown', reason: 'Aislamiento continuo de tríceps sin presión de hombro.' },
+      machine: { name: 'Extensión Tras Nuca en Polea', equip: 'Polea Media + Cuerda', sprite: 'tricep-overhead', reason: 'Foco directo en cabeza larga del tríceps.' },
+      free_weight: { name: 'Fondos en Banco Plano con Pies Apoyados', equip: 'Banco Plano', sprite: 'tricep-pushdown', reason: 'Alternativa rápida con peso corporal y sobrecarga libre.' }
+    },
+    'leg-press': {
+      pulley: { name: 'Pull-Through en Polea Baja con Cuerda', equip: 'Polea Baja + Cuerda', sprite: 'hip-thrust', reason: 'Bisagra de cadera con tensión continua en glúteo e isquios.' },
+      machine: { name: 'Sentadilla Hack a 45°', equip: 'Máquina Hack Squat', sprite: 'hack-squat', reason: 'Trayectoria lineal a 45° con máximo estímulo en cuádriceps.' },
+      free_weight: { name: 'Peso Muerto Rumano con Mancuernas', equip: 'Par de Mancuernas', sprite: 'romanian-deadlift', reason: 'Excelente trabajo de cadena posterior y femorales.' }
+    },
+    'hack-squat': {
+      pulley: { name: 'Sentadilla en Polea Baja con Cinturón', equip: 'Polea Baja', sprite: 'leg-press', reason: 'Descarga axial total de la columna vertebral.' },
+      machine: { name: 'Prensa de Piernas Inclinada 45°', equip: 'Prensa 45°', sprite: 'leg-press', reason: 'Empuje bilateral pesado con respaldo seguro.' },
+      free_weight: { name: 'Sentadilla Goblet con Mancuerna', equip: 'Mancuerna Pesada', sprite: 'quad-extension', reason: 'Patrón de sentadilla frontal profundo y seguro.' }
+    },
+    'quad-extension': {
+      pulley: { name: 'Sentadilla en Polea Baja con Maneral', equip: 'Polea Baja', sprite: 'hack-squat', reason: 'Tensión constante en extensores de rodilla.' },
+      machine: { name: 'Prensa 45° Enfoque Cuádriceps (Pies Bajos)', equip: 'Prensa 45°', sprite: 'leg-press', reason: 'Dominancia de flexión de rodilla con alto volumen.' },
+      free_weight: { name: 'Zancadas Estáticas con Mancuernas', equip: 'Par de Mancuernas', sprite: 'hack-squat', reason: 'Reclutamiento unilateral funcional de cuádriceps y glúteo.' }
+    },
+    'hamstring-curl': {
+      pulley: { name: 'Pull-Through en Polea Baja para Cadena Posterior', equip: 'Polea Baja + Cuerda', sprite: 'hip-thrust', reason: 'Extensión de cadera con pico de contracción isquiotibial.' },
+      machine: { name: 'Prensa 45° Pies en Parte Alta', equip: 'Prensa 45°', sprite: 'leg-press', reason: 'Recluta isquiotibiales y glúteos con empuje de talones.' },
+      free_weight: { name: 'Peso Muerto Rumano con Mancuernas', equip: 'Mancuernas / Barra', sprite: 'romanian-deadlift', reason: 'Estiramiento excéntrico profundo de isquiotibiales.' }
+    },
+    'calf-raise': {
+      pulley: { name: 'Elevación de Talones en Polea Baja', equip: 'Polea Baja + Bloque', sprite: 'calf-raise', reason: 'Tensión continua en gemelos y sóleo.' },
+      machine: { name: 'Elevación de Talones en Prensa 45°', equip: 'Prensa 45°', sprite: 'leg-press', reason: 'Gran rango de movimiento sin carga directa sobre los hombros.' },
+      free_weight: { name: 'Elevación Unilateral en Escalón con Mancuerna', equip: 'Escalón + Mancuerna', sprite: 'calf-raise', reason: 'Pausa isométrica de 2 segundos para máxima hipertrofia de pantorrillas.' }
+    },
+    'hip-thrust': {
+      pulley: { name: 'Pull-Through en Polea Baja con Cuerda', equip: 'Polea Baja + Cuerda', sprite: 'romanian-deadlift', reason: 'Extensión de cadera con tensión constante en glúteo mayor.' },
+      machine: { name: 'Abducción de Cadera en Máquina Sentada', equip: 'Máquina Abductora', sprite: 'hip-abductor', reason: 'Aísla el glúteo medio y menor con trayectoria fija.' },
+      free_weight: { name: 'Puente de Glúteo en Suelo con Barra', equip: 'Barra Olímpica', sprite: 'hip-thrust', reason: 'Empuje de cadera puro sin depender de la máquina o multipower.' }
+    },
+    'romanian-deadlift': {
+      pulley: { name: 'Pull-Through en Polea Baja para Glúteo e Isquios', equip: 'Polea Baja + Cuerda', sprite: 'hip-thrust', reason: 'Control estricto de bisagra de cadera con tensión permanente.' },
+      machine: { name: 'Curl Femoral Tumbado en Máquina', equip: 'Máquina de Femorales', sprite: 'hamstring-curl', reason: 'Flexión de rodilla estricta para aislamiento de isquiotibiales.' },
+      free_weight: { name: 'Buenos Días con Barra / Hiperextensiones', equip: 'Barra o Banco 45°', sprite: 'romanian-deadlift', reason: 'Sobrecarga excéntrica de femorales, glúteo y zona lumbar.' }
+    },
+    'hip-adductor': {
+      pulley: { name: 'Aducción de Cadera en Polea Baja con Tobillera', equip: 'Polea Baja + Tobillera', sprite: 'hip-adductor', reason: 'Tensión permanente en la cara interna del muslo.' },
+      machine: { name: 'Prensa de Piernas con Pies Abiertos (Sumo)', equip: 'Prensa 45°', sprite: 'leg-press', reason: 'Reclutamiento dominante de aductores con empuje pesado.' },
+      free_weight: { name: 'Sentadilla Sumo con Mancuerna Pesada', equip: 'Mancuerna', sprite: 'hack-squat', reason: 'Flexión profunda de cadera con pies a 45° para aductores.' }
+    },
+    'hip-abductor': {
+      pulley: { name: 'Abducción en Polea Baja con Tobillera', equip: 'Polea Baja + Tobillera', sprite: 'hip-abductor', reason: 'Aislamiento continuo de glúteo medio sin máquina sentada.' },
+      machine: { name: 'Hip Thrust en Multipower o Máquina', equip: 'Multipower / Banco', sprite: 'hip-thrust', reason: 'Gran estímulo de glúteo mayor y cadera posterior.' },
+      free_weight: { name: 'Zancadas Cruzadas / Búlgaras con Mancuernas', equip: 'Par de Mancuernas', sprite: 'romanian-deadlift', reason: 'Estabilidad de cadera y activación de glúteo medio libre.' }
+    },
+    'shoulder-press': {
+      pulley: { name: 'Elevaciones Laterales en Polea Baja', equip: 'Polea Baja + Maneral', sprite: 'lateral-raise', reason: 'Tensión constante en deltoides lateral sin puntos muertos.' },
+      machine: { name: 'Press de Hombros en Máquina Convergente', equip: 'Máquina de Hombros', sprite: 'shoulder-press', reason: 'Empuje vertical seguro y guiado cerca del fallo.' },
+      free_weight: { name: 'Press Arnold Sentado con Mancuernas', equip: 'Mancuernas + Banco 80°', sprite: 'shoulder-press', reason: 'Rotación completa para deltoides anterior y lateral.' }
+    },
+    'lateral-raise': {
+      pulley: { name: 'Elevaciones Laterales en Polea Baja', equip: 'Polea Baja + Maneral', sprite: 'face-pull', reason: 'Tensión horizontal y lateral continua en todo el recorrido.' },
+      machine: { name: 'Elevaciones Laterales en Máquina Guiada', equip: 'Máquina de Hombros', sprite: 'shoulder-press', reason: 'Aísla la cabeza lateral del deltoides sin inercia lumbar.' },
+      free_weight: { name: 'Elevaciones Laterales Estrictas Sentado', equip: 'Par de Mancuernas', sprite: 'lateral-raise', reason: 'Elimina el impulso del cuerpo aislando el hombro lateral.' }
+    },
+    'face-pull': {
+      pulley: { name: 'Face Pull Alto a la Frente con Cuerda', equip: 'Polea Alta + Cuerda', sprite: 'face-pull', reason: 'Rotación externa y salud del manguito rotador y deltoides posterior.' },
+      machine: { name: 'Vuelos Posteriores en Máquina Pec Deck Inversa', equip: 'Máquina Pec Deck', sprite: 'rear-delt-shrugs', reason: 'Aislamiento guiado del deltoides posterior.' },
+      free_weight: { name: 'Pájaros con Mancuernas Pecho Apoyado en Banco', equip: 'Mancuernas + Banco', sprite: 'rear-delt-shrugs', reason: 'Elimina balanceos para estímulo estricto de espalda alta y deltoides posterior.' }
+    },
+    'rear-delt-shrugs': {
+      pulley: { name: 'Cruces Invertidos en Polea Alta', equip: 'Torre de Poleas Doble', sprite: 'face-pull', reason: 'Tensión continua cruzada para deltoides posterior.' },
+      machine: { name: 'Pájaros en Máquina Inversa (Rear Delt)', equip: 'Máquina Guiada', sprite: 'rear-delt-shrugs', reason: 'Trayectoria fija para máxima contracción posterior.' },
+      free_weight: { name: 'Encogimientos con Mancuernas para Trapecio', equip: 'Par de Mancuernas', sprite: 'face-pull', reason: 'Sobrecarga pesada y pausa isométrica en trapecio superior.' }
+    },
+    'cable-crunch-abs': {
+      pulley: { name: 'Crunch Abdominal en Polea Alta con Cuerda', equip: 'Polea Alta + Cuerda', sprite: 'cable-crunch-abs', reason: 'Flexión espinal contra resistencia graduada.' },
+      machine: { name: 'Crunch en Máquina Abdominal Guiada', equip: 'Máquina de Core', sprite: 'cable-crunch-abs', reason: 'Soporte lumbar y trayectoria controlada.' },
+      free_weight: { name: 'Elevaciones de Piernas Colgado en Barra', equip: 'Barra de Dominadas', sprite: 'rear-delt-shrugs', reason: 'Activación intensa de recto abdominal inferior y flexores de cadera.' }
+    }
+  };
+
   // Módulo Élite: Catálogo enriquecido de alternativas por categoría (Polea, Máquina, Peso Libre)
   function getExerciseAlternatives(exercise) {
     if (!exercise) return [];
     const detectedKey = detectExerciseAnimationType(exercise);
-    const keyMap = {
-      'pulley-narrow-back': 'back_pulldown_narrow',
-      'machine-wide-back': 'back_machine_wide',
-      'seated-cable-row': 'back_row_seated',
-      'cable-pullover': 'back_pullover',
-      'cable-bicep-curl': 'bicep_curl',
-      'hammer-curl': 'bicep_hammer',
-      'chest-press': 'chest_press',
-      'incline-chest-press': 'chest_incline',
-      'pec-deck-fly': 'chest_pecdeck',
-      'cable-crossover': 'chest_crossover',
-      'tricep-pushdown': 'tricep_pushdown',
-      'tricep-overhead': 'tricep_overhead',
-      'machine-dips': 'tricep_dips',
-      'leg-press': 'leg_press',
-      'quad-extension': 'leg_extension',
-      'hamstring-curl': 'leg_curl',
-      'hack-squat': 'leg_hack_squat',
-      'calf-raise': 'leg_calves',
-      'hip-thrust': 'leg_hip_thrust',
-      'romanian-deadlift': 'leg_rdl',
-      'hip-adductor': 'leg_adductor',
-      'hip-abductor': 'leg_abductor',
-      'shoulder-press': 'shoulder_press',
-      'lateral-raise': 'shoulder_lateral',
-      'face-pull': 'shoulder_facepull',
-      'rear-delt-shrugs': 'shoulder_reardelt',
-      'cable-crunch-abs': 'core_crunch'
-    };
-    const mapKey = keyMap[detectedKey] || detectedKey.replace(/-/g, '_');
-    const alt = EXERCISE_ALTERNATIVES_MAP[mapKey] || EXERCISE_ALTERNATIVES_MAP[detectedKey] || EXERCISE_ALTERNATIVES_MAP['back_pulldown_narrow'] || {};
+    const catMap = CATEGORY_ALTERNATIVES_MAP[detectedKey] || CATEGORY_ALTERNATIVES_MAP['pulley-narrow-back'];
 
     const loadKg = exercise.loadType === 'kg' ? exercise.loadValue : (exercise.loadValue * 3.5);
     const dumbbellEq = Math.max(4, Math.round((loadKg * 0.45) / 2) * 2);
     const pulleyLevelEq = Math.max(1, Math.min(20, Math.round(loadKg / 3.5)));
+
+    const pMeta = catMap.pulley || { name: `Variante en Polea para ${exercise.muscle || 'Músculo'}`, equip: 'Torre de Poleas Regulable', sprite: 'cable-pullover', reason: 'Tensión constante en todo el recorrido biomecánico.' };
+    const mMeta = catMap.machine || { name: `Máquina Convergente para ${exercise.muscle || 'Músculo'}`, equip: 'Máquina Selectorizada o Smith', sprite: 'machine-wide-back', reason: 'Máxima estabilidad y trayectoria fija guiada.' };
+    const fMeta = catMap.free_weight || { name: `Mancuernas / Peso Libre para ${exercise.muscle || 'Músculo'}`, equip: 'Mancuernas + Banco', sprite: 'seated-cable-row', reason: 'Mayor libertad articular y activación de estabilizadores.' };
 
     return [
       {
@@ -927,42 +1040,42 @@
         category: 'cable',
         categoryType: 'polea',
         categoryLabel: '⚡ Alternativa en Polea (Tensión Continua)',
-        name: alt.altName && alt.altName.includes('Polea') ? alt.altName : `Variante en Polea para ${exercise.muscle || 'Grupo Muscular'}`,
-        equipment: 'Torre de Poleas Regulable',
+        name: pMeta.name,
+        equipment: pMeta.equip,
         loadType: 'nivel',
         loadValue: pulleyLevelEq,
         loadTransfer: `Carga sugerida: Nivel ${pulleyLevelEq}`,
-        reason: alt.altNote || 'Tensión constante en todo el recorrido biomecánico.',
-        note: alt.altNote || 'Tensión constante en todo el recorrido biomecánico.',
-        spriteType: alt.altSpriteType || detectedKey
+        reason: pMeta.reason,
+        note: pMeta.reason,
+        spriteType: pMeta.sprite
       },
       {
         id: 'alt-machine',
         category: 'machine',
         categoryType: 'maquina',
         categoryLabel: '🏢 Alternativa en Máquina (Estabilidad y Trayectoria Fija)',
-        name: alt.altName && !alt.altName.includes('Mancuerna') ? alt.altName : `Máquina Convergente / Guiada para ${exercise.muscle || 'Músculo'}`,
-        equipment: 'Máquina Selectorizada o Smith',
+        name: mMeta.name,
+        equipment: mMeta.equip,
         loadType: 'kg',
         loadValue: Math.max(10, Math.round(loadKg / 2.5) * 2.5),
         loadTransfer: `Carga sugerida: ${Math.max(10, Math.round(loadKg / 2.5) * 2.5)} kg`,
-        reason: 'Ideal cuando necesitas máxima estabilidad muscular sin fatigar estabilizadores.',
-        note: 'Ideal cuando necesitas máxima estabilidad muscular sin fatigar estabilizadores.',
-        spriteType: detectedKey
+        reason: mMeta.reason,
+        note: mMeta.reason,
+        spriteType: mMeta.sprite
       },
       {
         id: 'alt-free-weight',
         category: 'free_weight',
         categoryType: 'peso_libre',
         categoryLabel: '🏋️ Alternativa con Mancuernas / Peso Libre',
-        name: alt.altName && alt.altName.includes('Mancuerna') ? alt.altName : `Mancuernas / Banco para ${exercise.muscle || 'Músculo'}`,
-        equipment: 'Par de Mancuernas + Banco',
+        name: fMeta.name,
+        equipment: fMeta.equip,
         loadType: 'kg',
         loadValue: dumbbellEq,
         loadTransfer: `Carga sugerida: ${dumbbellEq} kg por mancuerna`,
-        reason: 'Perfecto si las máquinas y poleas están ocupadas en el gimnasio.',
-        note: 'Perfecto si las máquinas y poleas están ocupadas en el gimnasio.',
-        spriteType: detectedKey
+        reason: fMeta.reason,
+        note: fMeta.reason,
+        spriteType: fMeta.sprite
       }
     ];
   }

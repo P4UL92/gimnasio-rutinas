@@ -4181,6 +4181,37 @@ body.animations-paused .focus-sprite-frame {
   color: #94a3b8;
 }
 
+.swap-card-preview-box {
+  width: 100%;
+  height: 125px;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 4px 0 6px 0;
+  background: #0b101b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.swap-card-preview-frame {
+  width: 100%;
+  height: 100%;
+  background-size: 300% 200%;
+  background-repeat: no-repeat;
+  transition: transform 0.25s ease;
+}
+
+.swap-card-preview-box.sprite-row-top .swap-card-preview-frame {
+  background-position: 50% 0%;
+}
+
+.swap-card-preview-box.sprite-row-bottom .swap-card-preview-frame {
+  background-position: 50% 100%;
+}
+
+.swap-card:hover .swap-card-preview-frame {
+  transform: scale(1.05);
+}
+
 .swap-name {
   font-size: 0.95rem;
   color: #f8fafc;
