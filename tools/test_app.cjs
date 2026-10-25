@@ -1052,11 +1052,68 @@ assert.ok(sessionClockLabel && sessionClockLabel.textContent.includes('SESIÓN')
 
 app.exitWorkoutScreen();
 
+// =========================================================================
+// SUITE 36: Panel Informativo de Opciones Secundarias (Técnica y Descanso)
+// =========================================================================
+console.log('Ejecutando Suite 36: Panel Informativo de Opciones Secundarias (Técnica y Descanso)...');
+
+app.startDayWorkoutSession('lunes', 0);
+const focusEx = app.getState().schedule['lunes'].exercises[app.getState().activeExerciseIndex || 0];
+assert.ok(focusEx, 'Debe haber un ejercicio activo en la sesión');
+
+// Abrir el panel de técnica y descanso desde la opción secundaria
+const btnFocusSetMode = doc.getElementById('btn-focus-set-mode');
+assert.ok(btnFocusSetMode, 'Debe existir el botón de modo de serie en las opciones secundarias');
+btnFocusSetMode.click();
+
+const setModeDialog = doc.getElementById('exercise-setmode-dialog');
+assert.ok(setModeDialog, 'Debe existir el modal de técnica de serie y descanso');
+assert.equal(doc.getElementById('setmode-current-name').textContent, focusEx.name, 'El modal debe mostrar el nombre del ejercicio activo');
+
+const optionsList = doc.getElementById('setmode-options-list');
+assert.ok(optionsList, 'Debe existir la lista de opciones de técnica y descanso');
+const optionCards = optionsList.querySelectorAll('.setmode-option-card');
+assert.equal(optionCards.length, 4, 'Deben existir 4 tarjetas de técnica: normal, dropset, superserie, restpause');
+
+optionCards.forEach(card => {
+  const detailTexts = card.querySelectorAll('.setmode-detail-row');
+  assert.ok(detailTexts.length >= 2, 'Cada técnica debe informar cómo se desarrolla la serie y cómo se descansa');
+  assert.ok(card.textContent.includes('Cómo desarrollarla'), 'Debe incluir sección sobre cómo desarrollarla');
+  assert.ok(card.textContent.includes('Cómo descansar'), 'Debe incluir sección sobre cómo descansar');
+});
+
+// Probar botón Cerrar sin cambiar
+const initialMode = focusEx.setMode || 'normal';
+const btnCloseSetMode = doc.getElementById('btn-setmode-close');
+assert.ok(btnCloseSetMode, 'Debe existir el botón de cerrar en el panel informativo');
+btnCloseSetMode.click();
+assert.equal(focusEx.setMode || 'normal', initialMode, 'Cerrar el panel no debe alterar el modo del ejercicio');
+
+// Volver a abrir y seleccionar Dropset
+btnFocusSetMode.click();
+const dropsetCard = optionsList.querySelector('.setmode-option-card[data-mode="dropset"]');
+assert.ok(dropsetCard, 'Debe existir la tarjeta de Dropset');
+dropsetCard.click();
+
+const btnProceedSetMode = doc.getElementById('btn-setmode-proceed');
+assert.ok(btnProceedSetMode, 'Debe existir el botón de continuar y aplicar modo');
+assert.ok(btnProceedSetMode.textContent.includes('Dropset'), 'El botón continuar debe reflejar la opción seleccionada');
+btnProceedSetMode.click();
+
+assert.equal(focusEx.setMode, 'dropset', 'Al pulsar continuar debe aplicarse el modo Dropset al ejercicio');
+assert.equal(focusEx.restSeconds, 45, 'El tiempo de descanso debe ajustarse a 45s para Dropset metabólico');
+
+// Verificar que la interfaz del ejercicio refleje la técnica aplicada
+app.renderWorkoutFocusScreen();
+assert.ok(doc.getElementById('btn-focus-set-mode').textContent.includes('Dropset'), 'El botón en opciones secundarias debe mostrar el nuevo modo Dropset');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.15 (Confirmación Inicio, Interfaz Limpia, Culminación y Máquina Ocupada) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.16 (Panel Informativo de Técnica y Descanso) pasaron con éxito.');
 process.exit(0);
 
 

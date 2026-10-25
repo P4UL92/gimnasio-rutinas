@@ -1022,6 +1022,42 @@
     </div>
   </dialog>
 
+  <!-- Modal Nativo: Explicación y Configuración de Técnica de Serie y Descanso -->
+  <dialog id="exercise-setmode-dialog" class="gym-dialog setmode-dialog" closedby="any" aria-labelledby="setmode-dialog-title">
+    <div class="dialog-body setmode-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">TÉCNICA DE INTENSIDAD Y DESCANSO</span>
+          <h2 id="setmode-dialog-title">⚙️ Modo de Serie y Descanso</h2>
+        </div>
+        <button type="button" id="btn-close-setmode-dialog" class="btn-icon-close" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="current-exercise-banner setmode-banner">
+        <span class="swap-banner-label">Ejercicio:</span>
+        <strong id="setmode-current-name">Nombre del Ejercicio</strong>
+        <span id="setmode-current-meta" class="swap-banner-meta">Modo actual: 🎯 Serie Normal · Descanso: 75s</span>
+      </div>
+
+      <p class="setmode-dialog-lead">
+        Esta opción establece una técnica distinta para ejecutar tu serie y adecúa el tiempo de descanso recomendado. Elige la técnica a continuación y presiona Continuar para aplicarla, o Cerrar para mantener tu rutina habitual:
+      </p>
+
+      <div id="setmode-options-list" class="setmode-options-list" role="radiogroup" aria-label="Técnicas de serie y descanso">
+        <!-- Generado dinámicamente: Serie Normal, Dropset, Superserie, Rest-Pause -->
+      </div>
+
+      <div class="setmode-dialog-actions">
+        <button type="button" id="btn-setmode-proceed" class="btn-primary btn-setmode-proceed">
+          ✅ Continuar y Aplicar Modo
+        </button>
+        <button type="button" id="btn-setmode-close" class="btn-secondary btn-setmode-close">
+          ✕ Cerrar sin Cambiar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Modal Nativo: Excepción de Día / Mover al Domingo / Acomodación Inteligente -->
   <dialog id="exception-dialog" class="gym-dialog" closedby="any" aria-labelledby="exception-dialog-title">
     <form method="dialog" id="exception-form" class="dialog-form">

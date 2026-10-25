@@ -2412,7 +2412,8 @@ body.animations-paused .phase-pill-dot {
   color: #fde68a;
 }
 
-.btn-set-mode-chip.mode-superset {
+.btn-set-mode-chip.mode-superset,
+.btn-set-mode-chip.mode-superserie {
   border-color: rgba(56, 189, 248, 0.55);
   background: rgba(56, 189, 248, 0.18);
   color: #bae6fd;
@@ -4248,6 +4249,141 @@ body.animations-paused .focus-sprite-frame {
 .btn-header-profile {
   font-size: 0.78rem;
   padding: 5px 10px;
+}
+
+/* ==========================================================================
+   MODAL DE EXPLICACIÓN Y CONFIGURACIÓN DE TÉCNICA DE SERIE Y DESCANSO
+   ========================================================================== */
+.setmode-dialog {
+  max-width: 620px;
+  width: 95vw;
+}
+
+.setmode-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  max-height: 84vh;
+  overflow-y: auto;
+}
+
+.setmode-banner {
+  border-left: 4px solid #38bdf8;
+}
+
+.setmode-dialog-lead {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.setmode-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setmode-option-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setmode-option-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.setmode-option-card.is-selected {
+  border-color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+}
+
+.setmode-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.setmode-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setmode-radio-dot {
+  font-size: 0.95rem;
+  color: #38bdf8;
+}
+
+.setmode-card-title {
+  font-size: 0.92rem;
+  color: #f8fafc;
+}
+
+.setmode-card-badge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.setmode-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(9, 13, 22, 0.45);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.setmode-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.setmode-detail-label {
+  font-weight: 800;
+  color: #38bdf8;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.setmode-detail-text {
+  color: #e2e8f0;
+}
+
+.setmode-dialog-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-setmode-proceed {
+  flex: 1.6;
+  font-weight: 800;
+  padding: 10px 14px;
+  font-size: 0.86rem;
+}
+
+.btn-setmode-close {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.86rem;
 }
 
 /* ==========================================================================

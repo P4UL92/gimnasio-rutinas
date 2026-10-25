@@ -592,10 +592,56 @@
 
   // Modos Avanzados de Serie (Normal, Dropset, Superserie, Rest-Pause) y RIR
   const SET_MODE_CATALOG = {
-    normal: { id: 'normal', label: 'Estándar 4×12', badge: '🎯 Serie Normal', css: 'mode-normal' },
-    dropset: { id: 'dropset', label: 'Dropset en última serie (-25% peso al fallo)', badge: '🔥 Dropset Final', css: 'mode-dropset' },
-    superset: { id: 'superset', label: 'Superserie / Biserie sin descanso intermedio', badge: '⚡ Superserie', css: 'mode-superset' },
-    restpause: { id: 'restpause', label: 'Rest-Pause (12 reps + 15s + 4 reps extra)', badge: '⏸️ Rest-Pause', css: 'mode-restpause' }
+    normal: {
+      id: 'normal',
+      title: 'Serie Estándar (Normal 4×12)',
+      label: 'Estándar 4×12',
+      badge: '🎯 Serie Normal',
+      css: 'mode-normal',
+      restSeconds: 75,
+      howToExecute: 'Realiza 12 repeticiones completas manteniendo ritmo controlado y técnica estricta (3s fase excéntrica, 1s subida). Repite en las 4 series.',
+      howToRest: 'Descanso completo (75 segundos) entre series para recuperación neuromuscular y reposición óptima de fosfágenos (ATP/CP).'
+    },
+    dropset: {
+      id: 'dropset',
+      title: 'Dropset Final (Serie Descendente)',
+      label: 'Dropset en última serie (-25% peso al fallo)',
+      badge: '🔥 Dropset Final',
+      css: 'mode-dropset',
+      restSeconds: 45,
+      howToExecute: 'En la última serie, llega al fallo técnico (RIR 0). Sin descansar, reduce inmediatamente el peso un 20–30% y saca tantas repeticiones suplementarias como puedas hasta volver al fallo.',
+      howToRest: 'Descanso metabólico reducido (45 segundos) para sostener una alta congestión muscular y estrés sarcoplasmático.'
+    },
+    superserie: {
+      id: 'superserie',
+      title: 'Superserie / Biserie',
+      label: 'Superserie sin descanso intermedio',
+      badge: '⚡ Superserie',
+      css: 'mode-superset',
+      restSeconds: 90,
+      howToExecute: 'Ejecuta las repeticiones de este ejercicio e inmediatamente, sin pausa ni soltar la concentración, pasa a realizar el ejercicio antagonista o complementario.',
+      howToRest: 'Descanso extendido (90 segundos) tras completar ambos ejercicios combinados. No hay descanso intermedio entre ellos.'
+    },
+    superset: {
+      id: 'superset',
+      title: 'Superserie / Biserie',
+      label: 'Superserie sin descanso intermedio',
+      badge: '⚡ Superserie',
+      css: 'mode-superset',
+      restSeconds: 90,
+      howToExecute: 'Ejecuta las repeticiones de este ejercicio e inmediatamente, sin pausa ni soltar la concentración, pasa a realizar el ejercicio antagonista o complementario.',
+      howToRest: 'Descanso extendido (90 segundos) tras completar ambos ejercicios combinados. No hay descanso intermedio entre ellos.'
+    },
+    restpause: {
+      id: 'restpause',
+      title: 'Rest-Pause (Pausa y Reanudación)',
+      label: 'Rest-Pause (12 reps + 15s + 4 reps extra)',
+      badge: '⏸️ Rest-Pause',
+      css: 'mode-restpause',
+      restSeconds: 20,
+      howToExecute: 'Lleva la serie principal al fallo o RIR 1 con carga pesada. Suelta la carga y descansa solo 10 a 15 segundos respirando profundo. Vuelve a tomar el mismo peso y saca 3 a 5 repeticiones de remate.',
+      howToRest: 'Micro-descanso intra-serie de 20 segundos (y descanso estándar de 75s al concluir el bloque Rest-Pause).'
+    }
   };
 
   const RIR_ORDER = ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)'];

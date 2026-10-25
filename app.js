@@ -1567,9 +1567,9 @@
     btnModeChip.type = 'button';
     btnModeChip.className = `btn-set-mode-chip mode-${setModeKey}`;
     btnModeChip.dataset.exerciseId = ex.id;
-    btnModeChip.title = `${modeMeta.desc}. Toca para alternar técnica (Normal → Dropset → Superserie → Rest-Pause).`;
+    btnModeChip.title = `${modeMeta.desc}. Toca para abrir el panel de técnica y descanso.`;
     btnModeChip.textContent = modeMeta.badge;
-    btnModeChip.addEventListener('click', () => cycleExerciseSetMode(dayId, ex.id));
+    btnModeChip.addEventListener('click', () => openSetModeModal(dayId, ex.id));
 
     const btnRirChip = document.createElement('button');
     btnRirChip.type = 'button';
@@ -1667,6 +1667,33 @@
     return li;
   }
 
+  let currentSetModeTarget = { dayId: null, exerciseId: null, selectedMode: 'normal' };
+
+  function applyExerciseSetMode(dayId, exerciseId, newMode) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    ex.setMode = newMode;
+    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
+    const meta = modeCatalog[newMode];
+    if (meta && meta.restSeconds) {
+      ex.restSeconds = meta.restSeconds;
+    } else if (meta && meta.restFactor) {
+      ex.restSeconds = Math.max(20, Math.round(75 * meta.restFactor));
+    }
+    triggerHaptic([35]);
+    saveState();
+    renderExercisesList();
+    if (state.activeScreen === 'workout') {
+      renderWorkoutFocusScreen();
+    }
+    const badgeText = meta?.badge || 'Serie Actualizada';
+    showCelebrationToast(`⚡ ${badgeText}: descanso fijado en ${ex.restSeconds || 75}s.`);
+    return ex;
+  }
+
   function cycleExerciseSetMode(dayId, exerciseId) {
     const day = state.schedule[dayId];
     if (!day) return null;
@@ -1676,19 +1703,115 @@
     const modesOrder = ['normal', 'dropset', 'superserie', 'restpause'];
     const currentIdx = modesOrder.indexOf(ex.setMode || 'normal');
     const nextMode = modesOrder[(currentIdx + 1) % modesOrder.length];
-    ex.setMode = nextMode;
+    return applyExerciseSetMode(dayId, exerciseId, nextMode) ? nextMode : null;
+  }
+
+  function openSetModeModal(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    const currentMode = ex.setMode || 'normal';
+    currentSetModeTarget = { dayId, exerciseId, selectedMode: currentMode };
+
+    const dialog = document.getElementById('exercise-setmode-dialog');
+    const nameEl = document.getElementById('setmode-current-name');
+    const metaEl = document.getElementById('setmode-current-meta');
+    const listEl = document.getElementById('setmode-options-list');
+    const proceedBtn = document.getElementById('btn-setmode-proceed');
 
     const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
-    const meta = modeCatalog[nextMode];
-    if (meta && meta.restFactor) {
-      const baseRest = 75;
-      ex.restSeconds = Math.max(20, Math.round(baseRest * meta.restFactor));
+    const currentMeta = modeCatalog[currentMode] || modeCatalog.normal;
+
+    if (nameEl) nameEl.textContent = ex.name;
+    if (metaEl) {
+      metaEl.textContent = `Modo actual: ${currentMeta?.badge || '🎯 Serie Normal'} · Descanso: ${ex.restSeconds || 75}s`;
     }
-    triggerHaptic([35]);
-    saveState();
-    renderExercisesList();
-    renderWorkoutFocusScreen();
-    return nextMode;
+
+    const availableModes = ['normal', 'dropset', 'superserie', 'restpause'];
+
+    const updateSelectedUI = (selectedKey) => {
+      currentSetModeTarget.selectedMode = selectedKey;
+      const targetMeta = modeCatalog[selectedKey] || modeCatalog.normal;
+      if (proceedBtn) {
+        proceedBtn.textContent = `✅ Continuar con ${targetMeta?.badge || 'este Modo'} (${targetMeta?.restSeconds || 75}s descanso)`;
+      }
+      if (listEl) {
+        listEl.querySelectorAll('.setmode-option-card').forEach(card => {
+          const isSelected = card.dataset.mode === selectedKey;
+          card.classList.toggle('is-selected', isSelected);
+          card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+          const radioDot = card.querySelector('.setmode-radio-dot');
+          if (radioDot) radioDot.textContent = isSelected ? '●' : '○';
+        });
+      }
+    };
+
+    if (listEl) {
+      listEl.innerHTML = '';
+      availableModes.forEach(modeKey => {
+        const meta = modeCatalog[modeKey];
+        if (!meta) return;
+
+        const card = document.createElement('div');
+        card.className = `setmode-option-card ${modeKey === currentMode ? 'is-selected' : ''}`;
+        card.dataset.mode = modeKey;
+        card.setAttribute('role', 'radio');
+        card.setAttribute('aria-checked', modeKey === currentMode ? 'true' : 'false');
+        card.tabIndex = 0;
+
+        card.innerHTML = `
+          <div class="setmode-card-header">
+            <div class="setmode-card-title-group">
+              <span class="setmode-radio-dot">${modeKey === currentMode ? '●' : '○'}</span>
+              <strong class="setmode-card-title">${meta.title || meta.label}</strong>
+            </div>
+            <span class="btn-set-mode-chip mode-${modeKey} setmode-card-badge">${meta.badge}</span>
+          </div>
+          <div class="setmode-card-details">
+            <div class="setmode-detail-row">
+              <span class="setmode-detail-label">💪 Cómo desarrollarla:</span>
+              <span class="setmode-detail-text">${meta.howToExecute || meta.label}</span>
+            </div>
+            <div class="setmode-detail-row">
+              <span class="setmode-detail-label">⏳ Cómo descansar:</span>
+              <span class="setmode-detail-text">${meta.howToRest || `Descanso de ${meta.restSeconds || 75}s`}</span>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          updateSelectedUI(modeKey);
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            updateSelectedUI(modeKey);
+          }
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
+    updateSelectedUI(currentMode);
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {}
+    } else if (dialog) {
+      dialog.hidden = false;
+    }
+  }
+
+  function closeSetModeModal() {
+    const dlg = document.getElementById('exercise-setmode-dialog');
+    if (dlg) {
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.hidden = true;
+    }
   }
 
   function cycleExerciseRir(dayId, exerciseId) {
@@ -4851,7 +4974,7 @@
     });
     document.getElementById('btn-focus-set-mode')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
-      if (ex) cycleExerciseSetMode(state.selectedDay, ex.id);
+      if (ex) openSetModeModal(state.selectedDay, ex.id);
     });
     document.getElementById('btn-focus-rir')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -5071,6 +5194,29 @@
         }
       });
     }
+
+    // Modal de Técnica de Serie y Descanso
+    const btnCloseSetMode = document.getElementById('btn-close-setmode-dialog');
+    if (btnCloseSetMode) {
+      btnCloseSetMode.addEventListener('click', closeSetModeModal);
+    }
+    const btnCancelSetMode = document.getElementById('btn-setmode-close');
+    if (btnCancelSetMode) {
+      btnCancelSetMode.addEventListener('click', closeSetModeModal);
+    }
+    const btnProceedSetMode = document.getElementById('btn-setmode-proceed');
+    if (btnProceedSetMode) {
+      btnProceedSetMode.addEventListener('click', () => {
+        if (currentSetModeTarget.dayId && currentSetModeTarget.exerciseId && currentSetModeTarget.selectedMode) {
+          applyExerciseSetMode(
+            currentSetModeTarget.dayId,
+            currentSetModeTarget.exerciseId,
+            currentSetModeTarget.selectedMode
+          );
+        }
+        closeSetModeModal();
+      });
+    }
   }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -5098,6 +5244,11 @@
     adjustExerciseLoad,
     toggleSetCompletion,
     logCurrentWorkoutSession,
+    // Modos de Serie y Técnicas
+    openSetModeModal,
+    closeSetModeModal,
+    applyExerciseSetMode,
+    cycleExerciseSetMode,
     // Cronómetro & TUT APIs
     startSessionStopwatch,
     pauseSessionStopwatch,
