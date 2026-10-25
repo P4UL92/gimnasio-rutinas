@@ -498,6 +498,11 @@
     toast.textContent = message;
     toast.hidden = false;
     toast.classList.remove('is-leaving');
+    if (typeof message === 'string' && (message.includes('⚠️') || message.includes('❌'))) {
+      toast.classList.add('is-warning');
+    } else {
+      toast.classList.remove('is-warning');
+    }
     // Forzar reflow para reiniciar la animación suavemente si se dispara de forma consecutiva
     void toast.offsetWidth;
     toast.classList.add('is-active');
@@ -509,6 +514,7 @@
       setTimeout(() => {
         toast.hidden = true;
         toast.classList.remove('is-leaving');
+        toast.classList.remove('is-warning');
       }, 320);
     }, 3000);
   }

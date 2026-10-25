@@ -1296,11 +1296,45 @@ assert.ok(!restCard39.classList.contains('is-hidden'), 'La tarjeta de descanso d
 app.stopRestTimer();
 app.exitWorkoutScreen();
 
+// =========================================================================
+// SUITE 40: Adaptación Responsive de Cuadros de Notificaciones y Textos Largos
+// =========================================================================
+console.log('Ejecutando Suite 40: Adaptación Responsive de Cuadros de Notificaciones y Textos Largos...');
+
+// 40.1 Verificación de Notificación Corta y Clase is-active
+const toastEl40 = doc.getElementById('celebration-toast');
+assert.ok(toastEl40, 'Debe existir el elemento #celebration-toast');
+app.showCelebrationToast('🔊 Coach de Voz activado');
+assert.equal(toastEl40.hidden, false, 'El toast debe ser visible');
+assert.equal(toastEl40.textContent, '🔊 Coach de Voz activado');
+assert.ok(toastEl40.classList.contains('is-active'), 'El toast debe tener la clase .is-active');
+assert.ok(!toastEl40.classList.contains('is-warning'), 'Una notificación informativa normal no debe tener is-warning');
+
+// 40.2 Verificación de Notificación Larga (Sobrecarga Progresiva / Textos extensos)
+const longMessage = '📈 ¡Sobrecarga Progresiva en Prensa de piernas (Pies en parte alta)! 100 kg total → 105 kg total (1RM Est: 140 kg)';
+app.showCelebrationToast(longMessage);
+assert.equal(toastEl40.textContent, longMessage, 'El toast debe alojar el texto largo completo');
+assert.ok(toastEl40.classList.contains('is-active'), 'El toast largo debe mantenerse activo');
+
+// 40.3 Verificación de Notificación de Alerta / Advertencia (is-warning)
+const warningMessage = '⚠️ Debes completar todos los ejercicios del día para terminar la sesión.';
+app.showCelebrationToast(warningMessage);
+assert.equal(toastEl40.textContent, warningMessage);
+assert.ok(toastEl40.classList.contains('is-warning'), 'El toast con ⚠️ debe activar la clase .is-warning');
+
+// 40.4 Auditoría de Reglas CSS Responsive para Cuadros de Notificaciones
+const cssContent = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(cssContent.includes('.celebration-toast {'), 'styles.css debe contener regla para .celebration-toast');
+assert.ok(cssContent.includes('max-width: min(calc(100vw - 28px), 480px);') || cssContent.includes('max-width:'), 'Debe contar con max-width responsive');
+assert.ok(cssContent.includes('word-break: break-word;') || cssContent.includes('overflow-wrap: anywhere;'), 'Debe contar con adaptación de quiebre de palabra word-break');
+assert.ok(cssContent.includes('.celebration-toast.is-warning'), 'Debe contar con estilos diferenciados para alertas is-warning');
+assert.ok(cssContent.includes('@media (max-width: 480px)'), 'Debe contar con adaptación en media query de 480px');
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.19 (Transiciones de Notificaciones, Animaciones de Botones y Paneles Deslizantes) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.20 (Transiciones y Notificaciones Responsive Adaptadas) pasaron con éxito.');
 process.exit(0);
 
 
