@@ -242,9 +242,6 @@
     <section id="workout-focus-screen" class="app-screen-panel workout-focus-screen" data-screen-panel="workout" aria-labelledby="focus-ex-title" hidden>
       <div class="focus-screen-topbar">
         <div class="focus-topbar-left">
-          <button type="button" id="btn-exit-workout-screen" class="btn-secondary btn-back-plan" title="Volver al plan de entrenamiento">
-            ← Volver
-          </button>
           <button type="button" id="btn-focus-truncate-top" class="btn-truncate-pill" title="Truncar o finalizar la sesión antes de tiempo">
             ⚠️ Truncar
           </button>
@@ -254,7 +251,6 @@
           <strong id="focus-stopwatch-display" class="focus-clock-digits">00:00:00</strong>
           <button type="button" id="btn-focus-clock-toggle" class="btn-focus-clock-btn" aria-label="Iniciar o pausar cronómetro de sesión">▶</button>
         </div>
-        <span id="focus-day-progress-badge" class="day-sets-pill">0 / 24 series</span>
       </div>
 
       <!-- Navegador Paso a Paso de los Ejercicios del Día (1 a 6) -->
@@ -282,8 +278,8 @@
               <button type="button" id="btn-focus-help" class="btn-focus-help" aria-expanded="false" title="Ver máquina, músculo y técnica de ejecución">
                 <span class="help-btn-icon">❓</span> Máquina & Info
               </button>
-              <button type="button" id="btn-focus-skip-exercise" class="btn-skip-ex-link" title="Omitir o terminar este ejercicio y pasar al siguiente">
-                ⏭️ Saltar
+              <button type="button" id="btn-focus-swap-alt" class="btn-focus-swap-chip" title="Alternar ejercicio si la máquina está ocupada">
+                🔄 Máquina Ocupada
               </button>
             </div>
           </div>
@@ -319,7 +315,7 @@
           <!-- Sprite renderizado por app.js -->
         </div>
 
-        <!-- 3. Controles Esenciales: Peso / Nivel + Meta de Series y Repeticiones -->
+        <!-- 3. Controles Esenciales: Peso / Nivel -->
         <div class="focus-essential-controls">
           <div class="focus-load-box">
             <button type="button" id="btn-focus-load-minus" class="btn-step-load btn-focus-step" aria-label="Disminuir carga">−</button>
@@ -328,10 +324,6 @@
               <span id="focus-load-sub" class="unit-subtext">Torre de placas</span>
             </button>
             <button type="button" id="btn-focus-load-plus" class="btn-step-load btn-focus-step" aria-label="Aumentar carga">+</button>
-          </div>
-          <div class="focus-reps-summary">
-            <strong id="focus-sets-reps-label">Serie 1 de 4: 12 reps</strong>
-            <span id="focus-rest-target-label">⏳ Descanso sugerido: 75s</span>
           </div>
         </div>
 
@@ -350,19 +342,18 @@
 
           <!-- Hero Central: Muestra ÚNICAMENTE las repeticiones calculadas para la serie actual -->
           <div class="focus-current-reps-hero" id="focus-current-reps-hero">
-            <div class="focus-reps-number-box">
+            <div class="focus-reps-number-box" id="focus-reps-number-box">
               <span class="focus-reps-label">REPETICIONES A REALIZAR</span>
               <div class="focus-reps-display-row">
                 <strong id="focus-current-set-reps-digits" class="focus-current-reps-digits">12</strong>
                 <span class="focus-reps-unit">reps</span>
               </div>
-              <small id="focus-current-set-scheme-note" class="focus-reps-scheme-note">Calculadas según tu descanso y objetivo</small>
             </div>
 
             <!-- Botón Grande de Acción Táctil de Serie -->
             <button type="button" id="btn-focus-action-set" class="btn-primary btn-focus-action-set" title="Completar esta serie e iniciar el descanso">
               <span id="focus-btn-action-icon">✓</span>
-              <span id="focus-btn-action-text">Completar Serie 1 (12 reps)</span>
+              <span id="focus-btn-action-text">Serie 1 Completada - Descansar (12 reps)</span>
             </button>
           </div>
         </div>
@@ -391,11 +382,10 @@
         <details id="focus-secondary-menu" class="focus-secondary-menu">
           <summary class="focus-secondary-summary">
             <span>⚙️ Opciones Secundarias del Ejercicio</span>
-            <small>Técnica, Máquina Ocupada, TUT, 1RM y Nota ▾</small>
+            <small>Técnica, TUT, 1RM, RIR y Nota ▾</small>
           </summary>
           <div class="focus-secondary-body">
             <div class="focus-secondary-chips">
-              <button type="button" id="btn-focus-swap-alt" class="btn-alt-swap-chip">🔄 Máquina Ocupada</button>
               <button type="button" id="btn-focus-set-mode" class="btn-set-mode-chip">⚡ Serie Normal</button>
               <button type="button" id="btn-focus-rir" class="btn-rir-chip">🎯 RIR 2</button>
               <button type="button" id="btn-focus-calc" class="btn-rir-chip">🧮 Discos / 1RM</button>
@@ -1347,6 +1337,39 @@
         <button type="submit" value="close" class="btn-primary" style="width: 100%;">Listo</button>
       </footer>
     </form>
+  </dialog>
+
+  <!-- Modal Nativo: Confirmación de Inicio de Rutina del Día -->
+  <dialog id="workout-confirm-start-dialog" class="gym-dialog confirm-start-dialog" closedby="any" aria-labelledby="confirm-start-title">
+    <div class="dialog-body confirm-start-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">SESIÓN DE ENTRENAMIENTO</span>
+          <h2 id="confirm-start-title">💪 Iniciar Rutina del Día</h2>
+        </div>
+        <button type="button" id="btn-close-confirm-start" class="btn-icon-close" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="confirm-start-content">
+        <p class="confirm-start-lead">
+          ¿Estás listo para comenzar la sesión programada? Se activará el cronómetro en vivo y la guía visual de ejercicios y descansos.
+        </p>
+
+        <div class="confirm-start-card" id="confirm-start-card">
+          <h3 id="confirm-start-day-title">LUNES · ESPALDA Y BÍCEPS</h3>
+          <p id="confirm-start-day-subtitle">6 ejercicios programados · 24 series en total</p>
+        </div>
+
+        <div class="confirm-start-actions">
+          <button type="button" id="btn-confirm-start-proceed" class="btn-primary btn-confirm-start-yes">
+            🔥 ¡Sí, Comenzar Entrenamiento!
+          </button>
+          <button type="button" id="btn-confirm-start-cancel" class="btn-secondary btn-confirm-start-no">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </dialog>
 
   <!-- Modal Nativo: Truncar o Salir Anticipadamente de la Sesión -->

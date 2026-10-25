@@ -613,17 +613,19 @@ assert.equal(doc.getElementById('bottom-app-nav').hidden, true, 'La barra de nav
 assert.equal(doc.getElementById('day-tabs-nav').hidden, true, 'Las pestañas de días deben estar ocultas en modo entrenamiento');
 assert.equal(doc.getElementById('workout-focus-screen').hidden, false, 'La pantalla del ejercicio debe estar visible');
 
-// 29.2 Verificar existencia de botones requeridos: Terminar sesión, Truncar sesión, Saltar ejercicio
+// 29.2 Verificar existencia de botones requeridos: Terminar sesión, Truncar sesión, Máquina Ocupada en cabecera
 const btnFinishWorkout = doc.getElementById('btn-focus-finish-workout');
 const btnTruncateWorkout = doc.getElementById('btn-focus-truncate-workout');
 const btnTruncateTop = doc.getElementById('btn-focus-truncate-top');
+const btnSwapHeader = doc.getElementById('btn-focus-swap-alt');
 const btnSkipExercise = doc.getElementById('btn-focus-skip-exercise');
 
 assert.ok(btnFinishWorkout, 'Debe existir el botón #btn-focus-finish-workout (Terminar Sesión)');
 assert.ok(btnFinishWorkout.textContent.includes('Terminar Sesión'), 'El texto debe indicar Terminar Sesión');
 assert.ok(btnTruncateWorkout, 'Debe existir el botón #btn-focus-truncate-workout (Truncar Sesión en pie)');
 assert.ok(btnTruncateTop, 'Debe existir el botón #btn-focus-truncate-top (Truncar Sesión en barra superior)');
-assert.ok(btnSkipExercise, 'Debe existir el botón #btn-focus-skip-exercise (Saltar Ejercicio)');
+assert.ok(btnSwapHeader, 'Debe existir el botón #btn-focus-swap-alt (Máquina Ocupada) en la cabecera');
+assert.ok(!btnSkipExercise || btnSkipExercise.style.display === 'none', 'El botón de saltar ejercicio no debe estar visible');
 
 // 29.3 Probar Truncar Sesión: apertura de modal, visualización de progreso y registro parcial
 app.openWorkoutTruncateDialog();
@@ -646,10 +648,11 @@ assert.equal(app.getState().history[0].status, 'truncated', 'La sesión truncada
 
 // 29.4 Probar Terminar Sesión Satisfactoriamente y Pantalla de Resultados con Próxima Proyección
 app.startDayWorkoutSession('lunes', 0);
-// Completar las series del ejercicio
-for (let s = 0; s < 4; s++) {
-  app.toggleSetCompletion('lunes', 'lun-espalda-polea-estrecho', s);
-}
+// Completar todos los ejercicios del día para permitir terminar sesión
+app.getState().schedule.lunes.exercises.forEach(e => {
+  e.completedSets = [true, true, true, true];
+});
+app.renderWorkoutFocusScreen();
 app.finishWorkoutSession();
 
 const resultsDialog = doc.getElementById('workout-results-dialog');
@@ -931,11 +934,92 @@ assert.ok(actionText.textContent.includes('Serie 2 Completada - Descansar'), 'El
 
 app.exitWorkoutScreen();
 
+// --- Suite 35: Verificación de Confirmación al Iniciar, Supresión de Textos Repetitivos, Culminación y Máquina Ocupada ---
+console.log('Ejecutando Suite 35: Confirmación de Rutina, Textos Limpios, Culminación y Máquina Ocupada...');
+
+// 35.1 Pantalla/Modal de confirmación al iniciar rutina del día
+app.restoreOriginalSchedule();
+const confirmDialog = doc.getElementById('workout-confirm-start-dialog');
+assert.ok(confirmDialog, 'Debe existir el modal #workout-confirm-start-dialog');
+app.openConfirmStartWorkoutDialog('lunes', 0);
+assert.equal(confirmDialog.hidden, false, 'El modal de confirmación debe abrirse');
+const confirmTitle = doc.getElementById('confirm-start-day-title');
+assert.ok(confirmTitle.textContent.includes('LUNES'), 'El título de confirmación debe incluir el día');
+
+// Proceder con el inicio de entrenamiento
+const btnConfirmProceed = doc.getElementById('btn-confirm-start-proceed');
+btnConfirmProceed.click();
+assert.equal(app.getState().activeScreen, 'workout', 'Debe haber ingresado a la pantalla de entrenamiento tras confirmar');
+
+// 35.2 Supresión de textos repetitivos y ausencia de botón volver
+const exitBtn = doc.getElementById('btn-exit-workout-screen');
+assert.ok(!exitBtn || exitBtn.style.display === 'none' || doc.querySelector('#btn-exit-workout-screen') === null, 'No debe haber botón de volver visible');
+
+const dayProgressBadge = doc.getElementById('focus-day-progress-badge');
+assert.ok(!dayProgressBadge || dayProgressBadge.style.display === 'none', 'No debe haber badge de 1 / 24 series en la parte superior');
+
+const schemeNote = doc.getElementById('focus-current-set-scheme-note');
+assert.ok(!schemeNote || schemeNote.style.display === 'none' || schemeNote.textContent.trim() === '', 'No debe haber texto de "Meta calculada para Serie..."');
+
+const setsRepsLabel = doc.getElementById('focus-sets-reps-label');
+const restTargetLabel = doc.getElementById('focus-rest-target-label');
+assert.ok(!setsRepsLabel || setsRepsLabel.style.display === 'none', 'No debe haber "Serie X de X" en el panel del peso');
+assert.ok(!restTargetLabel || restTargetLabel.style.display === 'none', 'No debe haber "Descanso sugerido" en el panel del peso');
+
+// 35.3 Botón "Terminar Sesión" solo activo cuando todos los ejercicios se completen
+const finishBtn = doc.getElementById('btn-focus-finish-workout');
+assert.ok(finishBtn, 'Debe existir el botón #btn-focus-finish-workout');
+assert.equal(finishBtn.disabled, true, 'El botón de terminar sesión debe estar bloqueado mientras queden ejercicios pendientes');
+
+// 35.4 Botón de "Máquina Ocupada" en la cabecera y actualización de interfaz alterna
+const swapBtn = doc.getElementById('btn-focus-swap-alt');
+assert.ok(swapBtn, 'Debe existir el botón #btn-focus-swap-alt');
+const origTitle = doc.getElementById('focus-ex-title').textContent.trim();
+const origEquip = doc.getElementById('focus-ex-equip-badge').textContent.trim();
+
+// Aplicar alternativa
+const currentEx = app.getState().schedule['lunes'].exercises[0];
+const alts = window.GYM_VISUALS.getExerciseAlternatives(currentEx);
+assert.ok(alts.length > 0, 'Debe haber alternativas para el ejercicio');
+const chosenAlt = alts[0];
+app.swapExerciseAlternative('lunes', currentEx.id, chosenAlt);
+
+const updatedTitle = doc.getElementById('focus-ex-title').textContent.trim();
+const updatedEquip = doc.getElementById('focus-ex-equip-badge').textContent.trim();
+assert.notEqual(updatedTitle, origTitle, 'El título del ejercicio debe actualizarse al de la alternativa');
+assert.ok(updatedTitle.length > 0, 'El nuevo título debe ser válido');
+assert.ok(swapBtn.classList.contains('is-swapped'), 'El botón de máquina ocupada debe indicar estado alternativo');
+
+// Restaurar ejercicio original
+app.swapExerciseAlternative('lunes', currentEx.id, null);
+assert.equal(doc.getElementById('focus-ex-title').textContent.trim(), origTitle, 'Debe restaurarse el título original');
+
+// 35.5 Culminación de ejercicio: quitar "REPETICIONES A REALIZAR..." y mostrar solo botón "Ejercicio completado..."
+const dayObj35 = app.getState().schedule['lunes'];
+const suite35Ex = dayObj35.exercises[0];
+// Marcar todas las series del primer ejercicio
+for (let s = 0; s < 4; s++) {
+  suite35Ex.completedSets[s] = true;
+}
+app.stopRestTimer();
+app.renderWorkoutFocusScreen();
+
+const repsNumberBox = doc.getElementById('focus-reps-number-box');
+assert.ok(!repsNumberBox || repsNumberBox.style.display === 'none', 'En ejercicio culminado debe ocultarse el cuadro de repeticiones a realizar');
+const actionBtnCompleted = doc.getElementById('btn-focus-action-set');
+assert.ok(actionBtnCompleted.textContent.includes('Ejercicio completado...'), 'El botón de acción debe decir "Ejercicio completado..."');
+
+// Al presionar el botón de ejercicio completado, debe avanzar al siguiente ejercicio
+actionBtnCompleted.click();
+assert.equal(app.getState().activeExerciseIndex, 1, 'Debe haber avanzado automáticamente al Ejercicio 2');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.14 (Alternancia de Paneles Serie/Descanso, Botón ¡Listo! Comenzar Serie y 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.15 (Confirmación Inicio, Interfaz Limpia, Culminación y Máquina Ocupada) pasaron con éxito.');
 process.exit(0);
 
 

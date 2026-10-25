@@ -202,8 +202,14 @@
 
   // Clasifica cada ejercicio (preconfigurado o personalizado) en su patrón biomecánico exacto
   function detectExerciseAnimationType(exercise) {
-    if (exercise && exercise.spriteType && exercise.spriteType !== 'auto' && EXERCISE_SPRITE_CATALOG[exercise.spriteType]) {
-      return exercise.spriteType;
+    if (exercise && exercise.spriteType && exercise.spriteType !== 'auto') {
+      const normalizedKey = String(exercise.spriteType).replace(/_/g, '-');
+      if (EXERCISE_SPRITE_CATALOG[normalizedKey]) {
+        return normalizedKey;
+      }
+      if (EXERCISE_SPRITE_CATALOG[exercise.spriteType]) {
+        return exercise.spriteType;
+      }
     }
 
     const id = ((exercise && exercise.id) || '').toLowerCase();
@@ -681,103 +687,103 @@
     back_pulldown_narrow: {
       altName: 'Dominadas Asistidas o Jalón Unilateral en Polea',
       altEquipment: 'Máquina Asistida / Polea Alta',
-      altSpriteType: 'back_pullover',
+      altSpriteType: 'cable-pullover',
       altNote: 'Alternativa biomecánica de tracción vertical con énfasis en dorsal inferior. Mantén 4×12.'
     },
     back_machine_wide: {
       altName: 'Remo en Máquina Convergente Agarre Prono Amplio',
       altEquipment: 'Máquina Hammer / Polea',
-      altSpriteType: 'back_row_seated',
+      altSpriteType: 'seated-cable-row',
       altNote: 'Alternativa directa cuando la máquina de espalda amplia está ocupada. Codos abiertos a 60°.'
     },
     back_row_seated: {
       altName: 'Remo con Mancuerna a Una Mano (Serrucho) o Remo en Punta',
       altEquipment: 'Mancuerna / Banco Plano',
-      altSpriteType: 'back_machine_wide',
+      altSpriteType: 'machine-wide-back',
       altNote: 'Excelente sustituto libre para densidad de romboides y dorsal medio en 4×12.'
     },
     back_pullover: {
       altName: 'Pull-Over con Mancuerna en Banco Plano',
       altEquipment: 'Mancuerna + Banco',
-      altSpriteType: 'back_pulldown_narrow',
+      altSpriteType: 'pulley-narrow-back',
       altNote: 'Estiramiento profundo del dorsal ancho manteniendo codos semirrígidos.'
     },
     bicep_curl: {
       altName: 'Curl de Bíceps Alterno con Mancuernas o Barra Z',
       altEquipment: 'Mancuernas / Barra Z',
-      altSpriteType: 'bicep_hammer',
+      altSpriteType: 'hammer-curl',
       altNote: 'Sustituto ideal si la polea baja está ocupada. Supina la muñeca al subir.'
     },
     bicep_hammer: {
       altName: 'Curl Martillo Cruzado con Mancuernas',
       altEquipment: 'Par de Mancuernas',
-      altSpriteType: 'bicep_curl',
+      altSpriteType: 'cable-bicep-curl',
       altNote: 'Ataca el braquial anterior y braquiorradial sin depender de la estación de poleas.'
     },
     chest_press: {
       altName: 'Press Plano con Mancuernas o Barra Olímpica',
       altEquipment: 'Banco Plano + Mancuernas',
-      altSpriteType: 'chest_incline',
+      altSpriteType: 'incline-chest-press',
       altNote: 'Equivalente biomecánico de empuje horizontal con mayor rango de estabilización.'
     },
     chest_incline: {
       altName: 'Press Inclinado en Multipower (Smith) o Polea Baja',
       altEquipment: 'Multipower / Banco 30°',
-      altSpriteType: 'chest_press',
+      altSpriteType: 'chest-press',
       altNote: 'Enfocado en la porción clavicular (pecho superior) con tensión controlada.'
     },
     chest_pecdeck: {
       altName: 'Aperturas con Mancuernas en Banco Plano',
       altEquipment: 'Mancuernas + Banco',
-      altSpriteType: 'chest_crossover',
+      altSpriteType: 'cable-crossover',
       altNote: 'Aducción horizontal libre cuando el Pec Deck está ocupado.'
     },
     chest_crossover: {
       altName: 'Fondos Inclinados o Aperturas en Máquina Contractora',
       altEquipment: 'Paralelas / Pec Deck',
-      altSpriteType: 'chest_pecdeck',
+      altSpriteType: 'pec-deck-fly',
       altNote: 'Aísla las fibras esternales e inferiores del pectoral.'
     },
     tricep_pushdown: {
       altName: 'Press Francés con Barra Z o Mancuernas',
       altEquipment: 'Barra Z / Banco Plano',
-      altSpriteType: 'tricep_overhead',
+      altSpriteType: 'tricep-overhead',
       altNote: 'Gran estímulo en las 3 cabezas del tríceps sin usar torre de polea.'
     },
     tricep_overhead: {
       altName: 'Extensión Copa con Mancuerna a Dos Manos Tras Nuca',
       altEquipment: 'Mancuerna en Banco 90°',
-      altSpriteType: 'tricep_pushdown',
+      altSpriteType: 'tricep-pushdown',
       altNote: 'Estiramiento máximo de la cabeza larga del tríceps.'
     },
     tricep_dips: {
       altName: 'Press Cerrado en Máquina o Banco Plano',
       altEquipment: 'Barra / Máquina Multipower',
-      altSpriteType: 'tricep_pushdown',
+      altSpriteType: 'tricep-pushdown',
       altNote: 'Empuje compuesto de tríceps con codos pegados al torso.'
     },
     leg_press: {
       altName: 'Sentadilla en Multipower (Smith) o Prensa Horizontal',
       altEquipment: 'Multipower / Máquina',
-      altSpriteType: 'leg_hack_squat',
+      altSpriteType: 'hack-squat',
       altNote: 'Sustituto directo de empuje bilateral de tren inferior.'
     },
     leg_hack_squat: {
       altName: 'Zancadas Búlgaras con Mancuernas o Prensa 45° Pies Bajos',
       altEquipment: 'Mancuernas + Banco',
-      altSpriteType: 'leg_press',
+      altSpriteType: 'leg-press',
       altNote: 'Enfoque dominante de rodilla y cuádriceps.'
     },
     leg_extension: {
       altName: 'Sentadilla Sissy Asistida o Paso Atrás (Step-Down)',
       altEquipment: 'Soporte / Mancuerna',
-      altSpriteType: 'leg_hack_squat',
+      altSpriteType: 'hack-squat',
       altNote: 'Aísla el recto femoral cuando el sillón de cuádriceps está ocupado.'
     },
     leg_curl: {
       altName: 'Curl Femoral con Deslizadores o Mancuerna entre Pies',
       altEquipment: 'Banco Plano + Mancuerna',
-      altSpriteType: 'leg_rdl',
+      altSpriteType: 'romanian-deadlift',
       altNote: 'Flexión de rodilla estricta para isquiotibiales.'
     },
     leg_hip_thrust: {
@@ -807,37 +813,37 @@
     leg_calves: {
       altName: 'Elevación de Gemelos Unilateral con Mancuerna en Escalón',
       altEquipment: 'Escalón + Mancuerna',
-      altSpriteType: 'leg_press',
+      altSpriteType: 'calf-raise',
       altNote: 'Pausa de 2 segundos abajo y 1 segundo en punta.'
     },
     shoulder_press: {
       altName: 'Press Arnold Sentado con Mancuernas',
       altEquipment: 'Banco 85° + Mancuernas',
-      altSpriteType: 'shoulder_lateral',
+      altSpriteType: 'shoulder-press',
       altNote: 'Recorrido completo de deltoides anterior y lateral.'
     },
     shoulder_lateral: {
       altName: 'Elevación Lateral con Mancuernas Sentado (Estricto)',
       altEquipment: 'Par de Mancuernas',
-      altSpriteType: 'shoulder_press',
+      altSpriteType: 'lateral-raise',
       altNote: 'Elimina el impulso lumbar aislando la cabeza lateral del hombro.'
     },
     shoulder_facepull: {
       altName: 'Pájaros con Mancuernas Pecho Apoyado en Banco Inclinado',
       altEquipment: 'Banco 30° + Mancuernas',
-      altSpriteType: 'shoulder_reardelt',
+      altSpriteType: 'face-pull',
       altNote: 'Salud articular del manguito rotador y deltoides posterior.'
     },
     shoulder_reardelt: {
       altName: 'Encogimientos con Mancuernas + Remo al Mentón Agarre Ancho',
       altEquipment: 'Mancuernas / Barra Z',
-      altSpriteType: 'shoulder_facepull',
+      altSpriteType: 'rear-delt-shrugs',
       altNote: 'Estímulo directo de trapecio superior y deltoides posterior.'
     },
     core_crunch: {
       altName: 'Elevación de Piernas Colgado o en Silla Romana + Plancha',
       altEquipment: 'Silla Romana / Lastre',
-      altSpriteType: 'shoulder_reardelt',
+      altSpriteType: 'cable-crunch-abs',
       altNote: 'Flexión pélvica para recto abdominal inferior y core.'
     }
   };

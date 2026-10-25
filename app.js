@@ -951,13 +951,20 @@
 
         // Termina el descanso: se oculta el panel de descanso y se muestra el panel de la serie en curso actualizado
         stopRestTimer();
+        const currentEx = getActiveFocusExercise();
+        const day = state.schedule[state.selectedDay];
+        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
+          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
+            state.activeExerciseIndex++;
+          }
+        }
         renderWorkoutFocusScreen();
         const ex = getActiveFocusExercise();
         const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
         if (ex && nextIdx !== -1) {
           const nextReps = getExerciseSetReps(ex, nextIdx);
-          sendRestFinishedNotification('⏱️ ¡Descanso terminado!', `Es hora de tu Serie ${nextIdx + 1}: ${nextReps} repeticiones 💪`);
-          showCelebrationToast(`⏱️ ¡Descanso terminado! Serie ${nextIdx + 1}: realiza ${nextReps} repeticiones.`);
+          sendRestFinishedNotification('⏱️ ¡Descanso terminado!', `Es hora de ${ex.name} (Serie ${nextIdx + 1}: ${nextReps} reps) 💪`);
+          showCelebrationToast(`⏱️ ¡Descanso terminado! ${ex.name} - Serie ${nextIdx + 1}: ${nextReps} reps.`);
         }
         return;
       }
@@ -1496,7 +1503,7 @@
     btnFocusEx.addEventListener('click', () => {
       const dayObj = state.schedule[dayId];
       const idx = dayObj ? dayObj.exercises.findIndex(item => item.id === ex.id) : 0;
-      startDayWorkoutSession(dayId, idx >= 0 ? idx : 0);
+      openConfirmStartWorkoutDialog(dayId, idx >= 0 ? idx : 0);
     });
 
     // Menú desplegable que agrupa las opciones no esenciales para despejar la vista vertical
@@ -2534,6 +2541,8 @@
       ex.name = ex.originalSnapshot.name;
       ex.equipment = ex.originalSnapshot.equipment;
       ex.spriteType = ex.originalSnapshot.spriteType;
+      if (ex.originalSnapshot.loadType) ex.loadType = ex.originalSnapshot.loadType;
+      if (typeof ex.originalSnapshot.loadValue !== 'undefined') ex.loadValue = ex.originalSnapshot.loadValue;
       ex.note = ex.originalSnapshot.note;
       ex.isSwappedAlternative = false;
       delete ex.originalSnapshot;
@@ -2559,6 +2568,8 @@
             altName: first.name,
             altEquipment: first.equipment,
             altSpriteType: first.spriteType,
+            loadType: first.loadType,
+            loadValue: first.loadValue,
             altNote: first.reason
           };
         }
@@ -2576,14 +2587,21 @@
         name: ex.name,
         equipment: ex.equipment,
         spriteType: ex.spriteType || detectedKey,
+        loadType: ex.loadType,
+        loadValue: ex.loadValue,
         note: ex.note
       };
     }
 
     ex.name = altMeta.altName || altMeta.name;
     ex.equipment = altMeta.altEquipment || altMeta.equipment;
-    ex.spriteType = altMeta.altSpriteType || altMeta.spriteType;
+    const targetSprite = altMeta.altSpriteType || altMeta.spriteType;
+    if (targetSprite) {
+      ex.spriteType = String(targetSprite).replace(/_/g, '-');
+    }
     ex.note = altMeta.altNote || altMeta.reason || ex.note;
+    if (altMeta.loadType) ex.loadType = altMeta.loadType;
+    if (typeof altMeta.loadValue !== 'undefined') ex.loadValue = altMeta.loadValue;
     ex.isSwappedAlternative = true;
 
     triggerHaptic([45, 35]);
@@ -3342,6 +3360,49 @@
     };
   }
 
+  let pendingWorkoutLaunch = null;
+
+  function openConfirmStartWorkoutDialog(dayId = state.selectedDay, exerciseIndex = null) {
+    const targetDayId = DAYS_ORDER.includes(dayId) ? dayId : state.selectedDay;
+    const day = state.schedule[targetDayId];
+    if (!day) {
+      startDayWorkoutSession(targetDayId, exerciseIndex);
+      return;
+    }
+
+    pendingWorkoutLaunch = { dayId: targetDayId, exerciseIndex };
+
+    const dialog = document.getElementById('workout-confirm-start-dialog');
+    const titleEl = document.getElementById('confirm-start-day-title');
+    const subEl = document.getElementById('confirm-start-day-subtitle');
+
+    const totalSets = (day.exercises || []).reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+    if (titleEl) {
+      titleEl.textContent = `${day.dayName.toUpperCase()} · ${day.muscleGroup.toUpperCase()}`;
+    }
+    if (subEl) {
+      subEl.textContent = `${day.exercises.length} ejercicios programados · ${totalSets} series en total`;
+    }
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {
+        startDayWorkoutSession(targetDayId, exerciseIndex);
+      }
+    } else {
+      startDayWorkoutSession(targetDayId, exerciseIndex);
+    }
+  }
+
+  function closeConfirmStartWorkoutDialog() {
+    pendingWorkoutLaunch = null;
+    const dialog = document.getElementById('workout-confirm-start-dialog');
+    if (dialog && typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    }
+  }
+
   function exitWorkoutScreen() {
     stopRestTimer();
     switchAppScreen('plan', { instant: true });
@@ -3368,7 +3429,7 @@
 
     const dayProgressBadge = document.getElementById('focus-day-progress-badge');
     if (dayProgressBadge) {
-      dayProgressBadge.textContent = `${doneDaySets} / ${totalDaySets} series`;
+      dayProgressBadge.style.display = 'none';
     }
 
     const dayNameLabel = document.getElementById('focus-day-name-label');
@@ -3484,27 +3545,30 @@
     // Actualizar Dígitos de Repeticiones Únicas para la Serie Actual
     const repsDigits = document.getElementById('focus-current-set-reps-digits');
     const repsSchemeNote = document.getElementById('focus-current-set-scheme-note');
+    const repsHero = document.getElementById('focus-current-reps-hero');
+    const repsNumberBox = document.getElementById('focus-reps-number-box');
+
+    if (repsHero) {
+      repsHero.classList.toggle('is-exercise-done', isAllDone);
+    }
+    if (repsNumberBox) {
+      repsNumberBox.style.display = isAllDone ? 'none' : '';
+    }
+
     if (repsDigits) {
       repsDigits.textContent = isAllDone ? '✓' : String(activeSetReps);
     }
     if (repsSchemeNote) {
-      if (isAllDone) {
-        repsSchemeNote.textContent = '¡Excelente trabajo! Todas las series completadas.';
-      } else if (isResting) {
-        repsSchemeNote.textContent = `Descanso activo... Próxima serie: ${activeSetReps} repeticiones.`;
-      } else {
-        repsSchemeNote.textContent = `Meta calculada para Serie ${activeSetIndex + 1}: ${activeSetReps} reps`;
-      }
+      repsSchemeNote.textContent = '';
+      repsSchemeNote.style.display = 'none';
     }
 
     if (setsRepsLabel) {
-      setsRepsLabel.textContent = isAllDone
-        ? `✓ ${totalSets} series completadas`
-        : `Serie ${activeSetIndex + 1} de ${totalSets}: ${activeSetReps} reps`;
-      setsRepsLabel.title = 'Repeticiones de la serie activa en curso';
-      setsRepsLabel.style.cursor = 'default';
+      setsRepsLabel.style.display = 'none';
     }
-    if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
+    if (restTargetLabel) {
+      restTargetLabel.style.display = 'none';
+    }
 
     // Botón de Acción Principal de la Serie y Paneles Serie / Descanso
     const activeSetCard = document.getElementById('focus-active-set-card');
@@ -3534,7 +3598,7 @@
       if (isAllDone) {
         actionBtn.classList.add('is-all-completed');
         if (actionIcon) actionIcon.textContent = '🏆';
-        actionText.textContent = `Ejercicio Completado (${totalSets}/${totalSets})`;
+        actionText.textContent = 'Ejercicio completado...';
       } else if (isResting) {
         actionBtn.classList.add('is-resting-state');
         if (actionIcon) actionIcon.textContent = '⚡';
@@ -3618,8 +3682,11 @@
     const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
 
     if (btnSwap) {
-      btnSwap.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
-      btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
+      btnSwap.className = `btn-focus-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
+      btnSwap.textContent = ex.isSwappedAlternative ? '↩️ Restaurar Original' : '🔄 Máquina Ocupada';
+      btnSwap.title = ex.isSwappedAlternative
+        ? 'Restaurar ejercicio original programado'
+        : 'Ver alternativas si la máquina está ocupada';
     }
     if (btnMode) {
       btnMode.className = `btn-set-mode-chip mode-${setModeKey}`;
@@ -3637,15 +3704,28 @@
       noteEl.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
     }
 
+    // El botón de "Terminar Sesión" solo debe estar activado cuando todos los ejercicios se completen
+    const dayExercises = exercises || [];
+    const allExercisesDone = dayExercises.length > 0 && dayExercises.every(item => {
+      const total = Number(item.sets) || 4;
+      const done = (item.completedSets || []).filter(Boolean).length;
+      return done >= total;
+    });
+
+    const finishWorkoutBtn = document.getElementById('btn-focus-finish-workout');
+    if (finishWorkoutBtn) {
+      finishWorkoutBtn.disabled = !allExercisesDone;
+      finishWorkoutBtn.classList.toggle('is-disabled-locked', !allExercisesDone);
+      if (allExercisesDone) {
+        finishWorkoutBtn.title = '¡Excelente trabajo! Todos los ejercicios completados. Toca para guardar la sesión.';
+      } else {
+        finishWorkoutBtn.title = 'Completa todos los ejercicios del día para terminar la sesión.';
+      }
+    }
+
     const skipBtn = document.getElementById('btn-focus-skip-exercise');
     if (skipBtn) {
-      if (idx >= exercises.length - 1) {
-        skipBtn.textContent = '🏁 Último Ejercicio';
-        skipBtn.disabled = true;
-      } else {
-        skipBtn.textContent = '⏭️ Saltar Ejercicio';
-        skipBtn.disabled = false;
-      }
+      skipBtn.style.display = 'none';
     }
 
     return ex;
@@ -4003,6 +4083,18 @@
   function finishWorkoutSession() {
     const day = state.schedule[state.selectedDay];
     if (!day) return;
+
+    const exercises = day.exercises || [];
+    const allDone = exercises.length > 0 && exercises.every(item => {
+      const total = Number(item.sets) || 4;
+      const done = (item.completedSets || []).filter(Boolean).length;
+      return done >= total;
+    });
+
+    if (!allDone) {
+      showCelebrationToast('⚠️ Debes completar todos los ejercicios del día para terminar la sesión.');
+      return;
+    }
 
     stopRestTimer();
     logCurrentWorkoutSession({ silent: true });
@@ -4565,10 +4657,25 @@
 
     // Controles de la Pantalla de Entrenamiento Activo (#workout-focus-screen) y Navegación Inferior
     document.getElementById('btn-start-day-workout')?.addEventListener('click', () => {
-      startDayWorkoutSession(state.selectedDay, null);
+      openConfirmStartWorkoutDialog(state.selectedDay, null);
     });
     document.getElementById('btn-header-start-day')?.addEventListener('click', () => {
-      startDayWorkoutSession(state.selectedDay, null);
+      openConfirmStartWorkoutDialog(state.selectedDay, null);
+    });
+    document.getElementById('btn-confirm-start-proceed')?.addEventListener('click', () => {
+      const launch = pendingWorkoutLaunch;
+      closeConfirmStartWorkoutDialog();
+      if (launch) {
+        startDayWorkoutSession(launch.dayId, launch.exerciseIndex);
+      } else {
+        startDayWorkoutSession(state.selectedDay, null);
+      }
+    });
+    document.getElementById('btn-confirm-start-cancel')?.addEventListener('click', () => {
+      closeConfirmStartWorkoutDialog();
+    });
+    document.getElementById('btn-close-confirm-start')?.addEventListener('click', () => {
+      closeConfirmStartWorkoutDialog();
     });
     document.getElementById('btn-exit-workout-screen')?.addEventListener('click', () => {
       exitWorkoutScreen();
@@ -4608,13 +4715,28 @@
       const totalSets = Number(ex.sets) || 4;
       const doneCount = (ex.completedSets || []).filter(Boolean).length;
       if (doneCount === totalSets) {
-        showCelebrationToast('🏆 ¡Todas las series de este ejercicio están completadas!');
+        const day = state.schedule[state.selectedDay];
+        if (day && state.activeExerciseIndex < day.exercises.length - 1) {
+          state.activeExerciseIndex++;
+          renderWorkoutFocusScreen();
+          const nextEx = getActiveFocusExercise();
+          showCelebrationToast(`👉 Siguiente ejercicio: ${nextEx.name}`);
+        } else {
+          showCelebrationToast('🏆 ¡Todas las series completadas! Ya puedes finalizar la sesión.');
+        }
         return;
       }
 
       // Si estaba en descanso activo, el usuario le da para iniciar la siguiente serie
       if (restTimerInterval) {
         stopRestTimer();
+        const currentEx = getActiveFocusExercise();
+        const day = state.schedule[state.selectedDay];
+        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
+          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
+            state.activeExerciseIndex++;
+          }
+        }
         renderWorkoutFocusScreen();
         const activeIdx = (ex.completedSets || []).findIndex(done => !done);
         const repsCount = getExerciseSetReps(ex, activeIdx !== -1 ? activeIdx : 0);
@@ -4633,6 +4755,13 @@
       // Si está en descanso activo (o descanso finalizado), termina el descanso, oculta el panel de descanso y muestra la serie en curso actualizada
       if (restTimerInterval || restRemainingSeconds === 0) {
         stopRestTimer();
+        const currentEx = getActiveFocusExercise();
+        const day = state.schedule[state.selectedDay];
+        if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
+          if (day && state.activeExerciseIndex < day.exercises.length - 1) {
+            state.activeExerciseIndex++;
+          }
+        }
         renderWorkoutFocusScreen();
         const ex = getActiveFocusExercise();
         const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
@@ -4656,6 +4785,13 @@
     });
     document.getElementById('btn-focus-rest-skip')?.addEventListener('click', () => {
       stopRestTimer();
+      const currentEx = getActiveFocusExercise();
+      const day = state.schedule[state.selectedDay];
+      if (currentEx && (currentEx.completedSets || []).filter(Boolean).length === (Number(currentEx.sets) || 4)) {
+        if (day && state.activeExerciseIndex < day.exercises.length - 1) {
+          state.activeExerciseIndex++;
+        }
+      }
       renderWorkoutFocusScreen();
       const ex = getActiveFocusExercise();
       const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
@@ -4667,7 +4803,12 @@
 
     document.getElementById('btn-focus-swap-alt')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
-      if (ex) openExerciseSwapModal(state.selectedDay, ex.id);
+      if (!ex) return;
+      if (ex.isSwappedAlternative) {
+        swapExerciseAlternative(state.selectedDay, ex.id, null);
+      } else {
+        openExerciseSwapModal(state.selectedDay, ex.id);
+      }
     });
     document.getElementById('btn-focus-set-mode')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -4742,7 +4883,7 @@
     });
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
-    ['workout-truncate-dialog', 'workout-results-dialog'].forEach(dlgId => {
+    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog'].forEach(dlgId => {
       const dlg = document.getElementById(dlgId);
       if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
         dlg.addEventListener('click', event => {
@@ -4765,7 +4906,9 @@
       btn.addEventListener('click', () => {
         const target = btn.dataset.navScreen;
         if (target === 'workout') {
-          startDayWorkoutSession(state.selectedDay, state.activeExerciseIndex || 0);
+          if (state.activeScreen !== 'workout') {
+            openConfirmStartWorkoutDialog(state.selectedDay, state.activeExerciseIndex || 0);
+          }
         } else if (target) {
           switchAppScreen(target);
         }
@@ -4959,6 +5102,8 @@
     // APIs Focus UI v1.8 (Navegación Multi-Pantalla, Modo Entrenamiento Activo por Ejercicio y Menús Agrupados)
     switchAppScreen,
     startDayWorkoutSession,
+    openConfirmStartWorkoutDialog,
+    closeConfirmStartWorkoutDialog,
     exitWorkoutScreen,
     selectFocusExercise,
     renderWorkoutFocusScreen,
