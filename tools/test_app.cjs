@@ -1109,11 +1109,99 @@ assert.ok(doc.getElementById('btn-focus-set-mode').textContent.includes('Dropset
 
 app.exitWorkoutScreen();
 
+// =========================================================================
+// SUITE 37: Paneles Informativos de RIR y Medición de Serie (TUT) + Quitar Cronómetro en Descanso
+// =========================================================================
+console.log('Ejecutando Suite 37: Paneles Informativos de RIR y TUT + Quitar Cronómetro en Descanso...');
+
+app.startDayWorkoutSession('lunes', 0);
+const focusEx37 = app.getState().schedule['lunes'].exercises[0];
+
+// 37.1 Panel Informativo de RIR
+const btnFocusRir = doc.getElementById('btn-focus-rir');
+assert.ok(btnFocusRir, 'Debe existir el botón de RIR en opciones secundarias');
+btnFocusRir.click();
+
+const rirDialog = doc.getElementById('exercise-rir-dialog');
+assert.ok(rirDialog, 'Debe existir el modal de RIR');
+assert.equal(doc.getElementById('rir-current-name').textContent, focusEx37.name, 'El modal de RIR debe mostrar el nombre del ejercicio activo');
+
+const rirList = doc.getElementById('rir-options-list');
+assert.ok(rirList, 'Debe existir la lista de opciones de RIR');
+const rirCards = rirList.querySelectorAll('.setmode-option-card');
+assert.ok(rirCards.length >= 3, 'Deben existir opciones de RIR (RIR 2, RIR 1, RIR 0, RIR 3)');
+
+rirCards.forEach(card => {
+  assert.ok(card.textContent.includes('Qué significa'), 'Cada tarjeta de RIR debe explicar qué significa');
+  assert.ok(card.textContent.includes('Cuándo aplicarlo'), 'Cada tarjeta de RIR debe explicar cuándo aplicarlo');
+});
+
+// Probar botón Cerrar sin cambiar RIR
+const prevRir = focusEx37.targetRir || 'RIR 2';
+const btnCloseRir = doc.getElementById('btn-rir-close');
+assert.ok(btnCloseRir, 'Debe existir el botón de cerrar en el panel de RIR');
+btnCloseRir.click();
+assert.equal(focusEx37.targetRir || 'RIR 2', prevRir, 'Cerrar sin cambiar debe conservar el RIR anterior');
+
+// Abrir y seleccionar RIR 1
+btnFocusRir.click();
+const rir1Card = rirList.querySelector('.setmode-option-card[data-rir="RIR 1"]');
+assert.ok(rir1Card, 'Debe existir la tarjeta de RIR 1');
+rir1Card.click();
+
+const btnProceedRir = doc.getElementById('btn-rir-proceed');
+assert.ok(btnProceedRir, 'Debe existir el botón de continuar en RIR');
+assert.ok(btnProceedRir.textContent.includes('RIR 1'), 'El botón continuar debe reflejar RIR 1');
+btnProceedRir.click();
+assert.equal(focusEx37.targetRir, 'RIR 1', 'Al pulsar continuar debe aplicarse RIR 1 al ejercicio');
+
+// 37.2 Panel Informativo de Medir Serie (TUT 3-1-1)
+const btnFocusTut = doc.getElementById('btn-focus-tut');
+assert.ok(btnFocusTut, 'Debe existir el botón de TUT en opciones secundarias');
+btnFocusTut.click();
+
+const tutDialog = doc.getElementById('exercise-tut-dialog');
+assert.ok(tutDialog, 'Debe existir el modal de medición de serie (TUT)');
+assert.equal(doc.getElementById('tut-current-name').textContent, focusEx37.name, 'El modal TUT debe mostrar el nombre del ejercicio');
+assert.ok(tutDialog.textContent.includes('3 Segundos de Bajada'), 'Debe detallar la fase excéntrica (3s)');
+assert.ok(tutDialog.textContent.includes('1 Segundo de Pausa'), 'Debe detallar la fase isométrica (1s)');
+assert.ok(tutDialog.textContent.includes('1 Segundo de Subida'), 'Debe detallar la fase concéntrica (1s)');
+
+// Probar botón Cerrar sin iniciar TUT
+const btnCloseTut = doc.getElementById('btn-tut-close');
+assert.ok(btnCloseTut, 'Debe existir botón de cerrar en TUT');
+btnCloseTut.click();
+
+// Abrir y presionar continuar para iniciar medición
+btnFocusTut.click();
+const btnProceedTut = doc.getElementById('btn-tut-proceed');
+assert.ok(btnProceedTut, 'Debe existir botón continuar e iniciar medición en TUT');
+btnProceedTut.click();
+
+// Verificar que se inició la medición TUT para el ejercicio
+assert.ok(btnFocusTut.classList.contains('is-timing') || doc.querySelector('.btn-tut-stopwatch-focus')?.textContent.includes('Finalizar'), 'El botón debe reflejar estado de medición activa');
+
+// Detener la medición
+btnFocusTut.click();
+
+// 37.3 Verificación: quitar opción de cronómetro en el panel de descanso
+// Completar una serie para activar el descanso
+const actionBtn37 = doc.getElementById('btn-focus-action-set');
+actionBtn37.click();
+
+// Comprobar que en el descanso no existe o está suprimida la opción de cronómetro
+const timerModeSwitcher = doc.querySelector('.timer-mode-switcher');
+assert.ok(!timerModeSwitcher || timerModeSwitcher.style.display.includes('none') || timerModeSwitcher.getAttribute('aria-hidden') === 'true', 'La opción de cronómetro del panel de descanso debe estar suprimida');
+
+// Limpiar timers
+app.stopRestTimer();
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.16 (Panel Informativo de Técnica y Descanso) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.17 (Paneles RIR y TUT + Quitar Cronómetro en Descanso) pasaron con éxito.');
 process.exit(0);
 
 

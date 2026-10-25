@@ -4386,13 +4386,118 @@ body.animations-paused .focus-sprite-frame {
   font-size: 0.86rem;
 }
 
+.rir-banner {
+  border-left: 4px solid #10b981;
+}
+
+.tut-banner {
+  border-left: 4px solid #a855f7;
+}
+
+.tut-explanation-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tut-cadence-box {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.tut-cadence-title {
+  font-size: 0.92rem;
+  color: #f8fafc;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.tut-cadence-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tut-cadence-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.tut-phase-highlight {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.phase-eccentric {
+  color: #38bdf8;
+}
+
+.phase-isometric {
+  color: #fbbf24;
+}
+
+.phase-concentric {
+  color: #34d399;
+}
+
+.tut-meta-summary {
+  background: rgba(9, 13, 22, 0.6);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tut-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tut-summary-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #a855f7;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tut-summary-val {
+  font-size: 0.92rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.tut-summary-desc {
+  font-size: 0.76rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+/* Quitar la opción de cronómetro del panel de descanso */
+.timer-mode-switcher {
+  display: none !important;
+}
+
 /* ==========================================================================
    MODO ENTRENAMIENTO ACTIVO INMERSIVO (SOLO PANTALLA DEL EJERCICIO)
    ========================================================================== */
 body.in-workout-screen .app-header,
 body.in-workout-screen .day-tabs-nav,
 body.in-workout-screen .bottom-app-nav,
-body.in-workout-screen .app-footer {
+body.in-workout-screen .app-footer,
+body.in-workout-screen .rest-timer-bar {
   display: none !important;
 }
 

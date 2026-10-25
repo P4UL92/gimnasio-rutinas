@@ -644,7 +644,38 @@
     }
   };
 
-  const RIR_ORDER = ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)'];
+  const RIR_ORDER = ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)', 'RIR 3'];
+
+  const RIR_CATALOG = {
+    'RIR 2': {
+      id: 'RIR 2',
+      badge: '🎯 RIR 2',
+      title: 'RIR 2 · Esfuerzo Óptimo e Hipertrofia Base',
+      meaning: 'Terminas la serie sabiendo con certeza que podrías haber realizado exactamente 2 repeticiones más antes del fallo con buena técnica.',
+      application: 'Estándar recomendado para tus 4×12. Maximiza el crecimiento muscular manteniendo la fatiga residual controlada.'
+    },
+    'RIR 1': {
+      id: 'RIR 1',
+      badge: '🔥 RIR 1',
+      title: 'RIR 1 · Alta Intensidad / Serie Exigente',
+      meaning: 'Te detienes quedando solo 1 repetición en reserva. La última repetición es visiblemente lenta y requiere máximo esfuerzo.',
+      application: 'Excelente para la penúltima o última serie de ejercicios en máquina o polea cuando buscas una sobrecarga profunda.'
+    },
+    'RIR 0 (Fallo)': {
+      id: 'RIR 0 (Fallo)',
+      badge: '⚡ RIR 0 (Fallo)',
+      title: 'RIR 0 · Fallo Muscular Técnico',
+      meaning: 'No podrías completar una repetición concéntrica más manteniendo la técnica correcta. Agotamiento total de las fibras motoras.',
+      application: 'Reservado para la última serie del ejercicio o Dropsets. No abusar para no comprometer la recuperación de la semana.'
+    },
+    'RIR 3': {
+      id: 'RIR 3',
+      badge: '🛡️ RIR 3',
+      title: 'RIR 3 · Intensidad Moderada / Control',
+      meaning: 'Te detienes dejando 3 repeticiones en el tanque. Muy cómodo y con control motor perfecto.',
+      application: 'Ideal para semanas de descarga (deload), series de calentamiento/aproximación o ante fatiga acumulada.'
+    }
+  };
 
   const WORKOUT_TEMPLATES = {
     default_ppl: {
@@ -1766,6 +1797,7 @@
     calculate1RMZones,
     SET_MODE_CATALOG,
     RIR_ORDER,
+    RIR_CATALOG,
     WORKOUT_TEMPLATES,
     calculateNutritionPlan,
     EXERCISE_ALTERNATIVES_MAP,

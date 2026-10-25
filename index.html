@@ -829,7 +829,7 @@
   </nav>
 
   <aside id="rest-timer-bar" class="rest-timer-bar" aria-live="polite" hidden>
-    <div class="timer-mode-switcher">
+    <div class="timer-mode-switcher" style="display: none !important;" aria-hidden="true">
       <button type="button" id="btn-mode-rest" class="timer-mode-tab is-active">⏳ Descanso</button>
       <button type="button" id="btn-mode-stopwatch" class="timer-mode-tab">⏱️ Cronómetro</button>
     </div>
@@ -1053,6 +1053,105 @@
         </button>
         <button type="button" id="btn-setmode-close" class="btn-secondary btn-setmode-close">
           ✕ Cerrar sin Cambiar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Explicación y Configuración de RIR (Repeticiones en Reserva) -->
+  <dialog id="exercise-rir-dialog" class="gym-dialog setmode-dialog" closedby="any" aria-labelledby="rir-dialog-title">
+    <div class="dialog-body setmode-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">ESCALA DE INTENSIDAD Y ESFUERZO</span>
+          <h2 id="rir-dialog-title">🎯 Repeticiones en Reserva (RIR)</h2>
+        </div>
+        <button type="button" id="btn-close-rir-dialog" class="btn-icon-close" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="current-exercise-banner rir-banner">
+        <span class="swap-banner-label">Ejercicio:</span>
+        <strong id="rir-current-name">Nombre del Ejercicio</strong>
+        <span id="rir-current-meta" class="swap-banner-meta">Intensidad actual: 🎯 RIR 2</span>
+      </div>
+
+      <p class="setmode-dialog-lead">
+        El RIR mide cuántas repeticiones te quedan en el tanque antes de llegar al fallo muscular técnico. Te permite calibrar el esfuerzo sin desgastar innecesariamente tu sistema nervioso:
+      </p>
+
+      <div id="rir-options-list" class="setmode-options-list" role="radiogroup" aria-label="Opciones de RIR">
+        <!-- Generado dinámicamente: RIR 2, RIR 1, RIR 0 (Fallo), RIR 3 -->
+      </div>
+
+      <div class="setmode-dialog-actions">
+        <button type="button" id="btn-rir-proceed" class="btn-primary btn-setmode-proceed">
+          ✅ Continuar y Aplicar RIR
+        </button>
+        <button type="button" id="btn-rir-close" class="btn-secondary btn-setmode-close">
+          ✕ Cerrar sin Cambiar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Explicación y Medición de Serie bajo Tensión (TUT 3-1-1) -->
+  <dialog id="exercise-tut-dialog" class="gym-dialog setmode-dialog" closedby="any" aria-labelledby="tut-dialog-title">
+    <div class="dialog-body setmode-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">CADENCIA BIOMÉTRICA Y TENSIÓN</span>
+          <h2 id="tut-dialog-title">⏱️ Medición de Serie bajo Tensión (TUT 3-1-1)</h2>
+        </div>
+        <button type="button" id="btn-close-tut-dialog" class="btn-icon-close" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="current-exercise-banner tut-banner">
+        <span class="swap-banner-label">Ejercicio:</span>
+        <strong id="tut-current-name">Nombre del Ejercicio</strong>
+        <span id="tut-current-meta" class="swap-banner-meta">Esquema: 4 × 12 reps · Cadencia recomendada: 3-1-1</span>
+      </div>
+
+      <p class="setmode-dialog-lead">
+        El TUT (Time Under Tension) mide los segundos reales en que tus fibras musculares sostienen la carga. Al iniciar la medición, la app cronometrará la serie siguiendo una cadencia de ritmo controlado:
+      </p>
+
+      <div class="tut-explanation-cards">
+        <div class="tut-cadence-box">
+          <strong class="tut-cadence-title">📐 ¿Qué significa la Cadencia 3-1-1?</strong>
+          <ul class="tut-cadence-list">
+            <li>
+              <strong class="tut-phase-highlight phase-eccentric">📉 3 Segundos de Bajada (Excéntrica):</strong>
+              <span>Desciende el peso de forma lenta y controlada. Es la fase que produce mayor microdaño contráctil y estímulo hipertrófico.</span>
+            </li>
+            <li>
+              <strong class="tut-phase-highlight phase-isometric">⏸️ 1 Segundo de Pausa (Isométrica):</strong>
+              <span>Aguanta 1 segundo abajo en máximo estiramiento sin rebotar ni aprovechar inercia antes de subir.</span>
+            </li>
+            <li>
+              <strong class="tut-phase-highlight phase-concentric">📈 1 Segundo de Subida (Concéntrica):</strong>
+              <span>Empuja o tracciona de forma potente pero con técnica estricta.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="tut-meta-summary">
+          <div class="tut-summary-item">
+            <span class="tut-summary-label">⏱️ Tiempo Objetivo por Serie:</span>
+            <strong class="tut-summary-val">~60 segundos (12 reps × 5s)</strong>
+          </div>
+          <div class="tut-summary-item">
+            <span class="tut-summary-label">🎯 ¿Qué ocurrirá al presionar Continuar?</span>
+            <span class="tut-summary-desc">Se activará el cronómetro TUT para este ejercicio. Al terminar tus repeticiones, tocas "Finalizar Serie" para registrar el tiempo exacto y pasar al descanso programado.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setmode-dialog-actions">
+        <button type="button" id="btn-tut-proceed" class="btn-primary btn-setmode-proceed">
+          ▶ Continuar e Iniciar Medición
+        </button>
+        <button type="button" id="btn-tut-close" class="btn-secondary btn-setmode-close">
+          ✕ Cerrar sin Iniciar
         </button>
       </div>
     </div>

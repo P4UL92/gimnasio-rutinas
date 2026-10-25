@@ -1575,9 +1575,9 @@
     btnRirChip.type = 'button';
     btnRirChip.className = 'btn-rir-chip';
     btnRirChip.dataset.exerciseId = ex.id;
-    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para alternar.';
+    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para ver explicación y configurar.';
     btnRirChip.textContent = `🎯 ${rirLabel}`;
-    btnRirChip.addEventListener('click', () => cycleExerciseRir(dayId, ex.id));
+    btnRirChip.addEventListener('click', () => openRirModal(dayId, ex.id));
 
     const btnCalcChip = document.createElement('button');
     btnCalcChip.type = 'button';
@@ -1636,7 +1636,7 @@
       if (tutState.activeExerciseId === ex.id) {
         stopTutStopwatch();
       } else {
-        startTutStopwatch(dayId, ex.id);
+        openTutModal(dayId, ex.id);
       }
     });
 
@@ -1814,22 +1814,178 @@
     }
   }
 
+  let currentRirTarget = { dayId: null, exerciseId: null, selectedRir: 'RIR 2' };
+
+  function applyExerciseRir(dayId, exerciseId, newRir) {
+    const day = state.schedule[dayId];
+    if (!day) return null;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return null;
+
+    ex.targetRir = newRir;
+    triggerHaptic([30]);
+    saveState();
+    renderExercisesList();
+    if (state.activeScreen === 'workout') {
+      renderWorkoutFocusScreen();
+    }
+    showCelebrationToast(`🎯 ${newRir}: nivel de esfuerzo registrado.`);
+    return newRir;
+  }
+
   function cycleExerciseRir(dayId, exerciseId) {
     const day = state.schedule[dayId];
     if (!day) return null;
     const ex = day.exercises.find(e => e.id === exerciseId);
     if (!ex) return null;
 
-    const rirOrder = (GYM_VISUALS && GYM_VISUALS.RIR_ORDER) || ['RIR 3', 'RIR 2', 'RIR 1', 'RIR 0 (Fallo)'];
+    const rirOrder = (GYM_VISUALS && GYM_VISUALS.RIR_ORDER) || ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)', 'RIR 3'];
     const currentIdx = rirOrder.indexOf(ex.targetRir || 'RIR 2');
     const nextRir = rirOrder[(currentIdx + 1) % rirOrder.length];
-    ex.targetRir = nextRir;
+    return applyExerciseRir(dayId, exerciseId, nextRir);
+  }
 
-    triggerHaptic([30]);
-    saveState();
-    renderExercisesList();
-    renderWorkoutFocusScreen();
-    return nextRir;
+  function openRirModal(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    const currentRir = ex.targetRir || 'RIR 2';
+    currentRirTarget = { dayId, exerciseId, selectedRir: currentRir };
+
+    const dialog = document.getElementById('exercise-rir-dialog');
+    const nameEl = document.getElementById('rir-current-name');
+    const metaEl = document.getElementById('rir-current-meta');
+    const listEl = document.getElementById('rir-options-list');
+    const proceedBtn = document.getElementById('btn-rir-proceed');
+
+    if (nameEl) nameEl.textContent = ex.name;
+    if (metaEl) metaEl.textContent = `Intensidad actual: 🎯 ${currentRir}`;
+
+    const rirCatalog = (GYM_VISUALS && GYM_VISUALS.RIR_CATALOG) || {};
+    const availableRir = (GYM_VISUALS && GYM_VISUALS.RIR_ORDER) || ['RIR 2', 'RIR 1', 'RIR 0 (Fallo)', 'RIR 3'];
+
+    const updateSelectedRirUI = (selectedKey) => {
+      currentRirTarget.selectedRir = selectedKey;
+      if (proceedBtn) {
+        proceedBtn.textContent = `✅ Continuar con ${selectedKey}`;
+      }
+      if (listEl) {
+        listEl.querySelectorAll('.setmode-option-card').forEach(card => {
+          const isSelected = card.dataset.rir === selectedKey;
+          card.classList.toggle('is-selected', isSelected);
+          card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+          const radioDot = card.querySelector('.setmode-radio-dot');
+          if (radioDot) radioDot.textContent = isSelected ? '●' : '○';
+        });
+      }
+    };
+
+    if (listEl) {
+      listEl.innerHTML = '';
+      availableRir.forEach(rirKey => {
+        const meta = rirCatalog[rirKey] || {
+          badge: `🎯 ${rirKey}`,
+          title: rirKey,
+          meaning: `Detenerse con ${rirKey} repeticiones antes del fallo muscular técnico.`,
+          application: 'Ajuste de esfuerzo percibido para controlar la fatiga neuromuscular.'
+        };
+
+        const card = document.createElement('div');
+        card.className = `setmode-option-card ${rirKey === currentRir ? 'is-selected' : ''}`;
+        card.dataset.rir = rirKey;
+        card.setAttribute('role', 'radio');
+        card.setAttribute('aria-checked', rirKey === currentRir ? 'true' : 'false');
+        card.tabIndex = 0;
+
+        card.innerHTML = `
+          <div class="setmode-card-header">
+            <div class="setmode-card-title-group">
+              <span class="setmode-radio-dot">${rirKey === currentRir ? '●' : '○'}</span>
+              <strong class="setmode-card-title">${meta.title}</strong>
+            </div>
+            <span class="btn-rir-chip setmode-card-badge">${meta.badge}</span>
+          </div>
+          <div class="setmode-card-details">
+            <div class="setmode-detail-row">
+              <span class="setmode-detail-label">🎯 Qué significa:</span>
+              <span class="setmode-detail-text">${meta.meaning}</span>
+            </div>
+            <div class="setmode-detail-row">
+              <span class="setmode-detail-label">💡 Cuándo aplicarlo:</span>
+              <span class="setmode-detail-text">${meta.application}</span>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          updateSelectedRirUI(rirKey);
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            updateSelectedRirUI(rirKey);
+          }
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
+    updateSelectedRirUI(currentRir);
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {}
+    } else if (dialog) {
+      dialog.hidden = false;
+    }
+  }
+
+  function closeRirModal() {
+    const dlg = document.getElementById('exercise-rir-dialog');
+    if (dlg) {
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.hidden = true;
+    }
+  }
+
+  let currentTutTarget = { dayId: null, exerciseId: null };
+
+  function openTutModal(dayId, exerciseId) {
+    const day = state.schedule[dayId];
+    if (!day) return;
+    const ex = day.exercises.find(e => e.id === exerciseId);
+    if (!ex) return;
+
+    currentTutTarget = { dayId, exerciseId };
+
+    const dialog = document.getElementById('exercise-tut-dialog');
+    const nameEl = document.getElementById('tut-current-name');
+    const metaEl = document.getElementById('tut-current-meta');
+
+    if (nameEl) nameEl.textContent = ex.name;
+    if (metaEl) {
+      metaEl.textContent = `Esquema: ${ex.sets || 4} × ${ex.reps || 12} reps · Cadencia recomendada: 3-1-1 (~60s por serie)`;
+    }
+
+    if (dialog && typeof dialog.showModal === 'function') {
+      try {
+        dialog.showModal();
+      } catch (_) {}
+    } else if (dialog) {
+      dialog.hidden = false;
+    }
+  }
+
+  function closeTutModal() {
+    const dlg = document.getElementById('exercise-tut-dialog');
+    if (dlg) {
+      if (typeof dlg.close === 'function') dlg.close();
+      else dlg.hidden = true;
+    }
   }
 
   function formatExerciseRepsSummary(exercise) {
@@ -4978,7 +5134,7 @@
     });
     document.getElementById('btn-focus-rir')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
-      if (ex) cycleExerciseRir(state.selectedDay, ex.id);
+      if (ex) openRirModal(state.selectedDay, ex.id);
     });
     document.getElementById('btn-focus-calc')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -4994,10 +5150,10 @@
       if (!ex) return;
       if (tutState.activeExerciseId === ex.id) {
         stopTutStopwatch();
+        renderWorkoutFocusScreen();
       } else {
-        startTutStopwatch(state.selectedDay, ex.id);
+        openTutModal(state.selectedDay, ex.id);
       }
-      renderWorkoutFocusScreen();
     });
     document.getElementById('btn-focus-edit')?.addEventListener('click', () => {
       const ex = getActiveFocusExercise();
@@ -5217,6 +5373,39 @@
         closeSetModeModal();
       });
     }
+
+    // Modal de RIR
+    const btnCloseRir = document.getElementById('btn-close-rir-dialog');
+    if (btnCloseRir) btnCloseRir.addEventListener('click', closeRirModal);
+    const btnCancelRir = document.getElementById('btn-rir-close');
+    if (btnCancelRir) btnCancelRir.addEventListener('click', closeRirModal);
+    const btnProceedRir = document.getElementById('btn-rir-proceed');
+    if (btnProceedRir) {
+      btnProceedRir.addEventListener('click', () => {
+        if (currentRirTarget.dayId && currentRirTarget.exerciseId && currentRirTarget.selectedRir) {
+          applyExerciseRir(currentRirTarget.dayId, currentRirTarget.exerciseId, currentRirTarget.selectedRir);
+        }
+        closeRirModal();
+      });
+    }
+
+    // Modal de TUT
+    const btnCloseTut = document.getElementById('btn-close-tut-dialog');
+    if (btnCloseTut) btnCloseTut.addEventListener('click', closeTutModal);
+    const btnCancelTut = document.getElementById('btn-tut-close');
+    if (btnCancelTut) btnCancelTut.addEventListener('click', closeTutModal);
+    const btnProceedTut = document.getElementById('btn-tut-proceed');
+    if (btnProceedTut) {
+      btnProceedTut.addEventListener('click', () => {
+        if (currentTutTarget.dayId && currentTutTarget.exerciseId) {
+          startTutStopwatch(currentTutTarget.dayId, currentTutTarget.exerciseId);
+          if (state.activeScreen === 'workout') {
+            renderWorkoutFocusScreen();
+          }
+        }
+        closeTutModal();
+      });
+    }
   }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -5249,6 +5438,13 @@
     closeSetModeModal,
     applyExerciseSetMode,
     cycleExerciseSetMode,
+    // Modales de RIR y TUT
+    openRirModal,
+    closeRirModal,
+    applyExerciseRir,
+    cycleExerciseRir,
+    openTutModal,
+    closeTutModal,
     // Cronómetro & TUT APIs
     startSessionStopwatch,
     pauseSessionStopwatch,
