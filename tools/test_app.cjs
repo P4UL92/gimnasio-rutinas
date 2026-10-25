@@ -893,11 +893,49 @@ assert.ok(doc.getElementById('focus-ex-equip-badge'), 'Debe existir indicador de
 focusHelpBtn.click();
 assert.ok(focusHelpPanel.classList.contains('is-hidden'), 'Al volver a tocar #btn-focus-help, el panel de ayuda debe cerrarse');
 
+// --- Suite 34: Flujo Dinámico de Alternancia entre Serie en Curso y Temporizador de Descanso ---
+console.log('Ejecutando Suite 34: Alternancia entre Serie en Curso y Temporizador de Descanso...');
+
+// 34.1 Iniciar sesión de entrenamiento limpia en Lunes
+app.restoreOriginalSchedule();
+app.startDayWorkoutSession('lunes', 0);
+
+const focusActiveSetCard = doc.getElementById('focus-active-set-card');
+const focusRestCard = doc.getElementById('focus-rest-card');
+const actionBtn = doc.getElementById('btn-focus-action-set');
+const actionText = doc.getElementById('focus-btn-action-text');
+const restStartBtn = doc.getElementById('btn-focus-rest-start');
+
+// 34.2 En estado activo de serie, el temporizador de descanso debe estar oculto
+assert.ok(!focusActiveSetCard.classList.contains('is-hidden'), 'El panel de serie en curso debe estar visible inicialmente');
+assert.ok(focusRestCard.classList.contains('is-hidden'), 'El panel del temporizador de descanso debe estar oculto inicialmente');
+assert.ok(actionText.textContent.includes('Serie 1 Completada - Descansar'), 'El botón debe decir "Serie 1 Completada - Descansar"');
+
+// 34.3 Al presionar "Serie 1 Completada - Descansar":
+// Debe ocultarse el panel de la serie en curso y mostrarse el temporizador de descanso activo
+actionBtn.click();
+
+assert.ok(focusActiveSetCard.classList.contains('is-hidden'), 'El panel de la serie en curso debe ocultarse durante el descanso');
+assert.ok(!focusRestCard.classList.contains('is-hidden'), 'El panel de descanso debe mostrarse durante el descanso');
+assert.ok(focusRestCard.classList.contains('is-resting'), 'El panel de descanso debe tener la clase is-resting');
+assert.ok(restStartBtn.textContent.includes('¡Listo! Comenzar serie 2...'), 'El botón de descansar debe cambiar por "¡Listo! Comenzar serie 2..."');
+
+// 34.4 Al presionar "¡Listo! Comenzar serie 2...":
+// Debe terminar el descanso, ocultarse de nuevo el panel de descanso y mostrarse el panel de la serie en curso actualizado
+restStartBtn.click();
+
+assert.ok(focusRestCard.classList.contains('is-hidden'), 'El panel de descanso debe volver a ocultarse tras terminar el descanso');
+assert.ok(!focusActiveSetCard.classList.contains('is-hidden'), 'El panel de la serie en curso debe mostrarse de nuevo');
+assert.equal(doc.getElementById('focus-active-set-counter').textContent.trim(), 'SERIE 2 DE 4', 'Debe haber avanzado a SERIE 2 DE 4');
+assert.ok(actionText.textContent.includes('Serie 2 Completada - Descansar'), 'El botón debe decir "Serie 2 Completada - Descansar"');
+
+app.exitWorkoutScreen();
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.13 (Botones de Ayuda e Incógnita, Máquina/Músculo Desplegable y 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.14 (Alternancia de Paneles Serie/Descanso, Botón ¡Listo! Comenzar Serie y 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 

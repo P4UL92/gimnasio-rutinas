@@ -949,7 +949,8 @@
         playCompletionTone();
         triggerHaptic([120, 60, 120]);
 
-        // Recalcular y mostrar automáticamente la serie siguiente y sus repeticiones calculadas
+        // Termina el descanso: se oculta el panel de descanso y se muestra el panel de la serie en curso actualizado
+        stopRestTimer();
         renderWorkoutFocusScreen();
         const ex = getActiveFocusExercise();
         const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
@@ -988,13 +989,28 @@
         ? '🔥 En descanso activo...'
         : (restRemainingSeconds === 0 ? '✅ ¡Listo para la siguiente serie!' : 'Listo para usar');
     }
+
+    const isResting = Boolean(restTimerInterval);
     if (focusRestCardEl) {
-      focusRestCardEl.classList.toggle('is-resting', Boolean(restTimerInterval));
+      focusRestCardEl.classList.toggle('is-resting', isResting);
+      focusRestCardEl.classList.toggle('is-hidden', !isResting);
     }
     const activeSetCardEl = document.getElementById('focus-active-set-card');
     if (activeSetCardEl) {
-      activeSetCardEl.classList.toggle('is-resting-mode', Boolean(restTimerInterval));
+      activeSetCardEl.classList.toggle('is-resting-mode', isResting);
+      activeSetCardEl.classList.toggle('is-hidden', isResting);
     }
+
+    const restBtn = document.getElementById('btn-focus-rest-start');
+    if (restBtn) {
+      const ex = getActiveFocusExercise();
+      const activeIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+      const nextNum = (activeIdx !== -1 ? activeIdx : 0) + 1;
+      const repsCount = ex && activeIdx !== -1 ? getExerciseSetReps(ex, activeIdx) : 12;
+      restBtn.textContent = isResting ? `¡Listo! Comenzar serie ${nextNum}...` : '▶ Descansar';
+      restBtn.title = `Terminar descanso y comenzar Serie ${nextNum} (${repsCount} reps)`;
+    }
+
     const actionBtn = document.getElementById('btn-focus-action-set');
     const actionIcon = document.getElementById('focus-btn-action-icon');
     const actionText = document.getElementById('focus-btn-action-text');
@@ -1021,9 +1037,14 @@
     const bar = document.getElementById('rest-timer-bar');
     if (bar) bar.hidden = true;
     const focusRestCardEl = document.getElementById('focus-rest-card');
-    if (focusRestCardEl) focusRestCardEl.classList.remove('is-resting');
+    if (focusRestCardEl) {
+      focusRestCardEl.classList.remove('is-resting');
+      focusRestCardEl.classList.add('is-hidden');
+    }
     const activeSetCardEl = document.getElementById('focus-active-set-card');
-    if (activeSetCardEl) activeSetCardEl.classList.remove('is-resting-mode');
+    if (activeSetCardEl) {
+      activeSetCardEl.classList.remove('is-resting-mode', 'is-hidden');
+    }
     const focusRestStatusEl = document.getElementById('focus-rest-status-text');
     if (focusRestStatusEl) focusRestStatusEl.textContent = 'Listo para usar';
   }
@@ -3485,15 +3506,28 @@
     }
     if (restTargetLabel) restTargetLabel.textContent = `⏳ Descanso sugerido: ${ex.restSeconds || 75}s`;
 
-    // Botón de Acción Principal de la Serie
+    // Botón de Acción Principal de la Serie y Paneles Serie / Descanso
+    const activeSetCard = document.getElementById('focus-active-set-card');
+    const focusRestCard = document.getElementById('focus-rest-card');
+
+    if (activeSetCard) {
+      activeSetCard.classList.toggle('is-hidden', isResting);
+      activeSetCard.classList.toggle('is-resting-mode', isResting);
+    }
+    if (focusRestCard) {
+      focusRestCard.classList.toggle('is-hidden', !isResting);
+      focusRestCard.classList.toggle('is-resting', isResting);
+    }
+
+    const restBtn = document.getElementById('btn-focus-rest-start');
+    if (restBtn) {
+      restBtn.textContent = `¡Listo! Comenzar serie ${activeSetIndex + 1}...`;
+      restBtn.title = `Terminar descanso y comenzar Serie ${activeSetIndex + 1}`;
+    }
+
     const actionBtn = document.getElementById('btn-focus-action-set');
     const actionIcon = document.getElementById('focus-btn-action-icon');
     const actionText = document.getElementById('focus-btn-action-text');
-    const activeSetCard = document.getElementById('focus-active-set-card');
-
-    if (activeSetCard) {
-      activeSetCard.classList.toggle('is-resting-mode', isResting);
-    }
 
     if (actionBtn && actionText) {
       actionBtn.classList.remove('is-resting-state', 'is-all-completed');
@@ -3507,7 +3541,7 @@
         actionText.textContent = `¡Listo! Comenzar Serie ${activeSetIndex + 1} (${activeSetReps} reps)`;
       } else {
         if (actionIcon) actionIcon.textContent = '✓';
-        actionText.textContent = `Completar Serie ${activeSetIndex + 1} (${activeSetReps} reps)`;
+        actionText.textContent = `Serie ${activeSetIndex + 1} Completada - Descansar (${activeSetReps} reps)`;
       }
     }
 
@@ -4596,8 +4630,20 @@
     });
 
     document.getElementById('btn-focus-rest-start')?.addEventListener('click', () => {
-      const ex = getActiveFocusExercise();
-      startRestTimer(ex?.restSeconds || 75, ex ? `${ex.name} (Descanso)` : 'Descanso entre series');
+      // Si está en descanso activo (o descanso finalizado), termina el descanso, oculta el panel de descanso y muestra la serie en curso actualizada
+      if (restTimerInterval || restRemainingSeconds === 0) {
+        stopRestTimer();
+        renderWorkoutFocusScreen();
+        const ex = getActiveFocusExercise();
+        const nextIdx = ex?.completedSets ? ex.completedSets.findIndex(d => !d) : 0;
+        if (ex && nextIdx !== -1) {
+          const nextReps = getExerciseSetReps(ex, nextIdx);
+          showCelebrationToast(`💪 ¡Comenzando Serie ${nextIdx + 1}! Objetivo: ${nextReps} repeticiones.`);
+        }
+      } else {
+        const ex = getActiveFocusExercise();
+        startRestTimer(ex?.restSeconds || 75, ex ? `${ex.name} (Descanso)` : 'Descanso entre series');
+      }
     });
     document.getElementById('btn-focus-rest-minus')?.addEventListener('click', () => {
       restRemainingSeconds = Math.max(0, restRemainingSeconds - 15);
