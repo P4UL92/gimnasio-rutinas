@@ -288,8 +288,8 @@
         {
           id: 'mie-aductores-maquina',
           name: 'Aductores en máquina sentada',
-          muscle: 'Aductores (Cara interna del muslo)',
-          equipment: 'Máquina de aducción',
+          muscle: 'Aductores de cadera (Muslo interno)',
+          equipment: 'Máquina de aducción sentada',
           loadType: 'nivel',
           loadValue: 5,
           altLoadText: 'Nivel 5 o 20 kg',
@@ -297,7 +297,7 @@
           reps: 12,
           restSeconds: 60,
           userBase: false,
-          note: 'Recorrido amplio y controlado sin rebote al abrir o cerrar.'
+          note: 'Cierre medial para aductores internos: Junta las rodillas apretando los cojines hacia el centro y sostén 1 segundo en máxima contracción.'
         },
         {
           id: 'mie-elevacion-talones',
@@ -532,8 +532,8 @@
         {
           id: 'sab-hip-thrust',
           name: 'Hip Thrust en máquina o multipower',
-          muscle: 'Glúteo mayor',
-          equipment: 'Máquina de Hip Thrust / Smith',
+          muscle: 'Glúteo mayor (Extensión de cadera)',
+          equipment: 'Máquina de Hip Thrust / Smith con barra',
           loadType: 'kg',
           loadValue: 30,
           altLoadText: '30 kg totales',
@@ -541,7 +541,7 @@
           reps: 12,
           restSeconds: 90,
           userBase: false,
-          note: 'Empuja con los talones, bloquea la cadera arriba durante 1 segundo manteniendo el mentón recogido.'
+          note: 'Extensión de cadera para glúteo mayor: Empuja con los talones y la barra apoyada sobre la pelvis, bloquea arriba 1 segundo manteniendo el mentón recogido.'
         },
         {
           id: 'sab-peso-muerto-rumano',
@@ -574,8 +574,8 @@
         {
           id: 'sab-abduccion-maquina',
           name: 'Abducción de cadera en máquina',
-          muscle: 'Glúteo medio y menor',
-          equipment: 'Máquina abductora',
+          muscle: 'Glúteo medio y menor (Abductores)',
+          equipment: 'Máquina abductora sentada',
           loadType: 'nivel',
           loadValue: 5,
           altLoadText: 'Nivel 5 o 20 kg',
@@ -583,7 +583,7 @@
           reps: 12,
           restSeconds: 60,
           userBase: false,
-          note: 'Abre las rodillas con fuerza controlada y sostén medio segundo en máxima apertura.'
+          note: 'Apertura lateral de cadera para glúteo medio: Abre las rodillas empujando los cojines hacia afuera y sostén 1 segundo en máxima apertura.'
         },
         {
           id: 'sab-curl-femoral-sentado',

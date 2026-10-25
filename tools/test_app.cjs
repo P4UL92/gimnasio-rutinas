@@ -735,11 +735,65 @@ assert.equal(repsDigitsEl.textContent.trim(), '✓', 'Dígitos deben mostrar el 
 
 app.exitWorkoutScreen();
 
+// 31. Verificación de Rutina de Piernas, Hip Thrust, Abductores, Aductores y Sprites Biomecánicos con Barras
+const spriteCatalog = window.GYM_VISUALS.EXERCISE_SPRITE_CATALOG;
+assert.ok(spriteCatalog['hip-thrust'], 'Debe existir hip-thrust en el catálogo');
+assert.ok(spriteCatalog['hip-abductor'], 'Debe existir hip-abductor en el catálogo');
+assert.ok(spriteCatalog['hip-adductor'], 'Debe existir hip-adductor en el catálogo');
+
+// 31.1 Verificar que Hip Thrust y Abducción de Cadera NO comparten la misma hoja ni fila de sprites
+assert.notEqual(
+  spriteCatalog['hip-thrust'].spriteUrl,
+  spriteCatalog['hip-abductor'].spriteUrl,
+  'Hip Thrust y Abducción de Cadera deben tener hojas de sprites DIFERENTES e independientes'
+);
+assert.equal(spriteCatalog['hip-thrust'].spriteUrl, 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg');
+assert.equal(spriteCatalog['hip-abductor'].spriteUrl, 'assets/sprites/sprite_legs_adductor_abductor.jpg');
+assert.equal(spriteCatalog['hip-abductor'].row, 'top');
+assert.equal(spriteCatalog['hip-adductor'].spriteUrl, 'assets/sprites/sprite_legs_adductor_abductor.jpg');
+assert.equal(spriteCatalog['hip-adductor'].row, 'bottom');
+
+// 31.2 Verificar detección biomecánica en inglés y español sin colisiones
+const detectType = window.GYM_VISUALS.detectExerciseAnimationType;
+assert.equal(detectType({ id: 'sab-hip-thrust', name: 'Hip Thrust en máquina o multipower' }), 'hip-thrust');
+assert.equal(detectType({ id: 'custom-1', name: 'Empuje de cadera con barra' }), 'hip-thrust');
+assert.equal(detectType({ id: 'sab-abduccion-maquina', name: 'Abducción de cadera en máquina' }), 'hip-abductor');
+assert.equal(detectType({ id: 'custom-2', name: 'Hip Abduction Machine' }), 'hip-abductor');
+assert.equal(detectType({ id: 'mie-aductores-maquina', name: 'Aductores en máquina sentada' }), 'hip-adductor');
+assert.equal(detectType({ id: 'custom-3', name: 'Inner Thigh Adductor Machine' }), 'hip-adductor');
+assert.equal(detectType({ id: 'sab-peso-muerto-rumano', name: 'Peso muerto rumano con mancuernas' }), 'romanian-deadlift');
+assert.equal(detectType({ id: 'custom-4', name: 'Romanian Deadlift (RDL)' }), 'romanian-deadlift');
+
+// 31.3 Verificar que en Sábado con molestia lumbar NO se duplique Hip Thrust
+const personalizedSchedule = window.GYM_VISUALS.generatePersonalizedSchedule(
+  { limitations: 'lower_back', daysPerWeek: 6, level: 'intermediate' },
+  window.GYM_DATA.INITIAL_SCHEDULE
+);
+const sabadoExercises = personalizedSchedule.sabado.exercises;
+const hipThrustCount = sabadoExercises.filter(e => /hip thrust/i.test(e.name)).length;
+assert.equal(hipThrustCount, 1, 'Sábado debe tener únicamente 1 Hip Thrust, sin duplicados por molestias lumbares');
+const lumbarSubEx = sabadoExercises.find(e => e.id === 'sab-peso-muerto-rumano');
+assert.ok(lumbarSubEx && !lumbarSubEx.name.includes('Hip Thrust'), 'Peso muerto rumano no debe sustituirse por Hip Thrust');
+assert.ok(lumbarSubEx.name.includes('Hiperextensiones'), 'Peso muerto rumano debe sustituirse por Hiperextensiones 45° seguras');
+
+// 31.4 Verificar alternativas de Hip Thrust y Abductor sin caer en polea de espalda
+const htAlternatives = window.GYM_VISUALS.getExerciseAlternatives({ id: 'sab-hip-thrust', name: 'Hip Thrust' });
+assert.ok(htAlternatives.some(a => /glúteo|cadera/i.test(a.name) || /glúteo/i.test(a.reason)), 'Alternativas de Hip Thrust deben ser de glúteo/cadera');
+
+const abductorAlternatives = window.GYM_VISUALS.getExerciseAlternatives({ id: 'sab-abduccion-maquina', name: 'Abducción de cadera' });
+assert.ok(abductorAlternatives.some(a => /abducción|glúteo medio/i.test(a.name) || /glúteo/i.test(a.reason)), 'Alternativas de Abductor deben ser de glúteo medio/abducción');
+
+// 31.5 Verificar que los archivos físicos de sprites existen y tienen tamaño positivo
+const hipThrustFile = path.join(root, 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg');
+const abductorFile = path.join(root, 'assets/sprites/sprite_legs_adductor_abductor.jpg');
+assert.ok(fs.existsSync(hipThrustFile) && fs.statSync(hipThrustFile).size > 50000, 'sprite_glutes_hipthrust_rdl.jpg debe existir y tener peso válido');
+assert.ok(fs.existsSync(abductorFile) && fs.statSync(abductorFile).size > 50000, 'sprite_legs_adductor_abductor.jpg debe existir y tener peso válido');
+
 // Re-verificación final absoluta: 0 etiquetas <svg> tras todas las pantallas y modales
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg> tras todas las operaciones v1.9');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.10 (Pantalla Compacta, Contador de Serie Actual y Repeticiones Dinámicas tras Descanso con 0% SVGs) pasaron con éxito.');
+console.log('PASS: Todas las pruebas v1.9.11 (Ejercicios Distintos de Pierna/Glúteo, Hoja de Abductores Dedicada, Barra Visible en Hip Thrust y 0% SVGs) pasaron con éxito.');
 process.exit(0);
 
 

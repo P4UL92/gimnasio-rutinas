@@ -139,28 +139,28 @@
       spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
       row: 'top',
       label: 'HIP THRUST',
-      title: 'Hip Thrust (Empuje de Cadera Glúteo)',
+      title: 'Hip Thrust (Empuje de Cadera con Barra / Multipower)',
       cssModifier: 'sprite-hip-thrust sprite-row-top'
     },
     'romanian-deadlift': {
       spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
       row: 'bottom',
       label: 'PESO MUERTO',
-      title: 'Peso Muerto Rumano (Femoral y Glúteo)',
+      title: 'Peso Muerto Rumano (Femoral y Glúteo con Barra)',
       cssModifier: 'sprite-rdl sprite-row-bottom'
     },
     'hip-adductor': {
-      spriteUrl: 'assets/sprites/gym_exercise_sprite_sheet_legs_shoulders.jpg',
-      row: 'top',
+      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
+      row: 'bottom',
       label: 'ADUCTORES',
-      title: 'Aductores y Tren Inferior en Prensa',
-      cssModifier: 'sprite-hip-adductor sprite-row-top'
+      title: 'Aductores de Cadera en Máquina Sentada',
+      cssModifier: 'sprite-hip-adductor sprite-row-bottom'
     },
     'hip-abductor': {
-      spriteUrl: 'assets/sprites/sprite_glutes_hipthrust_rdl.jpg',
+      spriteUrl: 'assets/sprites/sprite_legs_adductor_abductor.jpg',
       row: 'top',
       label: 'ABDUCCIÓN CADERA',
-      title: 'Abducción y Activación de Cadera / Glúteo',
+      title: 'Abducción de Cadera en Máquina (Glúteo Medio)',
       cssModifier: 'sprite-hip-abductor sprite-row-top'
     },
     'shoulder-press': {
@@ -233,15 +233,15 @@
     if (name.includes('tríceps') || name.includes('triceps') || name.includes('pushdown')) return 'tricep-pushdown';
 
     // 5. Piernas y Glúteos
-    if (id.includes('hip-thrust') || name.includes('hip thrust') || name.includes('puente de glúteo')) return 'hip-thrust';
-    if (id.includes('peso-muerto') || name.includes('peso muerto') || name.includes('rumano') || name.includes('buenos días')) return 'romanian-deadlift';
-    if (id.includes('extension-cuadriceps') || name.includes('extensión de cuádriceps') || name.includes('silla de cuádriceps')) return 'quad-extension';
-    if (id.includes('curl-femoral') || name.includes('femoral') || name.includes('isquiotibial')) return 'hamstring-curl';
-    if (id.includes('sentadilla') || name.includes('sentadilla') || name.includes('hack') || name.includes('goblet') || name.includes('zancada') || name.includes('búlgara')) return 'hack-squat';
-    if (id.includes('aductores') || name.includes('aductores') || name.includes('aducción')) return 'hip-adductor';
-    if (id.includes('abduccion') || name.includes('abducción') || name.includes('abductora')) return 'hip-abductor';
-    if (id.includes('talones') || id.includes('gemelos') || name.includes('talones') || name.includes('gemelos') || name.includes('pantorrilla') || name.includes('sóleo')) return 'calf-raise';
-    if (id.includes('prensa') || name.includes('prensa') || text.includes('cuádriceps') || text.includes('pierna')) return 'leg-press';
+    if (id.includes('hip-thrust') || name.includes('hip thrust') || name.includes('puente de glúteo') || name.includes('empuje de cadera')) return 'hip-thrust';
+    if (id.includes('peso-muerto') || name.includes('peso muerto') || name.includes('rumano') || name.includes('buenos días') || name.includes('rdl') || name.includes('deadlift')) return 'romanian-deadlift';
+    if (id.includes('extension-cuadriceps') || name.includes('extensión de cuádriceps') || name.includes('silla de cuádriceps') || name.includes('leg extension')) return 'quad-extension';
+    if (id.includes('curl-femoral') || name.includes('curl femoral') || name.includes('femoral') || name.includes('isquiotibial') || name.includes('leg curl') || name.includes('hamstring')) return 'hamstring-curl';
+    if (id.includes('sentadilla') || name.includes('sentadilla') || name.includes('hack') || name.includes('goblet') || name.includes('zancada') || name.includes('búlgara') || name.includes('squat')) return 'hack-squat';
+    if (id.includes('aductores') || name.includes('aductores') || name.includes('aducción') || name.includes('adductor') || name.includes('adduccion')) return 'hip-adductor';
+    if (id.includes('abduccion') || name.includes('abducción') || name.includes('abductora') || name.includes('abductor') || name.includes('abduction')) return 'hip-abductor';
+    if (id.includes('talones') || id.includes('gemelos') || name.includes('talones') || name.includes('gemelos') || name.includes('pantorrilla') || name.includes('sóleo') || name.includes('soleo') || name.includes('calf')) return 'calf-raise';
+    if (id.includes('prensa') || name.includes('prensa') || name.includes('leg press') || text.includes('cuádriceps') || text.includes('pierna')) return 'leg-press';
 
     // 6. Hombros, Trapecio y Core
     if (id.includes('laterales') || name.includes('laterales') || name.includes('elevación lateral')) return 'lateral-raise';
@@ -780,28 +780,28 @@
       altNote: 'Flexión de rodilla estricta para isquiotibiales.'
     },
     leg_hip_thrust: {
-      altName: 'Puente de Glúteo en Máquina o Pull-Through en Polea Baja',
-      altEquipment: 'Polea Baja / Cuerda',
-      altSpriteType: 'leg_rdl',
-      altNote: 'Extensión de cadera con pico de contracción en glúteo mayor.'
+      altName: 'Puente de Glúteo en Suelo con Barra o Pull-Through en Polea',
+      altEquipment: 'Barra con Almohadilla / Polea Baja',
+      altSpriteType: 'hip-thrust',
+      altNote: 'Extensión pura de cadera con pico de contracción máxima en glúteo mayor.'
     },
     leg_rdl: {
       altName: 'Buenos Días en Multipower o Hiperextensiones 45° con Disco',
       altEquipment: 'Banco 45° / Barra',
-      altSpriteType: 'leg_hip_thrust',
+      altSpriteType: 'romanian-deadlift',
       altNote: 'Bisagra de cadera para cadena posterior (isquios y glúteos).'
     },
     leg_adductor: {
-      altName: 'Sentadilla Sumo con Mancuerna / Kettlebell Pesada',
-      altEquipment: 'Mancuerna Pesada',
-      altSpriteType: 'leg_abductor',
-      altNote: 'Puntas hacia afuera a 45° para activar aductores profundos.'
+      altName: 'Aducción en Polea Baja con Tobillera o Sentadilla Sumo',
+      altEquipment: 'Polea Baja + Tobillera / Mancuerna Pesada',
+      altSpriteType: 'hip-adductor',
+      altNote: 'Tensión constante en aductores de cadera y parte interna del muslo.'
     },
     leg_abductor: {
-      altName: 'Abducción de Cadera en Polea Baja con Tobillera',
+      altName: 'Abducción de Cadera en Polea Baja con Tobillera o Elásticos',
       altEquipment: 'Polea Baja + Tobillera',
-      altSpriteType: 'leg_adductor',
-      altNote: 'Tensión continua en glúteo medio y menor.'
+      altSpriteType: 'hip-abductor',
+      altNote: 'Aislamiento continuo en glúteo medio y menor sin usar la máquina sentada.'
     },
     leg_calves: {
       altName: 'Elevación de Gemelos Unilateral con Mancuerna en Escalón',
@@ -878,7 +878,37 @@
   function getExerciseAlternatives(exercise) {
     if (!exercise) return [];
     const detectedKey = detectExerciseAnimationType(exercise);
-    const alt = EXERCISE_ALTERNATIVES_MAP[detectedKey] || EXERCISE_ALTERNATIVES_MAP['back_pulldown_narrow'] || {};
+    const keyMap = {
+      'pulley-narrow-back': 'back_pulldown_narrow',
+      'machine-wide-back': 'back_machine_wide',
+      'seated-cable-row': 'back_row_seated',
+      'cable-pullover': 'back_pullover',
+      'cable-bicep-curl': 'bicep_curl',
+      'hammer-curl': 'bicep_hammer',
+      'chest-press': 'chest_press',
+      'incline-chest-press': 'chest_incline',
+      'pec-deck-fly': 'chest_pecdeck',
+      'cable-crossover': 'chest_crossover',
+      'tricep-pushdown': 'tricep_pushdown',
+      'tricep-overhead': 'tricep_overhead',
+      'machine-dips': 'tricep_dips',
+      'leg-press': 'leg_press',
+      'quad-extension': 'leg_extension',
+      'hamstring-curl': 'leg_curl',
+      'hack-squat': 'leg_hack_squat',
+      'calf-raise': 'leg_calves',
+      'hip-thrust': 'leg_hip_thrust',
+      'romanian-deadlift': 'leg_rdl',
+      'hip-adductor': 'leg_adductor',
+      'hip-abductor': 'leg_abductor',
+      'shoulder-press': 'shoulder_press',
+      'lateral-raise': 'shoulder_lateral',
+      'face-pull': 'shoulder_facepull',
+      'rear-delt-shrugs': 'shoulder_reardelt',
+      'cable-crunch-abs': 'core_crunch'
+    };
+    const mapKey = keyMap[detectedKey] || detectedKey.replace(/-/g, '_');
+    const alt = EXERCISE_ALTERNATIVES_MAP[mapKey] || EXERCISE_ALTERNATIVES_MAP[detectedKey] || EXERCISE_ALTERNATIVES_MAP['back_pulldown_narrow'] || {};
 
     const loadKg = exercise.loadType === 'kg' ? exercise.loadValue : (exercise.loadValue * 3.5);
     const dumbbellEq = Math.max(4, Math.round((loadKg * 0.45) / 2) * 2);
@@ -1091,9 +1121,9 @@
     // 6. Aplicar Sustituciones automáticas por Limitaciones Articulares
     if (limitations === 'lower_back') {
       if (baseEx.id === 'sab-peso-muerto-rumano') {
-        finalEx.name = 'Hip Thrust en Multipower (Apoyo Lumbar Seguro)';
-        finalEx.equipment = 'Banco Acolchado + Máquina Smith';
-        finalEx.note = 'Sustituido por seguridad lumbar: Cero compresión en columna baja, máxima activación glútea.';
+        finalEx.name = 'Hiperextensiones a 45° (Apoyo Pélvico Seguro)';
+        finalEx.equipment = 'Banco Romano 45° / Soporte Pélvico';
+        finalEx.note = 'Sustituido por seguridad lumbar: Cero compresión axial en columna, activación focalizada de isquiotibiales y glúteos.';
       } else if (baseEx.id === 'mie-sentadilla-goblet-hack') {
         finalEx.name = 'Prensa 45° Pies Medios (Espalda totalmente apoyada)';
         finalEx.equipment = 'Prensa Inclinada';
