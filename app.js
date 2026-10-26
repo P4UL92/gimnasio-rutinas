@@ -1654,6 +1654,12 @@
     }
   }
 
+  function isRestDay(dayKey) {
+    const d = state.schedule[dayKey];
+    if (!d) return false;
+    return (!d.exercises || d.exercises.length === 0 || d.status === 'rest' || d.status === 'rest_backup');
+  }
+
   function renderDayTabs() {
     const listEl = document.getElementById('day-tabs-list');
     if (!listEl) return;
@@ -1690,14 +1696,15 @@
       shortSpan.className = 'tab-short';
       shortSpan.textContent = day.shortName;
 
+      const isRest = isRestDay(dayKey);
       const groupSpan = document.createElement('span');
       groupSpan.className = 'tab-group';
       groupSpan.textContent =
         day.status === 'skipped_to_sunday'
           ? '→ DOM'
-          : dayKey === 'domingo' && day.exercises.length === 0
-            ? 'Libre'
-            : day.muscleGroup.split('·')[0].trim();
+          : isRest
+            ? 'Descanso'
+            : (day.muscleGroup ? day.muscleGroup.split('·')[0].trim() : 'Entreno');
 
       const dotSpan = document.createElement('span');
       dotSpan.className = 'tab-dot';
@@ -1729,11 +1736,79 @@
     const exceptionBtn = document.getElementById('btn-open-exception');
     const exceptionLabel = document.getElementById('btn-exception-label');
     const anatomyPanel = document.getElementById('day-anatomy-panel');
+    const anatomyCollapsible = document.getElementById('anatomy-collapsible');
+    const warmupChecklistCard = document.getElementById('warmup-checklist-card');
+    const daySecondaryMenu = document.getElementById('day-secondary-menu');
+    const startBtn = document.getElementById('btn-start-day-workout');
 
     if (heroCard) {
       heroCard.style.setProperty('--day-hue', String(day.accentHue || 160));
     }
 
+    const currentRealDay = detectDefaultDay();
+    const isViewingToday = (state.selectedDay === currentRealDay);
+    const isSunday = (state.selectedDay === 'domingo');
+    const dayCompleted = isDayCompleted(state.selectedDay);
+    const isRest = isRestDay(state.selectedDay);
+
+    if (isRest) {
+      // 1. Día de descanso: Solo subtítulo del día, botón de mover entrenamiento a Hoy, y panel de descanso
+      // Sin grupo muscular, sin textos ni subtítulos de entrenamiento
+      if (titleEl) {
+        titleEl.textContent = `${day.dayName}: Día de descanso`;
+      }
+      if (subtitleEl) {
+        subtitleEl.textContent = 'Día de descanso';
+      }
+      if (badgesEl) {
+        badgesEl.innerHTML = '';
+      }
+      if (setsCounterEl) {
+        setsCounterEl.textContent = '';
+        setsCounterEl.style.display = 'none';
+      }
+      if (durationEl) {
+        durationEl.textContent = '';
+        durationEl.style.display = 'none';
+      }
+      if (volumePillEl) {
+        volumePillEl.textContent = '';
+        volumePillEl.style.display = 'none';
+      }
+      if (exceptionBtn) {
+        exceptionBtn.hidden = true;
+      }
+      if (anatomyCollapsible) {
+        anatomyCollapsible.hidden = true;
+      }
+      if (warmupChecklistCard) {
+        warmupChecklistCard.hidden = true;
+      }
+      if (daySecondaryMenu) {
+        daySecondaryMenu.hidden = true;
+      }
+
+      if (startBtn) {
+        startBtn.classList.remove('is-day-completed-cta', 'btn-move-muscle-cta', 'btn-sunday-recover-cta');
+        if (isViewingToday) {
+          if (dayCompleted) {
+            startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
+            startBtn.classList.add('is-day-completed-cta');
+          } else {
+            startBtn.classList.add('btn-sunday-recover-cta');
+            startBtn.textContent = 'Iniciar día de ejercicio';
+          }
+        } else {
+          startBtn.classList.add('btn-move-muscle-cta');
+          const targetDay = state.schedule[currentRealDay];
+          const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
+          startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
+        }
+      }
+      return;
+    }
+
+    // 2. Día de entrenamiento
     if (badgesEl) {
       badgesEl.innerHTML = '';
       const muscleBadge = document.createElement('span');
@@ -1758,7 +1833,8 @@
       titleEl.textContent = `${day.dayName}: ${day.title}`;
     }
     if (subtitleEl) {
-      subtitleEl.textContent = day.subtitle;
+      // Subtítulo especifica el músculo
+      subtitleEl.textContent = day.muscleGroup || day.title;
     }
 
     const totalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
@@ -1769,6 +1845,7 @@
 
     if (setsCounterEl) {
       setsCounterEl.textContent = `${doneSets} / ${totalSets} series`;
+      setsCounterEl.style.display = '';
     }
     if (durationEl) {
       if (day.estimatedMinutes > 0) {
@@ -1785,11 +1862,18 @@
       const dayStat = analytics.perDay.find(d => d.id === state.selectedDay);
       if (dayStat) {
         volumePillEl.textContent = `${dayStat.doneKg} / ${dayStat.plannedKg} kg est.`;
+        volumePillEl.style.display = '';
       }
     }
 
     if (anatomyPanel && GYM_VISUALS) {
       anatomyPanel.innerHTML = GYM_VISUALS.renderAnatomyMapSVG(day);
+    }
+    if (anatomyCollapsible) {
+      anatomyCollapsible.hidden = false;
+    }
+    if (warmupChecklistCard) {
+      warmupChecklistCard.hidden = false;
     }
 
     if (exceptionBtn && exceptionLabel) {
@@ -1804,33 +1888,14 @@
       }
     }
 
-    const currentRealDay = detectDefaultDay();
-    const isViewingToday = (state.selectedDay === currentRealDay);
-    const dayCompleted = isDayCompleted(state.selectedDay);
-    const isSunday = (state.selectedDay === 'domingo');
-    const startBtn = document.getElementById('btn-start-day-workout');
-
     if (startBtn) {
       startBtn.classList.remove('btn-move-muscle-cta', 'btn-sunday-recover-cta');
-      if (isSunday) {
-        const sundayHasExercises = (state.schedule.domingo?.exercises?.length > 0);
-        if (dayCompleted) {
-          startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
-          startBtn.classList.add('is-day-completed-cta');
-        } else if (sundayHasExercises) {
-          startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
-          startBtn.classList.remove('is-day-completed-cta');
-        } else {
-          startBtn.classList.add('btn-sunday-recover-cta');
-          startBtn.textContent = '🚀 Iniciar Día de Entrenamiento';
-          startBtn.classList.remove('is-day-completed-cta');
-        }
-      } else if (isViewingToday) {
+      if (isSunday || isViewingToday) {
         if (dayCompleted) {
           startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
           startBtn.classList.add('is-day-completed-cta');
         } else {
-          startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
+          startBtn.textContent = 'Iniciar día de ejercicio';
           startBtn.classList.remove('is-day-completed-cta');
         }
       } else {
@@ -1842,17 +1907,11 @@
       }
     }
 
-    const daySecondaryMenu = document.getElementById('day-secondary-menu');
     if (daySecondaryMenu) {
-      daySecondaryMenu.hidden = (!isViewingToday || isSunday);
+      daySecondaryMenu.hidden = !isViewingToday;
       if (daySecondaryMenu.hidden) {
         daySecondaryMenu.open = false;
       }
-    }
-
-    const anatomyCollapsible = document.getElementById('anatomy-collapsible');
-    if (anatomyCollapsible) {
-      anatomyCollapsible.hidden = isSunday;
     }
 
     const headerStartBtn = document.getElementById('btn-header-start-day');
@@ -1876,7 +1935,7 @@
     cardHeader.appendChild(h3);
     li.appendChild(cardHeader);
 
-    // Layout visual: Ilustración rasterizada del ejercicio + Panel informativo
+    // Layout visual: Ilustración rasterizada del ejercicio (solo muestra, sin textos de carga ni reps)
     const visualLayout = document.createElement('div');
     visualLayout.className = 'exercise-visual-layout';
 
@@ -1893,36 +1952,7 @@
       }
     });
 
-    const contentCol = document.createElement('div');
-    contentCol.className = 'exercise-content-col exercise-preview-col';
-
-    // Grilla informativa de solo muestra (nada de modificación):
-    // Carga (Nivel/Peso), Repeticiones, Máquina y Músculo
-    const infoGrid = document.createElement('div');
-    infoGrid.className = 'exercise-preview-info-grid';
-
-    // 1. Nivel / Peso
-    const badgeInfo = formatLoadBadge(ex);
-    const pillLoad = document.createElement('div');
-    pillLoad.className = 'exercise-preview-pill pill-load';
-    pillLoad.innerHTML = `
-      <span class="pill-label">🏋️ Carga / Nivel</span>
-      <strong class="pill-val">${badgeInfo.main}${badgeInfo.sub ? ` (${badgeInfo.sub})` : ''}</strong>
-    `;
-
-    // 2. Repeticiones
-    const repsSummary = formatExerciseRepsSummary(ex);
-    const pillReps = document.createElement('div');
-    pillReps.className = 'exercise-preview-pill pill-reps badge-reps-prescribed';
-    pillReps.innerHTML = `
-      <span class="pill-label">🔁 Series y Reps</span>
-      <strong class="pill-val">${repsSummary}</strong>
-    `;
-
-    infoGrid.append(pillLoad, pillReps);
-    contentCol.appendChild(infoGrid);
-
-    visualLayout.append(illustrationWrap, contentCol);
+    visualLayout.appendChild(illustrationWrap);
     li.appendChild(visualLayout);
 
     return li;
@@ -3025,10 +3055,10 @@
         emptyLi.append(h3, p, actionsDiv);
       } else {
         const h3 = document.createElement('h3');
-        h3.textContent = '🌿 Domingo Libre / Día Comodín';
+        h3.textContent = 'Día de descanso';
         const p = document.createElement('p');
         p.textContent =
-          'Hoy es tu día de descanso semanal. Si deseas recuperar o repetir una rutina de la semana, presiona el botón "Iniciar Día de Entrenamiento" de arriba.';
+          'Hoy es tu día de descanso semanal y recuperación neuromuscular. Puedes aprovechar para hidratarte y recargar energía para la semana.';
         emptyLi.append(h3, p);
       }
 

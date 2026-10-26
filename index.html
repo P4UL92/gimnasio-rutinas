@@ -25,32 +25,32 @@
 
       <div class="header-quick-actions">
         <button type="button" id="btn-header-profile" class="btn-ghost btn-header-profile" title="Ver o editar parámetros de tu perfil de entrenamiento" aria-label="Abrir perfil de entrenamiento">
-          <span class="btn-profile-avatar gym-ico gym-ico-user" aria-hidden="true"></span>
+          <span class="btn-profile-avatar" aria-hidden="true">👤</span>
           <span id="header-profile-tag" class="btn-profile-tag">Mi Perfil</span>
         </button>
 
         <!-- Menú Agrupado de Opciones Secundarias de Cabecera -->
         <details id="header-tools-menu" class="header-tools-menu">
           <summary class="btn-ghost header-tools-trigger" aria-label="Abrir menú de herramientas y ajustes">
-            <span class="gym-ico gym-ico-gear" aria-hidden="true"></span> Opciones
+            ⚙️ Opciones
           </summary>
           <div class="header-actions header-tools-dropdown">
             <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
-              <span class="gym-ico gym-ico-plate" aria-hidden="true"></span> Calc. Discos / 1RM
+              🧮 Calc. Discos / 1RM
             </button>
             <button type="button" id="btn-toggle-deload-mode" class="btn-ghost" aria-pressed="false" title="Activar o desactivar Semana de Descarga Articular (-20% carga sugerida y RIR 3)">
-              <span class="gym-ico gym-ico-shield" aria-hidden="true"></span> Modo Descarga
+              🛡️ Modo Descarga
             </button>
             <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar o reiniciar días">
-              <span class="gym-ico gym-ico-restore" aria-hidden="true"></span> Restaura Días
+              🗓️ Restaura Días
             </button>
           </div>
         </details>
       </div>
     </div>
 
-    <!-- Barra compacta desplegable para Resumen Semanal (Ahorra espacio en vertical) -->
-    <details id="header-metrics-drawer" class="header-metrics-drawer">
+    <!-- Barra compacta para Resumen Semanal mostrada en pantalla principal -->
+    <details id="header-metrics-drawer" class="header-metrics-drawer" open>
       <summary class="header-metrics-summary">
         <span class="compact-stat-pill">📊 Semana: <strong id="compact-week-pct">0%</strong></span>
         <span class="compact-drawer-toggle">Resumen Semanal ▾</span>
@@ -110,7 +110,7 @@
             <!-- Botón Principal para Cambiar a la Pantalla de Entrenamiento Activo + Menú Agrupado -->
             <div class="day-primary-cta-bar">
               <button type="button" id="btn-start-day-workout" class="btn-start-workout-cta">
-                🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)
+                Iniciar día de ejercicio
               </button>
 
               <details id="day-secondary-menu" class="day-secondary-menu">
@@ -151,7 +151,7 @@
         <details id="warmup-checklist-card" class="warmup-checklist-card">
           <summary class="warmup-summary">
             <div class="warmup-summary-left">
-              <span class="warmup-badge"><span class="gym-ico gym-ico-flame" aria-hidden="true"></span> CALENTAMIENTO</span>
+              <span class="warmup-badge">🔥 CALENTAMIENTO</span>
               <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
             </div>
             <span id="warmup-progress-pill" class="warmup-progress-pill">4 pasos de activación</span>
@@ -214,7 +214,7 @@
             <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
             <div class="focus-ex-header-actions">
               <button type="button" id="btn-focus-warmup-cta" class="btn-focus-warmup-cta" title="Ver y completar calentamiento previo">
-                <span class="gym-ico gym-ico-flame" aria-hidden="true"></span> Calentamiento
+                🔥 Calentamiento
               </button>
               <button type="button" id="btn-focus-help" class="btn-focus-help" aria-expanded="false" title="Ver máquina, músculo y técnica de ejecución">
                 <span class="help-btn-icon">❓</span> Máquina & Info
@@ -283,7 +283,7 @@
 
           <!-- Hero Central: Muestra ÚNICAMENTE las repeticiones calculadas para la serie actual -->
           <div class="focus-current-reps-hero" id="focus-current-reps-hero">
-            <div class="focus-reps-number-box" id="focus-reps-number-box">
+            <div class="focus-reps-number-box badge-reps-prescribed" id="focus-reps-number-box">
               <span class="focus-reps-label">REPETICIONES A REALIZAR</span>
               <div class="focus-reps-display-row">
                 <strong id="focus-current-set-reps-digits" class="focus-current-reps-digits">12</strong>
@@ -419,7 +419,7 @@
       <section class="weekly-overview-section" aria-labelledby="overview-heading">
         <details class="overview-accordion" name="gym-stats-info" open>
           <summary>
-            <span id="overview-heading" class="summary-title"><span class="gym-ico gym-ico-calendar" aria-hidden="true"></span> Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
+            <span id="overview-heading" class="summary-title">📅 Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
           </summary>
           <div class="overview-content">
             <p class="overview-intro">
@@ -433,7 +433,7 @@
 
         <details class="overview-accordion" name="gym-stats-info">
           <summary>
-            <span class="summary-title"><span class="gym-ico gym-ico-stats" aria-hidden="true"></span> Historial de Sobrecarga Progresiva y Récords (PRs / 1RM)</span>
+            <span class="summary-title">📈 Historial de Sobrecarga Progresiva y Récords (PRs / 1RM)</span>
           </summary>
           <div class="overview-content">
             <p class="overview-intro">
@@ -453,13 +453,13 @@
     <div id="screen-hub" class="app-screen-panel" data-screen-panel="hub" hidden>
       <section class="weekly-overview-section" aria-label="Módulos adicionales y herramientas">
         <div class="section-header-row">
-          <h2 class="section-title"><span class="gym-ico gym-ico-gear" aria-hidden="true"></span> Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
+          <h2 class="section-title">🧰 Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
         </div>
 
       <!-- Acordeón 1: Mi Perfil Personalizado & Parámetros Biométricos -->
       <details class="overview-accordion is-featured-accordion" name="gym-info" open>
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-user" aria-hidden="true"></span> Mi Perfil Personalizado & Parámetros Biométricos</span>
+          <span class="summary-title">👤 Mi Perfil Personalizado & Parámetros Biométricos</span>
           <span class="badge badge-user-base" id="hub-profile-status-badge">Configurado</span>
         </summary>
         <div class="overview-content">
@@ -482,7 +482,7 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-plate" aria-hidden="true"></span> Registro Corporal y Medidas Antropométricas</span>
+          <span class="summary-title">⚖️ Registro Corporal y Medidas Antropométricas</span>
         </summary>
         <div class="overview-content">
           <p class="overview-intro">
@@ -522,7 +522,7 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-barbell" aria-hidden="true"></span> Plantillas de Rutina y Tarjeta Resumen Compartible (PNG)</span>
+          <span class="summary-title">🧩 Plantillas de Rutina y Tarjeta Resumen Compartible (PNG)</span>
         </summary>
         <div class="overview-content">
           <p class="overview-intro">
@@ -555,7 +555,7 @@
 
       <details class="overview-accordion" name="gym-info" id="nutrition-accordion">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-shaker" aria-hidden="true"></span> Nutrición Deportiva, Macros, Agua y Creatina (Pre / Post-Entreno)</span>
+          <span class="summary-title">🥗 Nutrición Deportiva, Macros, Agua y Creatina (Pre / Post-Entreno)</span>
         </summary>
         <div class="overview-content">
           <p class="overview-intro">
@@ -635,14 +635,14 @@
 
       <details class="overview-accordion" name="gym-info" id="gamification-accordion">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-trophy" aria-hidden="true"></span> Gamificación: Racha, Heatmap Mensual (28 Días) y Medallas</span>
+          <span class="summary-title">🏅 Gamificación: Racha, Heatmap Mensual (28 Días) y Medallas</span>
         </summary>
         <div class="overview-content">
           <div class="gamification-header-row">
             <p class="overview-intro" style="margin: 0;">
               Visualiza tu mapa de calor de los últimos 28 días y desbloquea trofeos tácticos superando tus marcas de Lunes a Sábado.
             </p>
-            <span id="streak-badge-pill" class="warmup-progress-pill is-done"><span class="gym-ico gym-ico-flame" aria-hidden="true"></span> Racha: 1 Semana Activa</span>
+            <span id="streak-badge-pill" class="warmup-progress-pill is-done">🔥 Racha: 1 Semana Activa</span>
           </div>
 
           <div id="consistency-heatmap-grid" class="consistency-heatmap-grid" aria-label="Mapa de calor de constancia de 28 días">
@@ -657,14 +657,14 @@
 
       <details class="overview-accordion" name="gym-info" id="recovery-readiness-accordion">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-shield" aria-hidden="true"></span> Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score</span>
+          <span class="summary-title">🔋 Semáforo de Recuperación Muscular (24h/48h/72h) y Readiness Score</span>
         </summary>
         <div class="overview-content">
           <div class="gamification-header-row">
             <p class="overview-intro" style="margin: 0;">
               Evalúa tu sueño, energía del Sistema Nervioso Central y agujetas (DOMS) para conocer tu disposición hoy y el estado de supercompensación de cada grupo muscular.
             </p>
-            <span id="readiness-score-pill" class="warmup-progress-pill is-done">Readiness: 88% · Óptimo</span>
+            <span id="readiness-score-pill" class="warmup-progress-pill is-done">🟢 Readiness: 88% · Óptimo</span>
           </div>
 
           <div class="readiness-form-grid">
@@ -707,7 +707,7 @@
 
       <details class="overview-accordion" name="gym-info" id="history-journal-accordion">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-biceps" aria-hidden="true"></span> Historial de Entrenamientos y Bitácora de Sensaciones</span>
+          <span class="summary-title">🏆 Historial de Entrenamientos y Bitácora de Sensaciones</span>
         </summary>
         <div class="overview-content">
           <div class="journal-entry-box">
@@ -729,7 +729,7 @@
 
       <details class="overview-accordion" name="gym-info">
         <summary>
-          <span class="summary-title"><span class="gym-ico gym-ico-gear" aria-hidden="true"></span> Respaldo de Datos y Reporte Excel (.CSV / .JSON)</span>
+          <span class="summary-title">💾 Respaldo de Datos y Reporte Excel (.CSV / .JSON)</span>
         </summary>
         <div class="overview-content backup-controls">
           <p class="overview-intro">
@@ -750,15 +750,15 @@
   <!-- Barra de Navegación Inferior estilo Android (3 Opciones Principales de Fuerza) -->
   <nav id="bottom-app-nav" class="bottom-app-nav" aria-label="Navegación principal de pantallas">
     <button type="button" class="bottom-nav-btn is-active" data-nav-screen="plan" aria-current="page">
-      <span class="bottom-nav-icon gym-strength-icon gym-ico gym-ico-barbell" aria-hidden="true"></span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">🏋️</span>
       <span class="bottom-nav-label">Rutina</span>
     </button>
     <button type="button" class="bottom-nav-btn" data-nav-screen="stats">
-      <span class="bottom-nav-icon gym-strength-icon gym-ico gym-ico-stats" aria-hidden="true"></span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">📈</span>
       <span class="bottom-nav-label">Progreso</span>
     </button>
     <button type="button" class="bottom-nav-btn" data-nav-screen="hub">
-      <span class="bottom-nav-icon gym-strength-icon gym-ico gym-ico-gear" aria-hidden="true"></span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">⚙️</span>
       <span class="bottom-nav-label">Menú / Extras</span>
     </button>
   </nav>

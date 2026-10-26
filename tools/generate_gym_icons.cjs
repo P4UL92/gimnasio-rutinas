@@ -579,165 +579,258 @@ const icons = {
     // Fuego del propulsor
     ctx.fillPolygon([[25, 46], [32, 58], [39, 46]], C_ACCENT_ORANGE);
     ctx.fillPolygon([[28, 46], [32, 53], [36, 46]], C_CHROME);
-  },
+  }
+};
 
-  // 17. WARMUP SCAPULAR (Rotaciones Escapulares y Movilidad Torácica)
+const C_MUSCLE_HOT = [255, 107, 53, 255];   // Fuego de activación muscular
+const C_MUSCLE_AMBER = [255, 170, 0, 255]; // Resplandor muscular secundario
+
+const warmupIcons = {
+  // 17. WARMUP SCAPULAR (Retracción y Protracción Escapular con detalle anatómico y activación)
   'warmup-scapular': (ctx) => {
-    // Cabeza y cuello
-    ctx.fillCircle(32, 14, 7, C_BLACK);
-    ctx.fillCircle(32, 14, 5, C_SILVER);
-    // Torso superior / espalda
-    ctx.fillPolygon([[20, 22], [44, 22], [40, 52], [24, 52]], C_BLACK);
-    ctx.fillPolygon([[22, 24], [42, 24], [38, 50], [26, 50]], C_STEEL);
-    // Columna
-    ctx.fillRect(31, 24, 2, 26, C_CHROME);
-    // Hombros / Escápulas
-    ctx.fillCircle(18, 26, 7, C_BLACK);
-    ctx.fillCircle(18, 26, 5, C_SILVER);
-    ctx.fillCircle(46, 26, 7, C_BLACK);
-    ctx.fillCircle(46, 26, 5, C_SILVER);
-    // Círculos de rotación dinámica articular
-    ctx.strokeCircle(18, 26, 10, 2, C_ACCENT_ORANGE);
-    ctx.strokeCircle(46, 26, 10, 2, C_ACCENT_ORANGE);
-    // Flechas de rotación
-    ctx.fillPolygon([[18, 14], [22, 18], [14, 18]], C_CHROME);
-    ctx.fillPolygon([[46, 14], [50, 18], [42, 18]], C_CHROME);
+    // Fondo sutil de foco muscular
+    ctx.fillCircle(64, 60, 48, [20, 25, 34, 180]);
+    // Cabeza y vértebras cervicales
+    ctx.fillCircle(64, 24, 12, C_BLACK);
+    ctx.fillCircle(64, 24, 9, C_SILVER);
+    ctx.fillCircle(64, 22, 6, C_CHROME);
+    ctx.fillRect(60, 34, 8, 8, C_STEEL);
+    // Caja torácica posterior y espalda dorsal
+    ctx.fillPolygon([[36, 40], [92, 40], [82, 102], [46, 102]], C_BLACK);
+    ctx.fillPolygon([[40, 42], [88, 42], [78, 98], [50, 98]], C_DARK_SLATE);
+    // Columna vertebral torácica con segmentos
+    ctx.strokeLine(64, 40, 64, 102, 3, C_CHROME);
+    for (let y = 46; y <= 96; y += 10) {
+      ctx.fillRect(61, y, 6, 3, C_SILVER);
+    }
+    // Músculos trapecios y romboides
+    ctx.fillPolygon([[64, 38], [86, 46], [64, 76], [42, 46]], [60, 70, 88, 220]);
+    // Escápula izquierda con iluminación de activación muscular
+    ctx.fillPolygon([[40, 46], [58, 48], [50, 76]], C_MUSCLE_HOT);
+    ctx.fillPolygon([[42, 48], [56, 50], [49, 72]], C_MUSCLE_AMBER);
+    // Escápula derecha con iluminación de activación muscular
+    ctx.fillPolygon([[88, 46], [70, 48], [78, 76]], C_MUSCLE_HOT);
+    ctx.fillPolygon([[86, 48], [72, 50], [79, 72]], C_MUSCLE_AMBER);
+    // Pivotes de articulación acromioclavicular y glenoidea
+    ctx.fillCircle(34, 46, 6, C_BLACK);
+    ctx.fillCircle(34, 46, 4, C_CHROME);
+    ctx.fillCircle(94, 46, 6, C_BLACK);
+    ctx.fillCircle(94, 46, 4, C_CHROME);
+    // Arcos cinemáticos de rotación y deslizamiento escapular 360°
+    ctx.strokeCircle(46, 60, 20, 3, C_ACCENT_ORANGE);
+    ctx.strokeCircle(82, 60, 20, 3, C_ACCENT_ORANGE);
+    // Flechas de dirección de movimiento articular (retracción / elevación / protracción)
+    ctx.fillPolygon([[46, 38], [52, 44], [40, 44]], C_CHROME);
+    ctx.fillPolygon([[82, 38], [88, 44], [76, 44]], C_CHROME);
+    ctx.fillPolygon([[46, 82], [40, 76], [52, 76]], C_CHROME);
+    ctx.fillPolygon([[82, 82], [76, 76], [88, 76]], C_CHROME);
   },
 
-  // 18. WARMUP DISLOCATE (Dislocaciones de Hombro con Banda / Bastón)
+  // 18. WARMUP DISLOCATE (Dislocaciones de Hombro con Banda / Pica sobre la cabeza)
   'warmup-dislocate': (ctx) => {
-    // Cabeza
-    ctx.fillCircle(32, 18, 6, C_SILVER);
-    // Cuerpo erguido
-    ctx.fillRect(30, 24, 4, 28, C_BLACK);
-    ctx.fillRect(31, 24, 2, 26, C_STEEL);
-    // Brazos sosteniendo el bastón/banda sobre la cabeza en arco
-    ctx.strokeLine(30, 26, 12, 14, 4, C_BLACK);
-    ctx.strokeLine(30, 26, 12, 14, 2, C_STEEL);
-    ctx.strokeLine(34, 26, 52, 14, 4, C_BLACK);
-    ctx.strokeLine(34, 26, 52, 14, 2, C_STEEL);
-    // Bastón / Banda elástica horizontal
-    ctx.strokeLine(8, 12, 56, 12, 4, C_SILVER);
-    ctx.strokeLine(8, 12, 56, 12, 2, C_CHROME);
-    // Arco de movilidad articular
-    ctx.strokeCircle(32, 32, 24, 2, C_ACCENT_ORANGE);
-    ctx.fillPolygon([[32, 6], [36, 10], [28, 10]], C_CHROME);
-  },
-
-  // 19. WARMUP ROTATOR (Rotación Externa de Manguito Rotador)
-  'warmup-rotator': (ctx) => {
-    // Torso lateral
-    ctx.fillRoundedRect(16, 16, 14, 38, 4, C_BLACK);
-    ctx.fillRoundedRect(18, 18, 10, 34, 2, C_STEEL);
-    // Brazo superior pegado al torso
-    ctx.fillRect(30, 22, 5, 18, C_SILVER);
-    // Codo flexionado a 90 grados
-    ctx.fillCircle(32, 40, 4, C_CHROME);
-    // Antebrazo rotando hacia afuera
-    ctx.strokeLine(32, 40, 52, 34, 4, C_SILVER);
-    ctx.strokeLine(32, 40, 52, 34, 2, C_CHROME);
-    // Banda / Polea tensada
-    ctx.strokeLine(52, 34, 60, 32, 3, C_ACCENT_ORANGE);
-    // Flecha de rotación externa
-    ctx.strokeCircle(32, 40, 16, 2, C_ACCENT_ORANGE);
-    ctx.fillPolygon([[50, 28], [54, 34], [46, 34]], C_CHROME);
-  },
-
-  // 20. WARMUP CHEST OPEN (Aperturas Dinámicas de Pectoral y Movilidad)
-  'warmup-chest-open': (ctx) => {
-    // Cabeza
-    ctx.fillCircle(32, 14, 6, C_SILVER);
-    // Pectoral / Esternón
-    ctx.fillPolygon([[24, 20], [40, 20], [36, 44], [28, 44]], C_BLACK);
-    ctx.fillPolygon([[26, 22], [38, 22], [34, 42], [30, 42]], C_STEEL);
-    // Pectorales en estiramiento
-    ctx.fillCircle(28, 26, 5, C_CHROME);
-    ctx.fillCircle(36, 26, 5, C_CHROME);
-    // Brazos abiertos en cruz dinámicos
-    ctx.strokeLine(26, 24, 6, 28, 4, C_SILVER);
-    ctx.strokeLine(38, 24, 58, 28, 4, C_SILVER);
-    // Flechas de apertura y expansión torácica
-    ctx.strokeLine(20, 36, 10, 36, 2, C_ACCENT_ORANGE);
-    ctx.fillPolygon([[8, 36], [12, 33], [12, 39]], C_ACCENT_ORANGE);
-    ctx.strokeLine(44, 36, 54, 36, 2, C_ACCENT_ORANGE);
-    ctx.fillPolygon([[56, 36], [52, 33], [52, 39]], C_ACCENT_ORANGE);
-  },
-
-  // 21. WARMUP HIP MOBILITY (Movilidad Dinámica de Cadera 90/90)
-  'warmup-hip-mobility': (ctx) => {
-    // Pelvis central
-    ctx.fillRoundedRect(24, 22, 16, 12, 3, C_BLACK);
-    ctx.fillRoundedRect(26, 24, 12, 8, 2, C_STEEL);
-    // Pierna anterior en ángulo 90
-    ctx.strokeLine(26, 30, 10, 36, 5, C_SILVER);
-    ctx.strokeLine(10, 36, 16, 52, 5, C_SILVER);
-    // Pierna posterior en ángulo 90
-    ctx.strokeLine(38, 30, 54, 24, 5, C_SILVER);
-    ctx.strokeLine(54, 24, 48, 40, 5, C_SILVER);
-    // Círculos de rotación de cadera
-    ctx.strokeCircle(26, 30, 8, 2, C_ACCENT_ORANGE);
-    ctx.strokeCircle(38, 30, 8, 2, C_ACCENT_ORANGE);
-  },
-
-  // 22. WARMUP GLUTE BRIDGE (Puente de Glúteo Isométrico y Activación)
-  'warmup-glute-bridge': (ctx) => {
-    // Colchoneta / Suelo
-    ctx.fillRect(4, 54, 56, 3, C_DARK_SLATE);
-    // Espalda superior y hombros en el suelo
-    ctx.fillCircle(14, 50, 5, C_SILVER);
-    // Torso elevado en ángulo de puente
-    ctx.strokeLine(14, 50, 34, 32, 6, C_BLACK);
-    ctx.strokeLine(14, 50, 34, 32, 4, C_STEEL);
-    // Cadera / Glúteos contraídos en el pico
-    ctx.fillCircle(34, 32, 7, C_ACCENT_ORANGE);
-    ctx.fillCircle(34, 32, 5, C_CHROME);
-    // Muslos hacia las rodillas
-    ctx.strokeLine(34, 32, 48, 40, 5, C_SILVER);
-    // Pies apoyados en el suelo
-    ctx.strokeLine(48, 40, 48, 54, 5, C_SILVER);
-    // Flecha de empuje hacia arriba
-    ctx.strokeLine(34, 26, 34, 14, 3, C_CHROME);
-    ctx.fillPolygon([[34, 10], [38, 16], [30, 16]], C_CHROME);
-  },
-
-  // 23. WARMUP CABLE WARMUP (Serie de Aproximación en Polea / Máquina Ligera)
-  'warmup-cable-warmup': (ctx) => {
-    // Marco de polea
-    ctx.fillRect(10, 8, 4, 48, C_BLACK);
-    ctx.fillRect(10, 8, 44, 4, C_BLACK);
-    ctx.strokeLine(10, 8, 54, 8, 2, C_STEEL);
-    // Polea giratoria superior
-    ctx.fillCircle(44, 12, 6, C_SILVER);
-    ctx.fillCircle(44, 12, 2, C_BLACK);
-    // Cable descendente
-    ctx.strokeLine(44, 14, 40, 32, 2, C_CHROME);
-    // Agarre / Barra ligera
-    ctx.strokeLine(32, 32, 48, 32, 4, C_SILVER);
-    // Atleta realizando el jalón controlado
-    ctx.fillCircle(34, 40, 5, C_SILVER);
-    ctx.fillRect(32, 45, 8, 12, C_STEEL);
-    // Indicador 40% carga suave
-    ctx.fillRoundedRect(16, 24, 18, 12, 2, C_BLACK);
-    ctx.strokeCircle(25, 30, 4, 2, C_ACCENT_ORANGE);
-  },
-
-  // 24. WARMUP CORE PLANK (Plancha / Activación de Core y Estabilidad)
-  'warmup-core-plank': (ctx) => {
+    // Fondo de movilidad
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
     // Suelo
-    ctx.fillRect(4, 52, 56, 3, C_DARK_SLATE);
-    // Brazos apoyados en antebrazos
-    ctx.strokeLine(16, 52, 16, 42, 4, C_SILVER);
-    ctx.strokeLine(16, 52, 24, 52, 4, C_SILVER);
-    // Cuerpo recto en plancha isométrica perfecta
-    ctx.strokeLine(16, 42, 52, 46, 6, C_BLACK);
-    ctx.strokeLine(16, 42, 52, 46, 4, C_STEEL);
+    ctx.fillRect(20, 118, 88, 4, C_DARK_SLATE);
+    // Atleta erguido de cuerpo entero
+    ctx.fillCircle(64, 38, 11, C_BLACK);
+    ctx.fillCircle(64, 38, 8, C_SILVER);
+    // Cuello y torso
+    ctx.fillRect(60, 48, 8, 8, C_STEEL);
+    ctx.fillPolygon([[48, 54], [80, 54], [74, 90], [54, 90]], C_BLACK);
+    ctx.fillPolygon([[50, 56], [78, 56], [72, 88], [56, 88]], C_DARK_SLATE);
+    // Piernas
+    ctx.strokeLine(58, 90, 52, 118, 5, C_STEEL);
+    ctx.strokeLine(70, 90, 76, 118, 5, C_STEEL);
+    // Hombros / Deltoides iluminados en activación
+    ctx.fillCircle(44, 56, 9, C_MUSCLE_HOT);
+    ctx.fillCircle(44, 56, 6, C_MUSCLE_AMBER);
+    ctx.fillCircle(84, 56, 9, C_MUSCLE_HOT);
+    ctx.fillCircle(84, 56, 6, C_MUSCLE_AMBER);
+    // Brazos extendidos en 'Y' sujetando el bastón/banda
+    ctx.strokeLine(44, 56, 22, 26, 6, C_BLACK);
+    ctx.strokeLine(44, 56, 22, 26, 4, C_SILVER);
+    ctx.strokeLine(84, 56, 106, 26, 6, C_BLACK);
+    ctx.strokeLine(84, 56, 106, 26, 4, C_SILVER);
+    // Bastón rígido / Banda elástica horizontal sobre la cabeza
+    ctx.strokeLine(12, 24, 116, 24, 6, C_BLACK);
+    ctx.strokeLine(14, 24, 114, 24, 4, C_CHROME);
+    ctx.fillCircle(14, 24, 4, C_ACCENT_ORANGE);
+    ctx.fillCircle(114, 24, 4, C_ACCENT_ORANGE);
+    // Gran arco de movilidad escapulo-humeral 180°
+    ctx.strokeCircle(64, 64, 46, 3, C_ACCENT_ORANGE);
+    // Flechas de arco adelante / atrás
+    ctx.fillPolygon([[64, 14], [72, 20], [56, 20]], C_CHROME);
+    ctx.fillPolygon([[20, 56], [24, 48], [16, 48]], C_ACCENT_ORANGE);
+    ctx.fillPolygon([[108, 56], [112, 48], [104, 48]], C_ACCENT_ORANGE);
+  },
+
+  // 19. WARMUP ROTATOR (Rotación Externa de Manguito Rotador a 90° con Banda)
+  'warmup-rotator': (ctx) => {
+    ctx.fillCircle(64, 64, 50, [20, 25, 34, 180]);
+    // Torso lateral erguido
+    ctx.fillRoundedRect(32, 34, 26, 68, 8, C_BLACK);
+    ctx.fillRoundedRect(34, 36, 22, 64, 6, C_DARK_SLATE);
+    // Cabeza de perfil
+    ctx.fillCircle(45, 24, 10, C_BLACK);
+    ctx.fillCircle(45, 24, 7, C_SILVER);
+    // Músculos del manguito rotador (infraespinoso / redondo menor) iluminados
+    ctx.fillCircle(42, 50, 11, C_MUSCLE_HOT);
+    ctx.fillCircle(42, 50, 7, C_MUSCLE_AMBER);
+    // Brazo superior pegado al torso
+    ctx.fillRect(54, 46, 10, 36, C_STEEL);
+    // Codo flexionado exactamente a 90 grados
+    ctx.fillCircle(59, 82, 8, C_BLACK);
+    ctx.fillCircle(59, 82, 5, C_CHROME);
+    // Antebrazo rotando hacia afuera
+    ctx.strokeLine(59, 82, 104, 72, 8, C_BLACK);
+    ctx.strokeLine(59, 82, 104, 72, 5, C_SILVER);
+    // Mano empuñada
+    ctx.fillCircle(104, 72, 7, C_CHROME);
+    // Banda elástica tensada fijada a poste
+    ctx.strokeLine(104, 72, 122, 70, 5, C_ACCENT_ORANGE);
+    ctx.fillRect(120, 40, 6, 60, C_BLACK);
+    // Guía de arco de rotación externa de 90°
+    ctx.strokeCircle(59, 82, 34, 3, C_ACCENT_ORANGE);
+    // Flecha de rotación hacia el plano exterior
+    ctx.fillPolygon([[102, 58], [108, 66], [96, 66]], C_CHROME);
+  },
+
+  // 20. WARMUP CHEST OPEN (Apertura Torácica y Estiramiento Dinámico de Pectorales)
+  'warmup-chest-open': (ctx) => {
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
+    // Cabeza frontal
+    ctx.fillCircle(64, 24, 11, C_BLACK);
+    ctx.fillCircle(64, 24, 8, C_SILVER);
+    ctx.fillRect(60, 34, 8, 8, C_STEEL);
+    // Esternón central
+    ctx.fillRect(62, 42, 4, 46, C_CHROME);
+    // Pectoral izquierdo en máxima activación y elongación
+    ctx.fillPolygon([[60, 44], [32, 48], [34, 74], [60, 70]], C_MUSCLE_HOT);
+    ctx.fillPolygon([[58, 46], [36, 50], [38, 70], [58, 68]], C_MUSCLE_AMBER);
+    // Pectoral derecho en máxima activación y elongación
+    ctx.fillPolygon([[68, 44], [96, 48], [94, 74], [68, 70]], C_MUSCLE_HOT);
+    ctx.fillPolygon([[70, 46], [92, 50], [90, 70], [70, 68]], C_MUSCLE_AMBER);
+    // Brazos abiertos en cruz extendidos
+    ctx.strokeLine(32, 50, 10, 56, 7, C_BLACK);
+    ctx.strokeLine(32, 50, 10, 56, 4, C_SILVER);
+    ctx.strokeLine(96, 50, 118, 56, 7, C_BLACK);
+    ctx.strokeLine(96, 50, 118, 56, 4, C_SILVER);
+    // Flechas de apertura dinámica horizontal
+    ctx.strokeLine(48, 86, 20, 86, 3, C_ACCENT_ORANGE);
+    ctx.fillPolygon([[14, 86], [22, 80], [22, 92]], C_CHROME);
+    ctx.strokeLine(80, 86, 108, 86, 3, C_ACCENT_ORANGE);
+    ctx.fillPolygon([[114, 86], [106, 80], [106, 92]], C_CHROME);
+  },
+
+  // 21. WARMUP HIP MOBILITY (Movilidad Dinámica de Cadera 90/90 y Rotación)
+  'warmup-hip-mobility': (ctx) => {
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
+    // Suelo
+    ctx.fillRect(10, 110, 108, 4, C_DARK_SLATE);
+    // Pelvis y cadera
+    ctx.fillRoundedRect(44, 46, 40, 24, 6, C_BLACK);
+    ctx.fillRoundedRect(46, 48, 36, 20, 5, C_DARK_SLATE);
+    // Articulaciones de cadera (glúteo medio / flexores) iluminadas
+    ctx.fillCircle(48, 58, 12, C_MUSCLE_HOT);
+    ctx.fillCircle(48, 58, 8, C_MUSCLE_AMBER);
+    ctx.fillCircle(80, 58, 12, C_MUSCLE_HOT);
+    ctx.fillCircle(80, 58, 8, C_MUSCLE_AMBER);
+    // Pierna izquierda en 90°
+    ctx.strokeLine(48, 58, 20, 72, 8, C_SILVER);
+    ctx.fillCircle(20, 72, 5, C_CHROME);
+    ctx.strokeLine(20, 72, 34, 104, 7, C_SILVER);
+    // Pierna derecha en 90°
+    ctx.strokeLine(80, 58, 108, 50, 8, C_SILVER);
+    ctx.fillCircle(108, 50, 5, C_CHROME);
+    ctx.strokeLine(108, 50, 94, 82, 7, C_SILVER);
+    // Arcos de rotación interna y externa de cadera
+    ctx.strokeCircle(48, 58, 22, 3, C_ACCENT_ORANGE);
+    ctx.strokeCircle(80, 58, 22, 3, C_ACCENT_ORANGE);
+    ctx.fillPolygon([[48, 34], [54, 40], [42, 40]], C_CHROME);
+    ctx.fillPolygon([[80, 34], [86, 40], [74, 40]], C_CHROME);
+  },
+
+  // 22. WARMUP GLUTE BRIDGE (Puente de Glúteo e Isquios con Extensión Pélvica)
+  'warmup-glute-bridge': (ctx) => {
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
+    // Suelo / colchoneta
+    ctx.fillRect(8, 110, 112, 5, C_DARK_SLATE);
+    // Hombros y cabeza apoyados en el suelo
+    ctx.fillCircle(26, 102, 10, C_BLACK);
+    ctx.fillCircle(26, 102, 7, C_SILVER);
+    // Espalda y torso en inclinación ascendente hacia el puente
+    ctx.strokeLine(26, 102, 68, 62, 10, C_BLACK);
+    ctx.strokeLine(26, 102, 68, 62, 7, C_STEEL);
+    // Glúteo Mayor e Isquiosurales contraídos en extensión completa
+    ctx.fillCircle(68, 62, 15, C_MUSCLE_HOT);
+    ctx.fillCircle(68, 62, 10, C_MUSCLE_AMBER);
+    // Muslos descendiendo hacia las rodillas
+    ctx.strokeLine(68, 62, 98, 76, 9, C_SILVER);
+    ctx.fillCircle(98, 76, 6, C_CHROME);
+    // Pantorrillas verticales apoyadas firmes en el suelo
+    ctx.strokeLine(98, 76, 98, 110, 8, C_SILVER);
+    ctx.fillCircle(98, 108, 6, C_CHROME);
+    // Gran vector de empuje pélvico hacia arriba
+    ctx.strokeLine(68, 50, 68, 18, 5, C_ACCENT_ORANGE);
+    ctx.fillPolygon([[68, 12], [76, 24], [60, 24]], C_CHROME);
+  },
+
+  // 23. WARMUP CABLE WARMUP (Serie de Aproximación en Polea / Máquina Ligera al 40%)
+  'warmup-cable-warmup': (ctx) => {
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
+    // Estructura de polea
+    ctx.fillRect(16, 14, 8, 100, C_BLACK);
+    ctx.fillRect(16, 14, 84, 8, C_BLACK);
+    ctx.strokeLine(16, 16, 100, 16, 3, C_STEEL);
+    // Rueda de polea giratoria
+    ctx.fillCircle(84, 22, 11, C_BLACK);
+    ctx.fillCircle(84, 22, 8, C_SILVER);
+    ctx.fillCircle(84, 22, 3, C_CHROME);
+    // Cable descendente
+    ctx.strokeLine(84, 24, 76, 58, 3, C_CHROME);
+    // Barra de agarre
+    ctx.strokeLine(60, 58, 92, 58, 6, C_BLACK);
+    ctx.strokeLine(62, 58, 90, 58, 4, C_CHROME);
+    // Atleta realizando el jalón de activación
+    ctx.fillCircle(68, 70, 9, C_SILVER);
+    ctx.fillPolygon([[60, 78], [76, 78], [72, 110], [64, 110]], C_DARK_SLATE);
+    // Dorsal / Bíceps iluminados en activación
+    ctx.fillPolygon([[60, 80], [70, 80], [68, 98], [62, 98]], C_MUSCLE_HOT);
+    ctx.fillPolygon([[61, 82], [68, 82], [67, 95], [63, 95]], C_MUSCLE_AMBER);
+    // Placas de carga ligera 40%
+    ctx.fillRoundedRect(30, 48, 24, 16, 4, C_BLACK);
+    ctx.strokeCircle(42, 56, 5, 2, C_ACCENT_ORANGE);
+    // Flecha de recorrido controlado
+    ctx.strokeLine(84, 64, 84, 88, 3, C_ACCENT_ORANGE);
+    ctx.fillPolygon([[84, 94], [78, 86], [90, 86]], C_CHROME);
+  },
+
+  // 24. WARMUP CORE PLANK (Plancha Isométrica y Estabilidad del Núcleo Abdominal)
+  'warmup-core-plank': (ctx) => {
+    ctx.fillCircle(64, 64, 52, [20, 25, 34, 180]);
+    // Suelo
+    ctx.fillRect(8, 108, 112, 5, C_DARK_SLATE);
+    // Apoyo en antebrazos
+    ctx.strokeLine(30, 108, 30, 86, 7, C_SILVER);
+    ctx.strokeLine(30, 108, 46, 108, 6, C_CHROME);
     // Cabeza neutra
-    ctx.fillCircle(12, 38, 5, C_SILVER);
-    // Puntas de pies apoyadas
-    ctx.fillCircle(52, 50, 4, C_CHROME);
-    // Núcleo / Core abdominal activo
-    ctx.fillCircle(32, 43, 6, C_ACCENT_ORANGE);
-    ctx.fillCircle(32, 43, 3, C_CHROME);
+    ctx.fillCircle(22, 78, 9, C_BLACK);
+    ctx.fillCircle(22, 78, 6, C_SILVER);
+    // Columna y cuerpo recto en plancha isométrica
+    ctx.strokeLine(30, 86, 106, 94, 10, C_BLACK);
+    ctx.strokeLine(30, 86, 106, 94, 7, C_STEEL);
+    // Puntas de pies firmes
+    ctx.fillCircle(106, 104, 6, C_CHROME);
+    // Núcleo / Faja abdominal y lumbares con resplandor completo
+    ctx.fillCircle(64, 88, 14, C_MUSCLE_HOT);
+    ctx.fillCircle(64, 88, 9, C_MUSCLE_AMBER);
+    ctx.fillCircle(64, 88, 4, C_CHROME);
+    // Anillo concéntrico de tensión del core y vectores de estabilidad
+    ctx.strokeCircle(64, 88, 22, 3, C_ACCENT_ORANGE);
+    ctx.strokeLine(48, 64, 80, 64, 3, C_CHROME);
+    ctx.fillPolygon([[44, 64], [50, 60], [50, 68]], C_CHROME);
+    ctx.fillPolygon([[84, 64], [78, 60], [78, 68]], C_CHROME);
   }
 };
 
@@ -754,4 +847,11 @@ for (const [name, drawFn] of Object.entries(icons)) {
   generatedCount++;
 }
 
-console.log(`PASS: Se generaron ${generatedCount} íconos PNG únicos de gimnasio en assets/icons/`);
+for (const [name, drawFn] of Object.entries(warmupIcons)) {
+  const pngBuf = createPng(128, 128, drawFn);
+  const filePath = path.join(outputDir, `${name}.png`);
+  fs.writeFileSync(filePath, pngBuf);
+  generatedCount++;
+}
+
+console.log(`PASS: Se generaron ${generatedCount} íconos y dibujos de calentamiento en assets/icons/`);

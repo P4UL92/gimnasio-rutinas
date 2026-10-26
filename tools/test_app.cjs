@@ -584,8 +584,8 @@ const exFat = dayExercisesFat[0];
 assert.deepEqual(Array.from(exFat.seriesReps), [15, 14, 13, 12], 'En pérdida de grasa debe prescribir repeticiones metabólicas [15, 14, 13, 12]');
 
 // Verificación de elementos DOM:
-// En la tarjeta de ejercicios se debe mostrar el badge de repeticiones prescritas por la app (.badge-reps-prescribed)
-assert.ok(doc.querySelector('.badge-reps-prescribed'), 'Las tarjetas de ejercicios deben incluir el badge informativo de repeticiones prescritas');
+// En la app se debe mostrar el indicador de repeticiones prescritas por la app (.badge-reps-prescribed)
+assert.ok(doc.querySelector('.badge-reps-prescribed'), 'La app debe incluir el indicador informativo de repeticiones prescritas');
 
 // Comprobar que NO existen controles para que el usuario altere arbitrariamente las repeticiones
 assert.equal(doc.getElementById('btn-focus-reps'), null, 'NO debe existir el botón interactivo #btn-focus-reps para modificación del usuario');
@@ -1543,14 +1543,14 @@ previewCards.forEach((card, idx) => {
   const title = card.querySelector('h3.exercise-card-title');
   assert.ok(title && title.textContent.trim().length > 0, `Card ${idx + 1} debe mostrar el nombre del ejercicio`);
 
-  // Solo Carga y Repeticiones (Máquina y Músculo eliminados según solicitud)
+  // Textos de Carga y Reps eliminados de las tarjetas según solicitud 10
   const pillLoad = card.querySelector('.exercise-preview-pill.pill-load');
   const pillReps = card.querySelector('.exercise-preview-pill.pill-reps');
   const pillEquip = card.querySelector('.exercise-preview-pill.pill-equip');
   const pillMuscle = card.querySelector('.exercise-preview-pill.pill-muscle');
 
-  assert.ok(pillLoad, `Card ${idx + 1} debe mostrar la carga/nivel`);
-  assert.ok(pillReps, `Card ${idx + 1} debe mostrar las repeticiones/series`);
+  assert.equal(pillLoad, null, `Card ${idx + 1} NO debe mostrar Carga / Nivel según solicitud 10`);
+  assert.equal(pillReps, null, `Card ${idx + 1} NO debe mostrar Series y Reps según solicitud 10`);
   assert.equal(pillEquip, null, `Card ${idx + 1} NO debe mostrar Máquina/Implemento`);
   assert.equal(pillMuscle, null, `Card ${idx + 1} NO debe mostrar Músculo Principal`);
 
@@ -1603,8 +1603,15 @@ app.selectDay('domingo');
 
 const sundayStartBtn = doc.getElementById('btn-start-day-workout');
 assert.ok(sundayStartBtn, 'Debe existir el botón principal de inicio en domingo');
-assert.ok(sundayStartBtn.textContent.includes('Iniciar Día de Entrenamiento'), 'El botón en domingo debe titular "Iniciar Día de Entrenamiento"');
-assert.ok(sundayStartBtn.classList.contains('btn-sunday-recover-cta'), 'El botón debe tener la clase temática .btn-sunday-recover-cta');
+const todayKey44 = app.detectDefaultDay();
+if (todayKey44 === 'domingo') {
+  assert.equal(sundayStartBtn.textContent.trim(), 'Iniciar día de ejercicio', 'El botón en domingo debe titular "Iniciar día de ejercicio"');
+  assert.ok(sundayStartBtn.classList.contains('btn-sunday-recover-cta'), 'El botón debe tener la clase temática .btn-sunday-recover-cta');
+} else {
+  const curName = app.getState().schedule[todayKey44].dayName;
+  assert.ok(sundayStartBtn.textContent.includes(`Mover entrenamiento a Hoy (${curName})`), 'En domingo siendo otro día debe ofrecer mover a Hoy');
+  assert.ok(sundayStartBtn.classList.contains('btn-move-muscle-cta'), 'El botón debe tener la clase temática .btn-move-muscle-cta');
+}
 
 // 44.2 Elementos prohibidos en Domingo: Sin opciones de día, sin mapa anatómico, sin opciones de días incrustadas
 const sundayMenu = doc.getElementById('day-secondary-menu');
@@ -1617,9 +1624,9 @@ const quickImportDays = doc.querySelector('#exercises-list .quick-import-days');
 assert.equal(quickImportDays, null, 'En Domingo NO deben mostrarse opciones de recuperación incrustadas en la lista');
 
 // 44.3 Apertura del Panel de Recuperación Dominical
-sundayStartBtn.click();
+app.openSundayRecoveryDialog();
 const recoverDialog = doc.getElementById('sunday-recovery-dialog');
-assert.ok(recoverDialog.hasAttribute('open') || !recoverDialog.hidden, 'Hacer clic en Iniciar Día de Entrenamiento en domingo debe abrir #sunday-recovery-dialog');
+assert.ok(recoverDialog.hasAttribute('open') || !recoverDialog.hidden, 'El panel de recuperación dominical debe abrirse');
 
 // 44.4 Cálculo Biomecánico de Horas de Descanso
 const recoveryOpts = app.calculateSundayRecoveryOptions();
@@ -1728,14 +1735,14 @@ expectedIcons.forEach(iconName => {
   assert.ok(stat.size > 200, `El archivo ${iconName} debe ser un PNG válido no vacío`);
 });
 
-// 45.3 Verificación de uso en la interfaz (Navegación inferior con íconos propios de gym)
-const navBarbell = doc.querySelector('.bottom-nav-btn[data-nav-screen="plan"] .gym-ico-barbell');
-const navStats = doc.querySelector('.bottom-nav-btn[data-nav-screen="stats"] .gym-ico-stats');
-const navGear = doc.querySelector('.bottom-nav-btn[data-nav-screen="hub"] .gym-ico-gear');
+// 45.3 Verificación de íconos coloridos en navegación inferior
+const navPlan = doc.querySelector('.bottom-nav-btn[data-nav-screen="plan"] .bottom-nav-icon');
+const navStats = doc.querySelector('.bottom-nav-btn[data-nav-screen="stats"] .bottom-nav-icon');
+const navHub = doc.querySelector('.bottom-nav-btn[data-nav-screen="hub"] .bottom-nav-icon');
 
-assert.ok(navBarbell, 'El botón de Rutina debe usar el ícono propio .gym-ico-barbell');
-assert.ok(navStats, 'El botón de Progreso debe usar el ícono propio .gym-ico-stats');
-assert.ok(navGear, 'El botón de Menú/Extras debe usar el ícono propio .gym-ico-gear');
+assert.ok(navPlan && navPlan.textContent.includes('🏋️'), 'El botón de Rutina debe mostrar el ícono colorido 🏋️');
+assert.ok(navStats && navStats.textContent.includes('📈'), 'El botón de Progreso debe mostrar el ícono colorido 📈');
+assert.ok(navHub && navHub.textContent.includes('⚙️'), 'El botón de Menú/Extras debe mostrar el ícono colorido ⚙️');
 
 // 45.4 Estilos CSS para el sistema de íconos
 assert.ok(cssContent.includes('.gym-ico'), 'styles.css debe definir la clase base .gym-ico');
@@ -1829,7 +1836,118 @@ assert.equal(afterSchedule.lunes.title, beforeSchedule.martes.title, 'Lunes debe
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 46 Suites de pruebas pasaron con éxito.');
+
+// =========================================================================
+// SUITE 47: AUDITORÍA DE ÍCONOS COLORIDOS, TARJETAS LIMPIAS, DÍA DE DESCANSO Y DIBUJOS
+// =========================================================================
+console.log('Ejecutando Suite 47: Íconos Coloridos, Tarjetas Limpias, Subtítulo Muscular y Día de Descanso...');
+
+// 47.1 Versión anterior y colorida de los íconos
+const navPlanIco = doc.querySelector('.bottom-nav-btn[data-nav-screen="plan"] .bottom-nav-icon');
+const navStatsIco = doc.querySelector('.bottom-nav-btn[data-nav-screen="stats"] .bottom-nav-icon');
+const navHubIco = doc.querySelector('.bottom-nav-btn[data-nav-screen="hub"] .bottom-nav-icon');
+assert.ok(navPlanIco && navPlanIco.textContent.includes('🏋️'), 'Bottom nav Rutina debe tener emoji colorido 🏋️');
+assert.ok(navStatsIco && navStatsIco.textContent.includes('📈'), 'Bottom nav Progreso debe tener emoji colorido 📈');
+assert.ok(navHubIco && navHubIco.textContent.includes('⚙️'), 'Bottom nav Menú/Extras debe tener emoji colorido ⚙️');
+
+const profileAvatar = doc.querySelector('.btn-header-profile .btn-profile-avatar');
+assert.ok(profileAvatar && profileAvatar.textContent.includes('👤'), 'Header perfil debe tener emoji 👤');
+
+const headerToolsSummary = doc.querySelector('#header-tools-menu summary');
+assert.ok(headerToolsSummary && headerToolsSummary.textContent.includes('⚙️ Opciones'), 'Header herramientas debe mostrar ⚙️ Opciones');
+
+const warmupBadge = doc.querySelector('.warmup-badge');
+assert.ok(warmupBadge && warmupBadge.textContent.includes('🔥 CALENTAMIENTO'), 'Badge de calentamiento debe mostrar 🔥 CALENTAMIENTO');
+
+// 47.2 Eliminación de textos de carga y reps en tarjetas de la pantalla principal
+app.selectDay('lunes');
+const previewCards47 = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.ok(previewCards47.length > 0, 'Deben existir tarjetas de ejercicio en pantalla principal');
+previewCards47.forEach((card, idx) => {
+  assert.equal(card.querySelector('.pill-load'), null, `Tarjeta ${idx + 1} no debe mostrar Carga/Nivel`);
+  assert.equal(card.querySelector('.pill-reps'), null, `Tarjeta ${idx + 1} no debe mostrar Series y Reps`);
+  assert.ok(!card.textContent.includes('Peso total seleccionado'), `Tarjeta ${idx + 1} no debe tener texto "Peso total seleccionado"`);
+  assert.ok(!card.textContent.includes('Series y Reps'), `Tarjeta ${idx + 1} no debe tener texto "Series y Reps"`);
+});
+
+// 47.3 Paneles superiores visibles hasta los días de entrenamiento
+const appHeaderEl = doc.querySelector('.app-header');
+const weeklySummaryEl = doc.querySelector('.weekly-summary-bar');
+const dayTabsNavEl = doc.getElementById('day-tabs-nav');
+assert.ok(appHeaderEl && !appHeaderEl.hidden, 'El panel superior .app-header debe mantenerse mostrado');
+assert.ok(weeklySummaryEl, 'El panel .weekly-summary-bar debe mantenerse presente y visible');
+assert.ok(dayTabsNavEl && !dayTabsNavEl.hidden, 'La barra de días #day-tabs-nav debe mantenerse mostrada');
+
+// 47.4 Subtítulo de días de entrenamiento especifica el músculo y se actualiza
+app.selectDay('lunes');
+const subLunes = doc.getElementById('day-subtitle');
+assert.ok(subLunes.textContent.includes('Espalda') || subLunes.textContent.includes('Bíceps'), 'El subtítulo de Lunes debe especificar el músculo');
+
+app.selectDay('martes');
+const subMartes = doc.getElementById('day-subtitle');
+assert.ok(subMartes.textContent.includes('Pecho') || subMartes.textContent.includes('Tríceps'), 'El subtítulo de Martes debe especificar el músculo');
+
+// 47.5 Botón de iniciar día de ejercicio solo dice "Iniciar día de ejercicio"
+const defaultDayKey = app.detectDefaultDay();
+app.selectDay(defaultDayKey);
+const startBtn47 = doc.getElementById('btn-start-day-workout');
+assert.ok(startBtn47, 'Debe existir el botón #btn-start-day-workout');
+if (!app.isDayCompleted(defaultDayKey)) {
+  assert.equal(startBtn47.textContent.trim(), 'Iniciar día de ejercicio', 'El botón principal debe decir estrictamente "Iniciar día de ejercicio"');
+}
+
+// 47.6 Dibujos de calentamiento generados a detalle
+const warmupFiles = [
+  'warmup-scapular.png',
+  'warmup-dislocate.png',
+  'warmup-rotator.png',
+  'warmup-chest-open.png',
+  'warmup-hip-mobility.png',
+  'warmup-glute-bridge.png',
+  'warmup-cable-warmup.png',
+  'warmup-core-plank.png'
+];
+warmupFiles.forEach(file => {
+  const filePath = pathMod.join(iconDir, file);
+  assert.ok(fsMod.existsSync(filePath), `Debe existir el archivo ${file}`);
+  const stat = fsMod.statSync(filePath);
+  assert.ok(stat.size > 1500, `El archivo ${file} debe ser una ilustración detallada (>1.5KB)`);
+});
+
+// 47.7 Día de descanso: domingo u otro recalculado
+app.selectDay('domingo');
+const domTitle = doc.getElementById('day-title');
+const domSub = doc.getElementById('day-subtitle');
+const domBadges = doc.getElementById('day-badges');
+const domSets = doc.getElementById('day-sets-counter');
+const domDur = doc.getElementById('day-duration-pill');
+const domVol = doc.getElementById('day-volume-pill');
+
+assert.ok(domTitle.textContent.includes('Día de descanso'), 'El título de domingo debe indicar Día de descanso');
+assert.equal(domSub.textContent.trim(), 'Día de descanso', 'El subtítulo debe ser estrictamente "Día de descanso"');
+assert.equal(domBadges.children.length, 0, 'No debe mostrar insignias de grupo muscular en día de descanso');
+assert.equal(domSets.style.display, 'none', 'El contador de series debe estar oculto en día de descanso');
+assert.equal(domDur.style.display, 'none', 'La duración debe estar oculta en día de descanso');
+assert.equal(domVol.style.display, 'none', 'El tonelaje debe estar oculto en día de descanso');
+
+// Tarjeta de día de descanso en exercises-list
+const emptyDayBox = doc.querySelector('#exercises-list .empty-day-box');
+assert.ok(emptyDayBox, 'Debe renderizarse el panel de día de descanso');
+assert.ok(emptyDayBox.querySelector('h3').textContent.includes('Día de descanso'), 'El encabezado debe decir "Día de descanso"');
+assert.ok(!emptyDayBox.textContent.includes('Domingo Libre / Día Comodín'), 'NO debe contener "Domingo Libre / Día Comodín"');
+
+// Botón de mover a Hoy especifica el día cuando se ve otro día
+const targetOtherDay47 = defaultDayKey === 'domingo' ? 'lunes' : 'domingo';
+app.selectDay(targetOtherDay47);
+const moveBtn = doc.getElementById('btn-start-day-workout');
+const todayName = app.getState().schedule[defaultDayKey].dayName;
+assert.ok(moveBtn.textContent.includes(`Mover entrenamiento a Hoy (${todayName})`), 'El botón de mover debe especificar el día de Hoy');
+
+// Re-verificación final absoluta: 0 etiquetas <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 47 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

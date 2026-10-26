@@ -4339,6 +4339,20 @@ body.animations-paused .focus-sprite-frame {
   line-height: 1.35;
 }
 
+.exercise-card.is-preview-only .exercise-visual-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.exercise-card.is-preview-only .exercise-illustration-wrap {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .exercise-preview-info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
