@@ -2818,6 +2818,62 @@
         instruction: 'Fase 1: Posición inicial en antebrazos. Fase 2: Despegue y alineación horizontal. Fase 3: Plancha isométrica rígida con respiración controlada y glúteos compactos para blindar la zona lumbar.'
       };
     }
+    if (text.includes('codo') || text.includes('muñeca') || text.includes('curl')) {
+      return {
+        imgUrl: 'assets/icons/warmup-arm-elbow-curl-anim.png',
+        animUrl: 'assets/icons/warmup-arm-elbow-curl-anim.png',
+        title: 'Activación de Codos y Muñecas (Curl Suave)',
+        instruction: 'Fase 1: Brazos extendidos neutros a los costados. Fase 2: Flexión a 90° con supinación activa de muñeca. Fase 3: Pico de flexión y lubricación de la articulación del codo sin fatiga.'
+      };
+    }
+    if (text.includes('cuerda') || text.includes('tríceps') || text.includes('triceps')) {
+      return {
+        imgUrl: 'assets/icons/warmup-triceps-rope-warmup-anim.png',
+        animUrl: 'assets/icons/warmup-triceps-rope-warmup-anim.png',
+        title: 'Extensión Suave en Cuerda para Tríceps',
+        instruction: 'Fase 1: Codos a 90° pegados al torso con agarre en cuerda. Fase 2: Descenso controlado abriendo extremos. Fase 3: Extensión completa hacia afuera oxigenando la inserción del tríceps.'
+      };
+    }
+    if (text.includes('máquina de pecho') || text.includes('maquina de pecho') || (text.includes('aproximación') && text.includes('pecho'))) {
+      return {
+        imgUrl: 'assets/icons/warmup-chest-press-warmup-anim.png',
+        animUrl: 'assets/icons/warmup-chest-press-warmup-anim.png',
+        title: 'Aproximación en Máquina de Pecho al 40%',
+        instruction: 'Fase 1: Agarre al nivel del esternón y retracción escapular. Fase 2: Empuje medio fluido en el plano escapular. Fase 3: Bloqueo controlado y activación del pectoral sin hiperextender codos.'
+      };
+    }
+    if (text.includes('tobillo') || text.includes('tibial') || text.includes('dorsiflexión') || text.includes('dorsiflexion')) {
+      return {
+        imgUrl: 'assets/icons/warmup-ankle-dorsi-anim.png',
+        animUrl: 'assets/icons/warmup-ankle-dorsi-anim.png',
+        title: 'Dorsiflexión de Tobillo contra Pared',
+        instruction: 'Fase 1: Pie a 10 cm de la pared con talón fijo. Fase 2: Rodilla avanzando hacia la pared superando la puntera. Fase 3: Toque controlado con la pared y elongación activa del tendón de Aquiles.'
+      };
+    }
+    if ((text.includes('prensa') || text.includes('pierna')) && text.includes('aproximación')) {
+      return {
+        imgUrl: 'assets/icons/warmup-leg-press-warmup-anim.png',
+        animUrl: 'assets/icons/warmup-leg-press-warmup-anim.png',
+        title: 'Aproximación en Prensa / Máquina al 40%',
+        instruction: 'Fase 1: Rodillas a 90° y pies centrados en plataforma. Fase 2: Empuje controlado por los talones. Fase 3: Extensión al 95% activando cuádriceps sin bloqueo articular brusco.'
+      };
+    }
+    if (text.includes('círculo') || text.includes('circulo') || text.includes('cuello')) {
+      return {
+        imgUrl: 'assets/icons/warmup-joint-circles-anim.png',
+        animUrl: 'assets/icons/warmup-joint-circles-anim.png',
+        title: 'Círculos Articulares de Cuello, Hombros y Cadera',
+        instruction: 'Fase 1: Postura neutra y cuello relajado. Fase 2: Rotaciones amplias y circulares de hombros hacia atrás. Fase 3: Movilidad circular lumbo-pélvica completa para lubricar cápsulas articulares.'
+      };
+    }
+    if (text.includes('y-t-w') || text.includes('ytw') || text.includes('deltoides posterior')) {
+      return {
+        imgUrl: 'assets/icons/warmup-ytw-scapular-anim.png',
+        animUrl: 'assets/icons/warmup-ytw-scapular-anim.png',
+        title: 'Y-T-W Escapular para Deltoides Posterior',
+        instruction: 'Fase 1: Elevación en "Y" sobre cabeza con pulgares arriba. Fase 2: Apertura en "T" retrayendo deltoides posterior. Fase 3: Tirón en "W" hacia costados juntando escápulas intensamente.'
+      };
+    }
     return {
       imgUrl: 'assets/icons/warmup-scapular.png',
       animUrl: 'assets/icons/warmup-scapular-anim.png',
@@ -4186,19 +4242,31 @@
       const visual = getWarmupStepVisual(step, day);
 
       const card = document.createElement('div');
-      card.className = 'warmup-exercise-card';
+      card.className = 'warmup-exercise-card exercise-card is-warmup-focus-card';
       card.innerHTML = `
-        <div class="warmup-exercise-top">
-          <div class="warmup-animated-frame" title="Animación biomecánica en 3 fases: Inicio → Recorrido → Activación">
-            <div class="warmup-sprite-frame" style="background-image: url('${visual.animUrl || visual.imgUrl}');"></div>
-            <img src="${visual.animUrl || visual.imgUrl}" alt="${step.label}" class="warmup-sprite-img" width="1" height="1" style="position: absolute; opacity: 0; pointer-events: none;">
+        <header class="exercise-card-header warmup-card-header">
+          <div class="warmup-card-title-row">
+            <span class="badge-warmup-tag">🔥 CALENTAMIENTO · PASO ${i + 1} DE ${steps.length}</span>
+            <span class="warmup-dur-pill">⏱️ ${step.duration}</span>
           </div>
-          <div class="warmup-exercise-info">
-            <div class="warmup-exercise-tag-row">
-              <span class="badge-warmup-tag">ANIMACIÓN 3 FASES BIOMECÁNICAS</span>
-              <span class="warmup-dur-pill">⏱️ ${step.duration}</span>
+          <h3 class="exercise-name warmup-exercise-name">${visual.title || step.label}</h3>
+        </header>
+
+        <div class="exercise-visual-layout warmup-visual-layout">
+          <div class="warmup-animated-frame warmup-sprite-box exercise-sprite-box" title="Recorrido de calentamiento en 3 fases: Inicio → Recorrido → Activación">
+            <div class="warmup-sprite-frame" style="background-image: url('${visual.animUrl || visual.imgUrl}');"></div>
+            <div class="sprite-overlay-bottom">
+              <div class="sprite-phase-pills" aria-hidden="true">
+                <span class="phase-pill-dot dot-1"></span>
+                <span class="phase-pill-dot dot-2"></span>
+                <span class="phase-pill-dot dot-3"></span>
+                <span class="phase-pill-text">1·2·3 FASES</span>
+              </div>
+              <span class="sprite-zoom-hint">Animación</span>
             </div>
-            <h4 class="warmup-exercise-name">${visual.title || step.label}</h4>
+          </div>
+
+          <div class="warmup-details-col">
             <div class="warmup-phases-strip">
               <span class="warmup-phase-item"><strong class="phase-num">1</strong> Inicio</span>
               <span class="warmup-phase-arrow">→</span>
@@ -4206,7 +4274,10 @@
               <span class="warmup-phase-arrow">→</span>
               <span class="warmup-phase-item is-peak"><strong class="phase-num">3</strong> Activación</span>
             </div>
-            <p class="warmup-exercise-desc">${visual.instruction}</p>
+            <div class="warmup-instruction-box">
+              <strong class="warmup-instruction-label">🎯 Recorrido Biomecánico y Técnica:</strong>
+              <p class="warmup-exercise-desc">${visual.instruction}</p>
+            </div>
           </div>
         </div>
       `;
@@ -4293,9 +4364,11 @@
     const isWarmupActive = (state.activeExerciseIndex === -1);
     const focusWarmupView = document.getElementById('focus-warmup-view');
     const focusExerciseCard = document.getElementById('focus-exercise-card');
+    const stepperCard = document.querySelector('.focus-stepper-card');
 
     // Durante el calentamiento: SOLO se muestran los ejercicios de calentamiento
     if (isWarmupActive) {
+      if (stepperCard) stepperCard.hidden = true;
       if (focusWarmupView) focusWarmupView.hidden = false;
       if (focusExerciseCard) focusExerciseCard.hidden = true;
       if (counterLabel) {
@@ -4323,6 +4396,7 @@
     }
 
     // Una vez culminados, RECIÉN se muestra el primer ejercicio para el músculo
+    if (stepperCard) stepperCard.hidden = false;
     if (focusWarmupView) focusWarmupView.hidden = true;
     if (focusExerciseCard) focusExerciseCard.hidden = false;
     if (prevBtn) prevBtn.hidden = false;

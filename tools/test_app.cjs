@@ -2190,8 +2190,85 @@ assert.ok(!warmupTitle50.textContent.includes('Protocolo Articular y Activación
 // Verificación absoluta de CERO etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir con 0% <svg>');
 
+// ==========================================
+// SUITE 51: Visualización Exclusiva de Calentamiento, Cards Animadas del Recorrido y Desbloqueo de Rutina
+// ==========================================
+console.log('Ejecutando Suite 51: Visualización Exclusiva de Calentamiento, Cards Animadas del Recorrido y Desbloqueo de Rutina...');
+
+// 51.1 Validar existencia de los 15 spritesheets animados de calentamiento
+const all15WarmupSprites = [
+  'warmup-scapular-anim.png',
+  'warmup-dislocate-anim.png',
+  'warmup-rotator-anim.png',
+  'warmup-chest-open-anim.png',
+  'warmup-hip-mobility-anim.png',
+  'warmup-glute-bridge-anim.png',
+  'warmup-cable-warmup-anim.png',
+  'warmup-core-plank-anim.png',
+  'warmup-arm-elbow-curl-anim.png',
+  'warmup-triceps-rope-warmup-anim.png',
+  'warmup-chest-press-warmup-anim.png',
+  'warmup-ankle-dorsi-anim.png',
+  'warmup-leg-press-warmup-anim.png',
+  'warmup-joint-circles-anim.png',
+  'warmup-ytw-scapular-anim.png'
+];
+
+all15WarmupSprites.forEach(file => {
+  const p = pathMod.join(iconDir, file);
+  assert.ok(fsMod.existsSync(p), `Debe existir el spritesheet animado del recorrido: ${file}`);
+  assert.ok(fsMod.statSync(p).size > 2000, `El archivo ${file} debe tener tamaño suficiente`);
+});
+
+// 51.2 Al iniciar el día de ejercicio, SOLO se debe mostrar los ejercicios de calentamiento
+app.selectDay('lunes');
+app.getState().workoutWarmupCompletedByDay = {}; // Resetear estado para probar inicio limpio
+app.startDayWorkoutSession('lunes');
+
+const stepperCard51 = doc.querySelector('.focus-stepper-card');
+const warmupView51 = doc.getElementById('focus-warmup-view');
+const exerciseCard51 = doc.getElementById('focus-exercise-card');
+const finishWarmupBtn51 = doc.getElementById('btn-finish-focus-warmup');
+
+assert.equal(stepperCard51.hidden, true, 'El stepper de ejercicios debe estar oculto durante el calentamiento');
+assert.equal(warmupView51.hidden, false, 'Solo debe mostrarse la vista de ejercicios de calentamiento');
+assert.equal(exerciseCard51.hidden, true, 'El ejercicio de la rutina NO debe mostrarse todavía');
+assert.ok(finishWarmupBtn51, 'Debe existir el botón para culminar el calentamiento');
+
+// 51.3 Cards de calentamiento estructuradas con animación del recorrido al igual que los demás ejercicios
+const warmupCards51 = warmupView51.querySelectorAll('.warmup-exercise-card');
+assert.ok(warmupCards51.length >= 3, 'Deben renderizarse las cards de calentamiento');
+
+warmupCards51.forEach((card, idx) => {
+  const spriteBox = card.querySelector('.warmup-sprite-box');
+  const spriteFrame = card.querySelector('.warmup-sprite-frame');
+  const phasePills = card.querySelector('.sprite-phase-pills');
+  const instructionDesc = card.querySelector('.warmup-exercise-desc');
+  
+  assert.ok(spriteBox, `Card ${idx + 1} debe contener el contenedor de imagen/animación .warmup-sprite-box`);
+  assert.ok(spriteFrame, `Card ${idx + 1} debe contener el frame de spritesheet .warmup-sprite-frame`);
+  assert.ok(phasePills, `Card ${idx + 1} debe contener el indicador de 3 fases del recorrido`);
+  assert.ok(instructionDesc && instructionDesc.textContent.length > 20, `Card ${idx + 1} debe explicar el recorrido biomecánico`);
+});
+
+// 51.4 Al pulsar el botón de completado, RECIÉN se muestra el primer ejercicio de la rutina
+finishWarmupBtn51.click();
+
+assert.equal(warmupView51.hidden, true, 'Al completar el calentamiento, la vista de calentamiento debe ocultarse');
+assert.equal(exerciseCard51.hidden, false, 'RECIÉN debe mostrarse la tarjeta del primer ejercicio');
+assert.equal(stepperCard51.hidden, false, 'El navegador de ejercicios debe mostrarse');
+assert.equal(app.getState().activeExerciseIndex, 0, 'Debe mostrar el ejercicio 1 de la rutina');
+
+const focusExTitle51 = doc.getElementById('focus-ex-title');
+assert.ok(focusExTitle51 && focusExTitle51.textContent.length > 0, 'El primer ejercicio debe tener su título visible');
+
+app.exitWorkoutScreen();
+
+// Verificación absoluta de CERO etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir con 0% <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 50 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 51 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

@@ -587,6 +587,294 @@ const WARMUP_ANIMATIONS = {
       ctx.strokeLine(ox + 28, 72, ox + 104, 100, 3, C_ACCENT_ORANGE);
       ctx.fillCircle(ox + 104, 102, 5, C_CHROME);
     }
+  },
+
+  // 9. ARM ELBOW CURL (Activación de Codos y Muñecas)
+  'warmup-arm-elbow-curl': (ctx) => {
+    // Fase 1: Brazos extendidos abajo
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.fillCircle(ox + 64, 30, 9, C_SILVER);
+      ctx.fillRect(ox + 54, 40, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 78, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 78, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 48, 44, ox + 42, 78, 4, C_SILVER);
+      ctx.strokeLine(ox + 80, 44, ox + 86, 78, 4, C_SILVER);
+      ctx.fillCircle(ox + 42, 80, 4, C_CHROME);
+      ctx.fillCircle(ox + 86, 80, 4, C_CHROME);
+    }
+    // Fase 2: Flexión y supinación a 90°
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.fillCircle(ox + 64, 30, 9, C_SILVER);
+      ctx.fillRect(ox + 54, 40, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 78, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 78, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 48, 44, ox + 46, 64, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 46, 64, ox + 36, 56, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 80, 44, ox + 82, 64, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 82, 64, ox + 92, 56, 4, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 46, 64, 6, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 82, 64, 6, C_ACCENT_AMBER);
+    }
+    // Fase 3: Flexión pico y lubricación articular
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.fillCircle(ox + 64, 30, 9, C_CHROME);
+      ctx.fillRect(ox + 54, 40, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 78, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 78, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 48, 44, ox + 46, 66, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 46, 66, ox + 46, 48, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 80, 44, ox + 82, 66, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 82, 66, ox + 82, 48, 5, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 46, 54, 8, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 82, 54, 8, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 64, 58, 30, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 10. TRICEPS ROPE WARMUP (Extensión de Tríceps en Cuerda)
+  'warmup-triceps-rope-warmup': (ctx) => {
+    // Fase 1: Codos flexionados a 90°
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.fillRect(ox + 62, 16, 4, 34, C_CHROME);
+      ctx.fillCircle(ox + 48, 42, 9, C_SILVER);
+      ctx.fillRect(ox + 42, 52, 16, 36, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 54, ox + 56, 54, 4, C_SILVER);
+      ctx.strokeLine(ox + 56, 54, ox + 62, 50, 4, C_SILVER);
+      ctx.fillCircle(ox + 62, 50, 5, C_CHROME);
+    }
+    // Fase 2: Descenso de la cuerda
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.fillRect(ox + 62, 16, 4, 50, C_CHROME);
+      ctx.fillCircle(ox + 48, 42, 9, C_SILVER);
+      ctx.fillRect(ox + 42, 52, 16, 36, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 54, ox + 54, 68, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 54, 68, ox + 62, 66, 4, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 54, 68, 6, C_ACCENT_AMBER);
+    }
+    // Fase 3: Extensión total y apertura lateral de cuerda
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.fillRect(ox + 62, 16, 4, 62, C_CHROME);
+      ctx.fillCircle(ox + 48, 42, 9, C_CHROME);
+      ctx.fillRect(ox + 42, 52, 16, 36, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 54, ox + 50, 80, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 50, 80, ox + 64, 82, 5, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 48, 64, 8, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 48, 64, 12, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 11. CHEST PRESS WARMUP (Aproximación Máquina de Pecho)
+  'warmup-chest-press-warmup': (ctx) => {
+    // Fase 1: Agarre inicial al pecho
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.fillRect(ox + 20, 24, 8, 84, C_BLACK);
+      ctx.fillRect(ox + 24, 76, 26, 8, C_DARK_SLATE);
+      ctx.fillCircle(ox + 44, 48, 9, C_SILVER);
+      ctx.fillRect(ox + 40, 58, 14, 28, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 62, ox + 36, 68, 4, C_SILVER);
+      ctx.strokeLine(ox + 36, 68, ox + 54, 68, 4, C_SILVER);
+    }
+    // Fase 2: Empuje medio hacia adelante
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.fillRect(ox + 20, 24, 8, 84, C_BLACK);
+      ctx.fillRect(ox + 24, 76, 26, 8, C_DARK_SLATE);
+      ctx.fillCircle(ox + 44, 48, 9, C_SILVER);
+      ctx.fillRect(ox + 40, 58, 14, 28, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 62, ox + 58, 66, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 58, 66, ox + 72, 66, 4, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 52, 64, 6, C_ACCENT_AMBER);
+    }
+    // Fase 3: Extensión controlada y pecho apretado
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.fillRect(ox + 20, 24, 8, 84, C_BLACK);
+      ctx.fillRect(ox + 24, 76, 26, 8, C_DARK_SLATE);
+      ctx.fillCircle(ox + 44, 48, 9, C_CHROME);
+      ctx.fillRect(ox + 40, 58, 14, 28, C_DARK_SLATE);
+      ctx.strokeLine(ox + 46, 62, ox + 76, 64, 5, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 52, 64, 9, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 52, 64, 4, [255, 255, 255, 255]);
+      ctx.strokeCircle(ox + 52, 64, 14, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 12. ANKLE DORSIFLEXION (Dorsiflexión de Tobillo contra Pared)
+  'warmup-ankle-dorsi': (ctx) => {
+    // Fase 1: Posición neutra a 10cm de pared
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.fillRect(ox + 104, 20, 6, 92, C_CHROME);
+      ctx.fillCircle(ox + 44, 46, 8, C_SILVER);
+      ctx.strokeLine(ox + 44, 46, ox + 48, 76, 6, C_DARK_SLATE);
+      ctx.strokeLine(ox + 48, 76, ox + 52, 108, 6, C_SILVER);
+      ctx.strokeLine(ox + 52, 108, ox + 68, 108, 6, C_STEEL);
+    }
+    // Fase 2: Rodilla avanzando hacia pared
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.fillRect(ox + 104, 20, 6, 92, C_CHROME);
+      ctx.fillCircle(ox + 48, 48, 8, C_SILVER);
+      ctx.strokeLine(ox + 48, 48, ox + 58, 78, 6, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 78, ox + 78, 92, 6, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 78, 92, ox + 66, 108, 6, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 66, 108, ox + 82, 108, 6, C_STEEL);
+      ctx.fillCircle(ox + 70, 104, 6, C_ACCENT_AMBER);
+    }
+    // Fase 3: Rodilla toca pared y máxima dorsiflexión
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.fillRect(ox + 104, 20, 6, 92, C_CHROME);
+      ctx.fillCircle(ox + 52, 50, 8, C_CHROME);
+      ctx.strokeLine(ox + 52, 50, ox + 68, 80, 6, C_DARK_SLATE);
+      ctx.strokeLine(ox + 68, 80, ox + 104, 90, 7, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 104, 90, ox + 76, 108, 7, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 76, 108, ox + 92, 108, 6, C_STEEL);
+      ctx.fillCircle(ox + 82, 104, 9, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 82, 104, 14, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 13. LEG PRESS WARMUP (Aproximación en Prensa al 40%)
+  'warmup-leg-press-warmup': (ctx) => {
+    // Fase 1: Flexión a 90° en carro
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.strokeLine(ox + 20, 96, ox + 104, 32, 4, C_DARK_SLATE);
+      ctx.fillCircle(ox + 34, 78, 8, C_SILVER);
+      ctx.strokeLine(ox + 34, 78, ox + 56, 84, 7, C_STEEL);
+      ctx.strokeLine(ox + 56, 84, ox + 64, 58, 6, C_SILVER);
+      ctx.strokeLine(ox + 64, 58, ox + 76, 68, 6, C_SILVER);
+      ctx.fillRect(ox + 74, 56, 6, 24, C_CHROME);
+    }
+    // Fase 2: Empuje medio
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.strokeLine(ox + 20, 96, ox + 104, 32, 4, C_DARK_SLATE);
+      ctx.fillCircle(ox + 34, 78, 8, C_SILVER);
+      ctx.strokeLine(ox + 34, 78, ox + 56, 84, 7, C_STEEL);
+      ctx.strokeLine(ox + 56, 84, ox + 72, 64, 6, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 72, 64, ox + 86, 56, 6, C_ACCENT_AMBER);
+      ctx.fillRect(ox + 84, 46, 6, 24, C_CHROME);
+      ctx.fillCircle(ox + 68, 70, 7, C_ACCENT_AMBER);
+    }
+    // Fase 3: Extensión fluida al 95% activando cuádriceps
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.strokeLine(ox + 20, 96, ox + 104, 32, 4, C_DARK_SLATE);
+      ctx.fillCircle(ox + 34, 78, 8, C_CHROME);
+      ctx.strokeLine(ox + 34, 78, ox + 56, 84, 7, C_STEEL);
+      ctx.strokeLine(ox + 56, 84, ox + 80, 60, 7, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 80, 60, ox + 94, 46, 7, C_ACCENT_ORANGE);
+      ctx.fillRect(ox + 92, 38, 6, 24, C_CHROME);
+      ctx.fillCircle(ox + 72, 66, 11, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 72, 66, 5, [255, 255, 255, 255]);
+      ctx.strokeCircle(ox + 72, 66, 16, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 14. JOINT CIRCLES (Círculos Articulares Cuello, Hombros y Cadera)
+  'warmup-joint-circles': (ctx) => {
+    // Fase 1: Posición neutra
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'INICIO');
+      ctx.fillCircle(ox + 64, 32, 9, C_SILVER);
+      ctx.fillRect(ox + 54, 42, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 80, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 80, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 48, 44, ox + 42, 74, 4, C_SILVER);
+      ctx.strokeLine(ox + 80, 44, ox + 86, 74, 4, C_SILVER);
+    }
+    // Fase 2: Círculos amplios de hombros
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'MOVIMIENTO');
+      ctx.fillCircle(ox + 64, 32, 9, C_SILVER);
+      ctx.fillRect(ox + 54, 42, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 80, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 80, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeCircle(ox + 46, 48, 14, 2, C_ACCENT_AMBER);
+      ctx.strokeCircle(ox + 82, 48, 14, 2, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 48, 44, ox + 40, 60, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 80, 44, ox + 88, 60, 4, C_ACCENT_AMBER);
+    }
+    // Fase 3: Circunducción completa
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'ACTIVACIÓN');
+      ctx.fillCircle(ox + 64, 32, 9, C_CHROME);
+      ctx.fillRect(ox + 54, 42, 20, 38, C_DARK_SLATE);
+      ctx.strokeLine(ox + 58, 80, ox + 54, 110, 4, C_STEEL);
+      ctx.strokeLine(ox + 70, 80, ox + 74, 110, 4, C_STEEL);
+      ctx.strokeCircle(ox + 64, 32, 16, 2, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 46, 48, 16, 3, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 82, 48, 16, 3, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 64, 76, 22, 2, C_ACCENT_ORANGE);
+    }
+  },
+
+  // 15. Y-T-W SCAPULAR (Y-T-W para Deltoides Posterior y Escápula)
+  'warmup-ytw-scapular': (ctx) => {
+    // Fase 1: Posición 'Y' Overhead
+    {
+      const ox = 0;
+      drawFrameDecorations(ctx, ox, 1, 'POSICIÓN Y');
+      ctx.fillCircle(ox + 64, 48, 8, C_SILVER);
+      ctx.fillRect(ox + 56, 56, 16, 34, C_DARK_SLATE);
+      ctx.strokeLine(ox + 52, 58, ox + 32, 24, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 76, 58, ox + 96, 24, 4, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 32, 24, 5, C_CHROME);
+      ctx.fillCircle(ox + 96, 24, 5, C_CHROME);
+    }
+    // Fase 2: Posición 'T' Apertura en Cruz
+    {
+      const ox = 128;
+      drawFrameDecorations(ctx, ox, 2, 'POSICIÓN T');
+      ctx.fillCircle(ox + 64, 48, 8, C_SILVER);
+      ctx.fillRect(ox + 56, 56, 16, 34, C_DARK_SLATE);
+      ctx.strokeLine(ox + 52, 60, ox + 18, 60, 4, C_ACCENT_AMBER);
+      ctx.strokeLine(ox + 76, 60, ox + 110, 60, 4, C_ACCENT_AMBER);
+      ctx.fillCircle(ox + 18, 60, 5, C_CHROME);
+      ctx.fillCircle(ox + 110, 60, 5, C_CHROME);
+      ctx.strokeCircle(ox + 64, 60, 16, 2, C_ACCENT_AMBER);
+    }
+    // Fase 3: Posición 'W' Retracción Máxima
+    {
+      const ox = 256;
+      drawFrameDecorations(ctx, ox, 3, 'POSICIÓN W');
+      ctx.fillCircle(ox + 64, 48, 8, C_CHROME);
+      ctx.fillRect(ox + 56, 56, 16, 34, C_DARK_SLATE);
+      ctx.strokeLine(ox + 52, 60, ox + 40, 74, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 40, 74, ox + 30, 52, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 76, 60, ox + 88, 74, 5, C_ACCENT_ORANGE);
+      ctx.strokeLine(ox + 88, 74, ox + 98, 52, 5, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 46, 64, 7, C_ACCENT_ORANGE);
+      ctx.fillCircle(ox + 82, 64, 7, C_ACCENT_ORANGE);
+      ctx.strokeCircle(ox + 64, 66, 18, 2, C_ACCENT_ORANGE);
+    }
   }
 };
 
