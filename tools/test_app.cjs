@@ -160,13 +160,16 @@ assert.ok(doc.getElementById('sprite-viewer-stage').classList.contains('mode-ful
 app.setSpriteViewerSpeed('1.4s');
 assert.equal(doc.getElementById('sprite-viewer-frame').style.animationDuration, '1.4s', 'El visor debe ajustar la velocidad de cadencia');
 
-// 6. Verificar Checklist Interactivo de Calentamiento Articular (5 min)
-const warmupItems = doc.querySelectorAll('#warmup-steps-list .warmup-step-btn');
+// 6. Verificar Descripción de Calentamiento Articular (5 min) en Pantalla Principal
+const warmupItems = doc.querySelectorAll('#warmup-steps-list .warmup-step-item');
 assert.equal(warmupItems.length, 4, 'Debe mostrar los 4 pasos de calentamiento articular específicos del día');
-app.toggleWarmupStep('lunes', 'w1');
-assert.equal(app.getState().warmupByDay.lunes.w1, true, 'El paso w1 de calentamiento debe marcarse como completado');
-app.completeAllWarmupSteps('lunes');
-assert.ok(doc.getElementById('warmup-progress-pill').textContent.includes('4 / 4'), 'Todos los pasos de calentamiento deben quedar completados');
+const descCard = doc.querySelector('#warmup-steps-list .warmup-desc-card');
+assert.ok(descCard, 'Debe contener tarjetas descriptivas del ejercicio de calentamiento');
+const descTitle = doc.querySelector('#warmup-steps-list .warmup-desc-title');
+assert.ok(descTitle && descTitle.textContent.includes('Rotaciones escapulares'), 'Debe mostrar el título del paso de calentamiento');
+const descText = doc.querySelector('#warmup-steps-list .warmup-desc-text');
+assert.ok(descText && descText.textContent.length > 20, 'Debe mostrar la explicación técnica del ejercicio');
+assert.ok(doc.getElementById('warmup-progress-pill').textContent.includes('pasos de activación'), 'El pill debe contener el contador de pasos de activación');
 
 // 7. Verificar Modo Nativo (WakeLock)
 app.toggleWakeLock(true);
@@ -693,8 +696,8 @@ const actionBtnEl = doc.getElementById('btn-focus-action-set');
 assert.ok(counterPill, 'Debe existir el contador de serie actual #focus-active-set-counter');
 assert.equal(counterPill.textContent.trim(), 'SERIE 1 DE 4', 'Al inicio debe mostrar SERIE 1 DE 4');
 assert.equal(repsDigitsEl.textContent.trim(), '12', 'Debe mostrar en grande ÚNICAMENTE las repeticiones de la Serie 1 (12)');
-assert.ok(actionBtnEl.textContent.includes('Serie 1'), 'El botón debe indicar acción para la Serie 1');
-assert.ok(actionBtnEl.textContent.includes('12 reps'), 'El botón debe indicar las 12 reps de la Serie 1');
+assert.ok(actionBtnEl.textContent.includes('Serie 1 Completada - Descansar'), 'El botón debe indicar Serie 1 Completada - Descansar');
+assert.ok(!actionBtnEl.textContent.includes('12 reps'), 'El botón para descansar NO debe incluir repeticiones');
 
 // 30.2 Completar Serie 1 usando el botón de acción táctil -> debe activar descanso
 actionBtnEl.click();
@@ -709,8 +712,8 @@ skipRestBtn.click();
 // 30.4 Verificar que el contador avanzó automáticamente a Serie 2 y calculó ÚNICAMENTE las reps de la Serie 2 (10)
 assert.equal(counterPill.textContent.trim(), 'SERIE 2 DE 4', 'Tras el descanso de la Serie 1 debe avanzar automáticamente a SERIE 2 DE 4');
 assert.equal(repsDigitsEl.textContent.trim(), '10', 'Debe mostrar ÚNICAMENTE las 10 reps calculadas para la Serie 2');
-assert.ok(actionBtnEl.textContent.includes('Serie 2'), 'El botón debe haber cambiado a la Serie 2');
-assert.ok(actionBtnEl.textContent.includes('10 reps'), 'El botón debe mostrar las 10 reps calculadas para la Serie 2');
+assert.ok(actionBtnEl.textContent.includes('Serie 2 Completada - Descansar'), 'El botón debe haber cambiado a Serie 2 Completada - Descansar');
+assert.ok(!actionBtnEl.textContent.includes('10 reps'), 'El botón para descansar NO debe incluir repeticiones');
 
 // 30.5 Completar Serie 2 y saltar descanso -> debe calcular y mostrar Serie 3 (8 reps)
 actionBtnEl.click();
@@ -1777,15 +1780,16 @@ if (sundayDurationPill) {
   assert.ok(!sundayDurationPill.textContent.includes('Descanso'), 'La píldora de duración no debe mostrar el texto "Descanso"');
 }
 
-// 46.3 Calentamiento con imágenes y responsive
+// 46.3 Calentamiento descriptivo y responsive
 app.selectDay('lunes');
 const warmupSteps = doc.querySelectorAll('#warmup-steps-list .warmup-step-item');
 assert.ok(warmupSteps.length > 0, 'Deben renderizarse los pasos de calentamiento');
 
 warmupSteps.forEach((item, idx) => {
-  const img = item.querySelector('.warmup-step-thumb-img');
-  assert.ok(img, `Paso ${idx + 1} de calentamiento debe tener imagen de demostración`);
-  assert.ok(img.getAttribute('src').includes('warmup-'), `La imagen del paso ${idx + 1} debe provenir de assets/icons/warmup-*`);
+  const descTitle = item.querySelector('.warmup-desc-title');
+  assert.ok(descTitle, `Paso ${idx + 1} de calentamiento debe tener título descriptivo`);
+  const descText = item.querySelector('.warmup-desc-text');
+  assert.ok(descText, `Paso ${idx + 1} de calentamiento debe tener instrucción técnica`);
 });
 
 const warmupPill = doc.getElementById('warmup-progress-pill');
@@ -1923,8 +1927,8 @@ const domSets = doc.getElementById('day-sets-counter');
 const domDur = doc.getElementById('day-duration-pill');
 const domVol = doc.getElementById('day-volume-pill');
 
-assert.ok(domTitle.textContent.includes('Día de descanso'), 'El título de domingo debe indicar Día de descanso');
-assert.equal(domSub.textContent.trim(), 'Día de descanso', 'El subtítulo debe ser estrictamente "Día de descanso"');
+assert.ok(domTitle.textContent.includes('🌿 Día de descanso'), 'El título de domingo debe indicar Día de descanso con ícono');
+assert.ok(domSub.textContent.includes('🌿 Día de descanso'), 'El subtítulo debe ser "🌿 Día de descanso" con ícono');
 assert.equal(domBadges.children.length, 0, 'No debe mostrar insignias de grupo muscular en día de descanso');
 assert.equal(domSets.style.display, 'none', 'El contador de series debe estar oculto en día de descanso');
 assert.equal(domDur.style.display, 'none', 'La duración debe estar oculta en día de descanso');
@@ -1943,11 +1947,129 @@ const moveBtn = doc.getElementById('btn-start-day-workout');
 const todayName = app.getState().schedule[defaultDayKey].dayName;
 assert.ok(moveBtn.textContent.includes(`Mover entrenamiento a Hoy (${todayName})`), 'El botón de mover debe especificar el día de Hoy');
 
-// Re-verificación final absoluta: 0 etiquetas <svg>
-assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
+// ==========================================
+// SUITE 48: Fase Inicial de Calentamiento en Enfoque, Desbloqueo de Ejercicios, Ícono de Hoja y Botón de Descanso
+// ==========================================
+console.log('Ejecutando Suite 48: Fase Inicial de Calentamiento en Enfoque, Desbloqueo de Ejercicios, Ícono de Hoja y Botón de Descanso...');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 47 Suites de pruebas pasaron con éxito.');
+
+// 48.1 Calentamiento en pantalla principal solo descriptivo
+app.selectDay('lunes');
+const mainWarmupList = doc.getElementById('warmup-steps-list');
+assert.ok(mainWarmupList, 'Debe existir la lista de calentamiento en la pantalla principal');
+const warmupDescItems = mainWarmupList.querySelectorAll('.warmup-desc-only');
+assert.equal(warmupDescItems.length, 4, 'Debe renderizar los 4 pasos descriptivos');
+assert.equal(mainWarmupList.querySelectorAll('input[type="checkbox"]').length, 0, 'No debe haber checkboxes en el calentamiento de la pantalla principal');
+assert.equal(mainWarmupList.querySelectorAll('.btn-check-warmup').length, 0, 'No debe haber botones de chequeo interactivo');
+const firstDescCard = mainWarmupList.querySelector('.warmup-desc-card');
+assert.ok(firstDescCard, 'Debe contener tarjetas con clase .warmup-desc-card');
+assert.ok(firstDescCard.querySelector('.warmup-desc-title'), 'Debe contener título del ejercicio preparatorio');
+assert.ok(firstDescCard.querySelector('.warmup-desc-text'), 'Debe contener descripción técnica del calentamiento');
+
+// 48.2 Pantalla de entrenamiento completa con fase inicial 🔥 Entrenamiento (índice -1)
+app.selectDay('martes');
+// Iniciar sesión pasando null (flujo real del usuario al presionar Iniciar día de ejercicio)
+const launchMartes = app.startDayWorkoutSession('martes', null);
+assert.equal(launchMartes.activeScreen, 'workout', 'Debe cambiar a la pantalla de entrenamiento');
+assert.equal(launchMartes.activeExerciseIndex, -1, 'El índice activo debe ser -1 (fase inicial de calentamiento)');
+
+const focusWarmupViewEl = doc.getElementById('focus-warmup-view');
+const focusExCardEl = doc.getElementById('focus-exercise-card');
+assert.equal(focusWarmupViewEl.hidden, false, 'La vista de calentamiento inicial debe estar visible');
+assert.equal(focusExCardEl.hidden, true, 'La tarjeta de ejercicio debe estar oculta durante el calentamiento');
+
+const focusCounter = doc.getElementById('focus-ex-counter-label');
+assert.equal(focusCounter.textContent.trim(), 'Fase Inicial: Calentamiento de Entrenamiento', 'El contador debe indicar Fase Inicial: Calentamiento de Entrenamiento');
+
+const btnPrevEx = doc.getElementById('btn-focus-prev-ex');
+const btnNextEx = doc.getElementById('btn-focus-next-ex');
+assert.equal(btnPrevEx.disabled, true, 'El botón anterior debe estar deshabilitado en calentamiento');
+assert.equal(btnNextEx.disabled, true, 'El botón siguiente debe estar deshabilitado en calentamiento');
+
+// 48.3 Stepper pills: Primera píldora 🔥 Entrenamiento y ejercicios 1..N bloqueados con 🔒
+const focusPills = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
+assert.ok(focusPills.length >= 5, 'Debe haber la píldora inicial + los ejercicios del día');
+const warmupPillEl = focusPills[0];
+assert.ok(warmupPillEl.classList.contains('focus-step-warmup'), 'La primera píldora debe tener clase .focus-step-warmup');
+assert.ok(warmupPillEl.classList.contains('is-active'), 'La primera píldora debe estar activa');
+assert.ok(warmupPillEl.textContent.includes('Entrenamiento'), 'La primera píldora debe llamarse Entrenamiento');
+
+for (let p = 1; p < focusPills.length; p++) {
+  const exPill = focusPills[p];
+  assert.ok(exPill.classList.contains('is-locked'), `La píldora del ejercicio ${p} debe tener clase is-locked`);
+  assert.equal(exPill.disabled, true, `La píldora del ejercicio ${p} debe estar deshabilitada`);
+  assert.ok(exPill.textContent.includes('🔒'), `La píldora del ejercicio ${p} debe mostrar ícono de candado 🔒`);
+}
+
+// 48.4 Intentar saltar a otro ejercicio mientras esté en calentamiento debe ser bloqueado
+const tryJump = app.selectFocusExercise(1);
+assert.equal(tryJump, null, 'No se debe poder saltar a otro ejercicio mientras esté en calentamiento');
+assert.equal(app.getState().activeExerciseIndex, -1, 'El índice activo debe seguir siendo -1');
+
+// 48.5 Visualización de imágenes warmup-*.png, marcos animados y explicaciones técnicas
+const warmupCardsInFocus = doc.querySelectorAll('#focus-warmup-exercises-list .warmup-exercise-card');
+assert.equal(warmupCardsInFocus.length, 4, 'Deben renderizarse las 4 tarjetas de calentamiento en modo enfoque');
+warmupCardsInFocus.forEach((card, idx) => {
+  const animFrame = card.querySelector('.warmup-animated-frame');
+  assert.ok(animFrame, `La tarjeta ${idx + 1} debe tener marco animado (.warmup-animated-frame)`);
+  const imgEl = animFrame.querySelector('img');
+  assert.ok(imgEl && imgEl.getAttribute('src').includes('warmup-'), `La tarjeta ${idx + 1} debe mostrar la imagen detallada de calentamiento`);
+  const nameEl = card.querySelector('.warmup-exercise-name');
+  assert.ok(nameEl && nameEl.textContent.length > 5, `La tarjeta ${idx + 1} debe mostrar el nombre del ejercicio`);
+  const descEl = card.querySelector('.warmup-exercise-desc');
+  assert.ok(descEl && descEl.textContent.length > 15, `La tarjeta ${idx + 1} debe mostrar la explicación técnica`);
+});
+
+// 48.6 Botón único: Calentamiento Terminado desbloquea los ejercicios y pasa a Ejercicio 1
+const finishWarmupBtn = doc.getElementById('btn-finish-focus-warmup');
+assert.ok(finishWarmupBtn, 'Debe existir el botón único #btn-finish-focus-warmup');
+assert.ok(finishWarmupBtn.textContent.includes('Calentamiento Terminado'), 'El botón debe decir Calentamiento Terminado');
+
+finishWarmupBtn.click();
+
+assert.equal(app.getState().workoutWarmupCompletedByDay.martes, true, 'El estado debe registrar el calentamiento como completado para Martes');
+assert.equal(app.getState().activeExerciseIndex, 0, 'Debe cambiar automáticamente a la pestaña del primer ejercicio (Ejercicio 1)');
+assert.equal(focusWarmupViewEl.hidden, true, 'La vista de calentamiento debe ocultarse tras finalizar');
+assert.equal(focusExCardEl.hidden, false, 'La tarjeta del primer ejercicio debe mostrarse desbloqueada');
+
+const updatedPills = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
+const ex1Pill = updatedPills[1];
+assert.ok(!ex1Pill.classList.contains('is-locked'), 'El ejercicio 1 ya no debe estar bloqueado');
+assert.equal(ex1Pill.disabled, false, 'El ejercicio 1 debe estar habilitado para interactuar');
+assert.ok(ex1Pill.classList.contains('is-active'), 'El ejercicio 1 debe estar activo');
+
+// Ahora navegar al ejercicio 2 sí debe permitirse
+const jumpToEx2 = app.selectFocusExercise(1);
+assert.ok(jumpToEx2, 'Ahora que el calentamiento está terminado, debe permitir seleccionar el Ejercicio 2');
+assert.equal(app.getState().activeExerciseIndex, 1, 'El índice activo debe ser 1 (Ejercicio 2)');
+
+// 48.7 Botón para descansar solo debe decir "Serie X Completada - Descansar"
+const actionTextEl = doc.getElementById('focus-btn-action-text');
+assert.ok(actionTextEl, 'Debe existir #focus-btn-action-text');
+assert.equal(actionTextEl.textContent.trim(), 'Serie 1 Completada - Descansar', 'El botón para descansar debe decir estrictamente "Serie 1 Completada - Descansar"');
+assert.ok(!actionTextEl.textContent.includes('reps'), 'No debe incluir repeticiones en el texto del botón');
+
+app.exitWorkoutScreen();
+
+// 48.8 Ícono de hoja en día de descanso en la pantalla principal
+app.selectDay('domingo');
+const restTitle = doc.getElementById('day-title');
+const restSub = doc.getElementById('day-subtitle');
+const domTab = doc.querySelector('.day-tab-btn[data-day="domingo"] .tab-group');
+const emptyRestBox = doc.querySelector('#exercises-list .empty-day-box');
+
+assert.ok(restTitle.textContent.includes('🌿'), 'El título de domingo debe contener el ícono de hoja 🌿');
+assert.ok(restTitle.textContent.includes('Día de descanso'), 'El título de domingo debe indicar Día de descanso');
+assert.ok(restSub.textContent.includes('🌿 Día de descanso'), 'El subtítulo debe contener 🌿 Día de descanso');
+assert.ok(domTab.textContent.includes('🌿 Descanso'), 'La pestaña de domingo debe incluir 🌿 Descanso');
+assert.ok(emptyRestBox.querySelector('h3').textContent.includes('🌿 Día de descanso'), 'El panel vacío de descanso debe contener 🌿 Día de descanso');
+
+// 48.9 CERO etiquetas <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con CERO etiquetas <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 48 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

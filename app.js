@@ -49,6 +49,7 @@
       },
       journalNotesByDay: {},
       warmupByDay: {},
+      workoutWarmupCompletedByDay: {},
       progressionHistory: [],
       bodyMetrics: [],
       history: [],
@@ -112,6 +113,9 @@
       if (!parsed.warmupByDay || typeof parsed.warmupByDay !== 'object') {
         parsed.warmupByDay = {};
       }
+      if (!parsed.workoutWarmupCompletedByDay || typeof parsed.workoutWarmupCompletedByDay !== 'object') {
+        parsed.workoutWarmupCompletedByDay = {};
+      }
       if (!parsed.activeTemplate) {
         parsed.activeTemplate = 'default_ppl';
       }
@@ -139,7 +143,7 @@
       if (!['plan', 'workout', 'stats', 'hub'].includes(parsed.activeScreen)) {
         parsed.activeScreen = 'plan';
       }
-      if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < 0) {
+      if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < -1) {
         parsed.activeExerciseIndex = 0;
       }
       if (!parsed.userProfile || typeof parsed.userProfile !== 'object') {
@@ -957,6 +961,7 @@
     stopRestTimer();
     const fresh = createInitialState();
     state.schedule = fresh.schedule;
+    state.workoutWarmupCompletedByDay = {};
     saveState();
     renderAll();
   }
@@ -990,6 +995,9 @@
     for (const dayKey of daysList) {
       if (DAYS_ORDER.includes(dayKey) && fresh.schedule[dayKey]) {
         state.schedule[dayKey] = deepClone(fresh.schedule[dayKey]);
+        if (state.workoutWarmupCompletedByDay) {
+          delete state.workoutWarmupCompletedByDay[dayKey];
+        }
         count++;
       }
     }
@@ -1466,6 +1474,7 @@
   }
 
   function getActiveFocusExercise() {
+    if (typeof state.activeExerciseIndex === 'number' && state.activeExerciseIndex < 0) return null;
     const day = state.schedule[state.selectedDay];
     return day?.exercises?.[state.activeExerciseIndex || 0] || null;
   }
@@ -1703,7 +1712,7 @@
         day.status === 'skipped_to_sunday'
           ? '→ DOM'
           : isRest
-            ? 'Descanso'
+            ? '🌿 Descanso'
             : (day.muscleGroup ? day.muscleGroup.split('·')[0].trim() : 'Entreno');
 
       const dotSpan = document.createElement('span');
@@ -1755,10 +1764,10 @@
       // 1. Día de descanso: Solo subtítulo del día, botón de mover entrenamiento a Hoy, y panel de descanso
       // Sin grupo muscular, sin textos ni subtítulos de entrenamiento
       if (titleEl) {
-        titleEl.textContent = `${day.dayName}: Día de descanso`;
+        titleEl.textContent = `${day.dayName}: 🌿 Día de descanso`;
       }
       if (subtitleEl) {
-        subtitleEl.textContent = 'Día de descanso';
+        subtitleEl.textContent = '🌿 Día de descanso';
       }
       if (badgesEl) {
         badgesEl.innerHTML = '';
@@ -2855,77 +2864,38 @@
 
     const dayId = state.selectedDay;
     const day = state.schedule[dayId];
-    if (!day || day.exercises.length === 0) {
+    if (!day || !day.exercises || day.exercises.length === 0 || isRestDay(dayId)) {
       card.hidden = true;
       return;
     }
     card.hidden = false;
 
     const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
-    const dayWarmupMap = (state.warmupByDay && state.warmupByDay[dayId]) || {};
-    let doneCount = 0;
 
     listEl.innerHTML = '';
+    // En la página principal, el calentamiento solo muestra la descripción del ejercicio
     for (const step of steps) {
-      const isDone = Boolean(dayWarmupMap[step.id]);
-      if (isDone) doneCount += 1;
-
       const visual = getWarmupStepVisual(step, day);
 
       const li = document.createElement('li');
-      li.className = `warmup-step-item ${isDone ? 'is-completed' : ''}`;
+      li.className = 'warmup-step-item warmup-desc-only';
       li.dataset.stepId = step.id;
 
-      const stepCard = document.createElement('div');
-      stepCard.className = 'warmup-step-card warmup-step-btn';
-      stepCard.role = 'button';
-      stepCard.tabIndex = 0;
-      stepCard.title = 'Toca para ver la técnica y completar este calentamiento';
-      stepCard.dataset.stepId = step.id;
-      if (isDone) {
-        stepCard.setAttribute('aria-pressed', 'true');
-      }
-
-      stepCard.innerHTML = `
-        <div class="warmup-step-thumb-wrap">
-          <img src="${visual.imgUrl}" alt="${step.label}" class="warmup-step-thumb-img" width="42" height="42">
+      li.innerHTML = `
+        <div class="warmup-desc-card">
+          <strong class="warmup-desc-title">🔥 ${step.label} (${step.duration})</strong>
+          <p class="warmup-desc-text">${visual.instruction}</p>
         </div>
-        <div class="warmup-step-body">
-          <span class="warmup-step-name">${step.label}</span>
-          <div class="warmup-step-meta">
-            <span class="warmup-step-dur">⏱️ ${step.duration}</span>
-            <span class="warmup-step-status ${isDone ? 'is-done' : ''}">${isDone ? '✓ Completado' : 'Pendiente'}</span>
-          </div>
-        </div>
-        <button type="button" class="btn-check-warmup ${isDone ? 'is-done' : ''}" aria-label="Marcar como completado">
-          ${isDone ? '✓' : '○'}
-        </button>
       `;
-
-      stepCard.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-check-warmup')) {
-          toggleWarmupStep(dayId, step.id);
-        } else {
-          openWarmupPreviewDialog(step, visual, dayId);
-        }
-      });
-      stepCard.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openWarmupPreviewDialog(step, visual, dayId);
-        }
-      });
-
-      li.appendChild(stepCard);
       listEl.appendChild(li);
     }
 
     if (titleEl) {
-      titleEl.textContent = `Calentamiento Articular (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
+      titleEl.textContent = `Protocolo de Calentamiento y Activación (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
     }
     if (pillEl) {
-      pillEl.innerHTML = `<span class="warmup-step-count">${doneCount} / ${steps.length}</span> <span class="warmup-step-label">pasos de activación</span>`;
-      pillEl.classList.toggle('is-done', doneCount === steps.length);
+      pillEl.innerHTML = `<span class="warmup-step-count">${steps.length}</span> <span class="warmup-step-label">pasos de activación</span>`;
+      pillEl.classList.remove('is-done');
     }
   }
 
@@ -3055,7 +3025,7 @@
         emptyLi.append(h3, p, actionsDiv);
       } else {
         const h3 = document.createElement('h3');
-        h3.textContent = 'Día de descanso';
+        h3.textContent = '🌿 Día de descanso';
         const p = document.createElement('p');
         p.textContent =
           'Hoy es tu día de descanso semanal y recuperación neuromuscular. Puedes aprovechar para hidratarte y recargar energía para la semana.';
@@ -4056,7 +4026,7 @@
     const direction = (nextIdx >= prevIdx || prevIdx === -1) ? 'right' : 'left';
 
     state.activeScreen = targetScreen;
-    if (typeof options.exerciseIndex === 'number' && options.exerciseIndex >= 0) {
+    if (typeof options.exerciseIndex === 'number' && options.exerciseIndex >= -1) {
       state.activeExerciseIndex = options.exerciseIndex;
     }
     saveState();
@@ -4088,9 +4058,16 @@
     const day = state.schedule[state.selectedDay];
     const exercises = day?.exercises || [];
 
+    state.workoutWarmupCompletedByDay = state.workoutWarmupCompletedByDay || {};
+    let isWarmupDone = Boolean(state.workoutWarmupCompletedByDay[targetDayId]);
+
     let targetIdx = 0;
     if (typeof exerciseIndex === 'number' && exerciseIndex >= 0 && exerciseIndex < exercises.length) {
       targetIdx = exerciseIndex;
+      state.workoutWarmupCompletedByDay[targetDayId] = true;
+      isWarmupDone = true;
+    } else if (!isWarmupDone) {
+      targetIdx = -1; // Fase inicial de calentamiento obligatoria
     } else {
       const firstIncomplete = exercises.findIndex(ex => {
         const total = Number(ex.sets) || 4;
@@ -4110,7 +4087,7 @@
       activeScreen: state.activeScreen,
       dayId: state.selectedDay,
       activeExerciseIndex: state.activeExerciseIndex,
-      exercise: exercises[targetIdx] || null
+      exercise: targetIdx >= 0 ? (exercises[targetIdx] || null) : null
     };
   }
 
@@ -4174,11 +4151,75 @@
     return state.activeScreen;
   }
 
+  function renderFocusWarmupContent(day) {
+    const listEl = document.getElementById('focus-warmup-exercises-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (!day || !GYM_VISUALS || typeof GYM_VISUALS.getWarmupProtocolForDay !== 'function') return;
+    const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const visual = getWarmupStepVisual(step, day);
+
+      const card = document.createElement('div');
+      card.className = 'warmup-exercise-card';
+      card.innerHTML = `
+        <div class="warmup-exercise-top">
+          <div class="warmup-animated-frame">
+            <img src="${visual.imgUrl}" alt="${step.label}" width="76" height="76">
+          </div>
+          <div class="warmup-exercise-info">
+            <div class="warmup-exercise-tag-row">
+              <span class="badge-warmup-tag">ACTIVACIÓN ARTICULAR</span>
+              <span class="warmup-dur-pill">⏱️ ${step.duration}</span>
+            </div>
+            <h4 class="warmup-exercise-name">${visual.title || step.label}</h4>
+            <p class="warmup-exercise-desc">${visual.instruction}</p>
+          </div>
+        </div>
+      `;
+      listEl.appendChild(card);
+    }
+  }
+
+  function finishWorkoutWarmupAndUnlock() {
+    const dayId = state.selectedDay;
+    state.workoutWarmupCompletedByDay = state.workoutWarmupCompletedByDay || {};
+    state.workoutWarmupCompletedByDay[dayId] = true;
+    state.activeExerciseIndex = 0;
+    triggerHaptic([40, 20, 60]);
+    showCelebrationToast('🔥 ¡Calentamiento terminado! Ejercicios desbloqueados.');
+    saveState();
+    renderWorkoutFocusScreen();
+  }
+
   function selectFocusExercise(index) {
     const day = state.schedule[state.selectedDay];
     const exercises = day?.exercises || [];
+    const numIdx = Number(index);
+    const dayId = state.selectedDay;
+    state.workoutWarmupCompletedByDay = state.workoutWarmupCompletedByDay || {};
+    const isWarmupDone = Boolean(state.workoutWarmupCompletedByDay[dayId]);
+
+    // Si se selecciona la fase de calentamiento (-1)
+    if (numIdx === -1) {
+      state.activeExerciseIndex = -1;
+      saveState();
+      renderWorkoutFocusScreen();
+      return null;
+    }
+
+    // Si no ha terminado el calentamiento, no se puede saltar a otro ejercicio
+    if (!isWarmupDone && numIdx >= 0) {
+      showCelebrationToast('🔒 Debes completar la fase inicial de calentamiento para desbloquear los ejercicios.');
+      triggerHaptic([60, 40, 60]);
+      return null;
+    }
+
     if (exercises.length === 0) return null;
-    const clamped = Math.max(0, Math.min(exercises.length - 1, Number(index) || 0));
+    const clamped = Math.max(0, Math.min(exercises.length - 1, numIdx || 0));
     state.activeExerciseIndex = clamped;
     saveState();
     renderWorkoutFocusScreen();
@@ -4212,9 +4253,68 @@
       return null;
     }
 
-    if (state.activeExerciseIndex >= exercises.length || state.activeExerciseIndex < 0) {
-      state.activeExerciseIndex = 0;
+    state.workoutWarmupCompletedByDay = state.workoutWarmupCompletedByDay || {};
+    const isWarmupDone = Boolean(state.workoutWarmupCompletedByDay[state.selectedDay]);
+
+    if (state.activeExerciseIndex >= exercises.length || state.activeExerciseIndex < -1) {
+      state.activeExerciseIndex = isWarmupDone ? 0 : -1;
     }
+
+    const isWarmupActive = (state.activeExerciseIndex === -1);
+
+    if (pillsContainer) {
+      pillsContainer.innerHTML = '';
+
+      // Píldora inicial obligatoria: 🔥 Entrenamiento
+      const warmupPill = document.createElement('button');
+      warmupPill.type = 'button';
+      warmupPill.className = `focus-step-pill focus-step-warmup ${isWarmupActive ? 'is-active' : ''} ${isWarmupDone ? 'is-completed' : ''}`;
+      warmupPill.dataset.exerciseIndex = '-1';
+      warmupPill.setAttribute('aria-label', 'Fase Inicial: Calentamiento de Entrenamiento');
+      warmupPill.textContent = isWarmupDone ? '✓ Entrenamiento' : '🔥 Entrenamiento';
+      warmupPill.addEventListener('click', () => selectFocusExercise(-1));
+      pillsContainer.appendChild(warmupPill);
+
+      exercises.forEach((item, i) => {
+        const itemTotal = Number(item.sets) || 4;
+        const itemDone = (item.completedSets || []).filter(Boolean).length;
+        const isAllDone = itemDone === itemTotal && itemTotal > 0;
+        const isLocked = !isWarmupDone;
+
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = `focus-step-pill ${!isWarmupActive && i === state.activeExerciseIndex ? 'is-active' : ''} ${isAllDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}`;
+        pill.dataset.exerciseIndex = String(i);
+        pill.setAttribute('aria-label', `Ir a ejercicio ${i + 1}: ${item.name}`);
+
+        if (isLocked) {
+          pill.disabled = true;
+          pill.textContent = `🔒 ${i + 1}`;
+        } else {
+          pill.textContent = isAllDone ? `✓ ${i + 1}` : `${i + 1}`;
+          pill.addEventListener('click', () => selectFocusExercise(i));
+        }
+        pillsContainer.appendChild(pill);
+      });
+    }
+
+    const focusWarmupView = document.getElementById('focus-warmup-view');
+    const focusExerciseCard = document.getElementById('focus-exercise-card');
+
+    if (isWarmupActive) {
+      if (focusWarmupView) focusWarmupView.hidden = false;
+      if (focusExerciseCard) focusExerciseCard.hidden = true;
+      if (counterLabel) {
+        counterLabel.textContent = 'Fase Inicial: Calentamiento de Entrenamiento';
+      }
+      if (prevBtn) prevBtn.disabled = true;
+      if (nextBtn) nextBtn.disabled = true;
+      renderFocusWarmupContent(day);
+      return null;
+    }
+
+    if (focusWarmupView) focusWarmupView.hidden = true;
+    if (focusExerciseCard) focusExerciseCard.hidden = false;
 
     const idx = state.activeExerciseIndex;
     const ex = exercises[idx];
@@ -4224,24 +4324,6 @@
     }
     if (prevBtn) prevBtn.disabled = idx <= 0;
     if (nextBtn) nextBtn.disabled = idx >= exercises.length - 1;
-
-    if (pillsContainer) {
-      pillsContainer.innerHTML = '';
-      exercises.forEach((item, i) => {
-        const itemTotal = Number(item.sets) || 4;
-        const itemDone = (item.completedSets || []).filter(Boolean).length;
-        const isAllDone = itemDone === itemTotal && itemTotal > 0;
-
-        const pill = document.createElement('button');
-        pill.type = 'button';
-        pill.className = `focus-step-pill ${i === idx ? 'is-active' : ''} ${isAllDone ? 'is-completed' : ''}`;
-        pill.dataset.exerciseIndex = String(i);
-        pill.setAttribute('aria-label', `Ir a ejercicio ${i + 1}: ${item.name}`);
-        pill.textContent = isAllDone ? `✓ ${i + 1}` : `${i + 1}`;
-        pill.addEventListener('click', () => selectFocusExercise(i));
-        pillsContainer.appendChild(pill);
-      });
-    }
 
     // 1. Ilustración / Sprite en 3 Fases (Solo imagen limpia sin texto superpuesto)
     const spriteStage = document.getElementById('focus-sprite-stage');
@@ -4370,7 +4452,7 @@
         actionText.textContent = `¡Listo! Comenzar Serie ${activeSetIndex + 1} (${activeSetReps} reps)`;
       } else {
         if (actionIcon) actionIcon.textContent = '✓';
-        actionText.textContent = `Serie ${activeSetIndex + 1} Completada - Descansar (${activeSetReps} reps)`;
+        actionText.textContent = `Serie ${activeSetIndex + 1} Completada - Descansar`;
       }
     }
 
@@ -5722,6 +5804,9 @@
     document.getElementById('btn-exit-workout-screen')?.addEventListener('click', () => {
       exitWorkoutScreen();
     });
+    document.getElementById('btn-finish-focus-warmup')?.addEventListener('click', () => {
+      finishWorkoutWarmupAndUnlock();
+    });
     document.getElementById('btn-focus-clock-toggle')?.addEventListener('click', () => {
       toggleSessionStopwatch();
     });
@@ -6258,6 +6343,8 @@
     openWarmupPreviewDialog,
     closeWarmupPreviewDialog,
     getWarmupStepVisual,
+    renderFocusWarmupContent,
+    finishWorkoutWarmupAndUnlock,
     // APIs Collapsibles Suaves e Iconos
     initSmoothCollapsibles,
     // APIs Dynamic Series & Reps v1.9.1

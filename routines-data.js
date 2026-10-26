@@ -621,9 +621,9 @@
       dayName: 'Domingo',
       shortName: 'DOM',
       dayNumber: 7,
-      title: 'Día de descanso',
-      subtitle: 'Día de descanso',
-      muscleGroup: 'Día de descanso',
+      title: '🌿 Día de descanso',
+      subtitle: '🌿 Día de descanso',
+      muscleGroup: '🌿 Día de descanso',
       accentHue: 45,
       estimatedMinutes: 0,
       status: 'rest_backup', // 'rest_backup' | 'reprogrammed' | 'completed'
