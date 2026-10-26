@@ -1599,6 +1599,59 @@
     </div>
   </dialog>
 
+  <!-- Modal 1: Selección de Rutina a Recuperar en Domingo con Control Biomecánico de Descanso -->
+  <dialog id="sunday-recovery-dialog" class="gym-dialog sunday-recovery-dialog" closedby="any" aria-labelledby="sunday-recover-title">
+    <div class="dialog-body sunday-recover-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">RECUPERACIÓN DOMINICAL BIOMECÁNICA</span>
+          <h2 id="sunday-recover-title">🗓️ ¿Qué rutina deseas recuperar hoy?</h2>
+        </div>
+        <button type="button" id="btn-close-sunday-recover" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <p class="dialog-lead">
+        Selecciona la rutina de la semana que deseas recuperar o entrenar este Domingo. Por biomecánica y cuidado articular, el sistema bloquea los músculos estimulados recientemente (menos de 48h de recuperación):
+      </p>
+
+      <div class="sunday-recovery-grid" id="sunday-recovery-grid">
+        <!-- Generado dinámicamente por app.js con cálculo de descanso -->
+      </div>
+
+      <div class="dialog-actions-row" style="margin-top: 14px; display: flex; justify-content: flex-end;">
+        <button type="button" id="btn-cancel-sunday-recover" class="btn-ghost btn-close-danger">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal 2: Confirmación de Rutina y Recálculo para los Días Siguientes -->
+  <dialog id="sunday-confirm-dialog" class="gym-dialog sunday-confirm-dialog" closedby="any" aria-labelledby="sunday-confirm-title">
+    <div class="dialog-body sunday-confirm-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">CONFIRMACIÓN Y BALANCE DE DESCANSO</span>
+          <h2 id="sunday-confirm-title">⚡ Confirmar Rutina en Domingo</h2>
+        </div>
+        <button type="button" id="btn-close-sunday-confirm" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="sunday-confirm-content" id="sunday-confirm-content">
+        <!-- Resumen de rutina elegida y recálculo de los días siguientes -->
+      </div>
+
+      <div class="dialog-actions-row" style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" id="btn-confirm-apply-sunday" class="btn-primary" style="flex: 1 1 200px;">
+          ✓ Confirmar y Cargar Rutina en Domingo
+        </button>
+        <button type="button" id="btn-back-to-sunday-recover" class="btn-ghost" style="flex: 0 0 auto;">
+          ↩️ Volver a Elegir
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Modal Nativo: Resultados de Entrenamiento y Próxima Proyección Muscular -->
   <dialog id="workout-results-dialog" class="gym-dialog workout-results-dialog" closedby="any" aria-labelledby="results-dialog-title">
     <div class="dialog-body results-dialog-body">

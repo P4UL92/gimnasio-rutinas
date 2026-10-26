@@ -6221,3 +6221,158 @@ body.in-workout-screen .app-main-content {
   color: #cbd5e1;
   line-height: 1.35;
 }
+
+/* ==========================================================================
+   MODALES DE RECUPERACIÓN DOMINICAL Y RECÁLCULO PREVENTIVO
+   ========================================================================== */
+.sunday-recovery-dialog,
+.sunday-confirm-dialog {
+  max-width: 640px;
+  width: 95vw;
+}
+
+.sunday-recover-body,
+.sunday-confirm-body {
+  padding: 16px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sunday-recovery-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.sunday-option-card {
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.sunday-option-card.is-available {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: linear-gradient(145deg, rgba(22, 31, 51, 0.95), rgba(15, 23, 42, 0.95));
+}
+
+.sunday-option-card.is-available:hover {
+  border-color: var(--accent-emerald);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+}
+
+.sunday-option-card.is-blocked {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(30, 18, 24, 0.7);
+  opacity: 0.88;
+}
+
+.sunday-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sunday-option-title {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.sunday-option-meta {
+  font-size: 0.80rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sunday-badge-ready {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+}
+
+.sunday-badge-blocked {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.sunday-recovery-reason {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.sunday-option-card.is-available .sunday-recovery-reason {
+  color: #94a3b8;
+}
+
+.sunday-option-card.is-blocked .sunday-recovery-reason {
+  color: #fca5a5;
+}
+
+.btn-select-sunday-routine {
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.sunday-confirm-box {
+  background: rgba(22, 31, 51, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sunday-confirm-routine-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--accent-emerald);
+}
+
+.sunday-recalc-card {
+  background: rgba(15, 23, 42, 0.95);
+  border-left: 4px solid var(--accent-amber);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #f1f5f9;
+}
+
+.sunday-recalc-card.is-optimal {
+  border-left-color: var(--accent-emerald);
+}
+
+.btn-sunday-recover-cta {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  border-color: #38bdf8;
+  color: #f0f9ff;
+}
+

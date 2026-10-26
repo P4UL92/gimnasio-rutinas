@@ -1090,6 +1090,285 @@
     return true;
   }
 
+  // =========================================================================
+  // GESTIÓN DE RECUPERACIÓN DOMINICAL CON CONTROL DE DESCANSO BIOMECÁNICO
+  // =========================================================================
+
+  let pendingSundayRoutineKey = null;
+
+  function calculateSundayRecoveryOptions() {
+    const saturday = state.schedule.sabado;
+    const satMuscle = (saturday?.muscleGroup || 'Piernas y Glúteos').toLowerCase();
+
+    const candidateDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const hoursSinceMap = {
+      sabado: 18,
+      viernes: 42,
+      jueves: 66,
+      miercoles: 90,
+      martes: 114,
+      lunes: 138
+    };
+
+    return candidateDays.map(dayKey => {
+      const d = state.schedule[dayKey];
+      const dayMuscle = (d?.muscleGroup || '').toLowerCase();
+
+      // Sábado se entrenó ayer (< 24h)
+      const isYesterday = (dayKey === 'sabado');
+
+      // Músculo coincidente con el entrenado ayer (ej. Piernas / Glúteos)
+      const isLegSaturday = satMuscle.includes('pierna') || satMuscle.includes('glúteo');
+      const isLegCandidate = dayMuscle.includes('pierna') || dayMuscle.includes('glúteo');
+      const isChestSaturday = satMuscle.includes('pecho');
+      const isChestCandidate = dayMuscle.includes('pecho');
+      const isBackSaturday = satMuscle.includes('espalda');
+      const isBackCandidate = dayMuscle.includes('espalda');
+
+      const matchesYesterdayMuscle = isYesterday ||
+        (isLegSaturday && isLegCandidate) ||
+        (isChestSaturday && isChestCandidate) ||
+        (isBackSaturday && isBackCandidate);
+
+      const hoursSince = hoursSinceMap[dayKey] || 72;
+      const canTrain = !matchesYesterdayMuscle && hoursSince >= 40;
+
+      let reason = '';
+      if (isYesterday) {
+        reason = 'Bloqueado: Entrenado ayer sábado (~18h de descanso). Requiere mínimo 48h de recuperación muscular y articular.';
+      } else if (matchesYesterdayMuscle) {
+        reason = `Bloqueado: El grupo muscular (${d.muscleGroup}) fue estimulado ayer sábado. Requiere 48h de descanso continuo.`;
+      } else {
+        reason = `Apto: ~${hoursSince}h de recuperación completadas. Músculo descansado y listo para estimular hipertrofia.`;
+      }
+
+      return {
+        dayKey,
+        dayName: d.dayName,
+        title: d.title,
+        subtitle: d.subtitle,
+        muscleGroup: d.muscleGroup,
+        exerciseCount: (d.exercises || []).length || 6,
+        hoursSince,
+        canTrain,
+        reason
+      };
+    });
+  }
+
+  function openSundayRecoveryDialog() {
+    const dialog = document.getElementById('sunday-recovery-dialog');
+    const grid = document.getElementById('sunday-recovery-grid');
+    if (!dialog || !grid) return;
+
+    const options = calculateSundayRecoveryOptions();
+    grid.innerHTML = '';
+
+    options.forEach(opt => {
+      const card = document.createElement('article');
+      card.className = `sunday-option-card ${opt.canTrain ? 'is-available' : 'is-blocked'}`;
+
+      const header = document.createElement('div');
+      header.className = 'sunday-option-header';
+
+      const titleEl = document.createElement('h3');
+      titleEl.className = 'sunday-option-title';
+      titleEl.textContent = `${opt.dayName}: ${opt.title}`;
+
+      const badge = document.createElement('span');
+      badge.className = opt.canTrain ? 'sunday-badge-ready' : 'sunday-badge-blocked';
+      badge.textContent = opt.canTrain ? `✅ Recuperado (~${opt.hoursSince}h)` : '⛔ Bloqueado por descanso';
+
+      header.append(titleEl, badge);
+
+      const meta = document.createElement('div');
+      meta.className = 'sunday-option-meta';
+      meta.innerHTML = `
+        <span>🎯 <strong>Músculo:</strong> ${opt.muscleGroup}</span>
+        <span>📋 ${opt.exerciseCount} ejercicios</span>
+      `;
+
+      const reasonP = document.createElement('p');
+      reasonP.className = 'sunday-recovery-reason';
+      reasonP.textContent = opt.reason;
+
+      const actionRow = document.createElement('div');
+      actionRow.className = 'sunday-option-actions';
+
+      if (opt.canTrain) {
+        const btnChoose = document.createElement('button');
+        btnChoose.type = 'button';
+        btnChoose.className = 'btn-primary btn-select-sunday-routine';
+        btnChoose.textContent = `⚡ Elegir Rutina de ${opt.dayName}`;
+        btnChoose.addEventListener('click', () => {
+          openSundayConfirmDialog(opt.dayKey);
+        });
+        actionRow.appendChild(btnChoose);
+      } else {
+        const btnBlocked = document.createElement('button');
+        btnBlocked.type = 'button';
+        btnBlocked.className = 'btn-ghost';
+        btnBlocked.disabled = true;
+        btnBlocked.textContent = '⛔ No disponible (En descanso articular)';
+        actionRow.appendChild(btnBlocked);
+      }
+
+      card.append(header, meta, reasonP, actionRow);
+      grid.appendChild(card);
+    });
+
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.setAttribute('open', ''); }
+    } else {
+      dialog.setAttribute('open', '');
+    }
+    dialog.hidden = false;
+    dialog.setAttribute('open', '');
+  }
+
+  function closeSundayRecoveryDialog() {
+    const dialog = document.getElementById('sunday-recovery-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    }
+    dialog.hidden = true;
+    dialog.removeAttribute('open');
+  }
+
+  function openSundayConfirmDialog(selectedDayKey) {
+    const confirmDialog = document.getElementById('sunday-confirm-dialog');
+    const contentEl = document.getElementById('sunday-confirm-content');
+    if (!confirmDialog || !contentEl) return;
+
+    pendingSundayRoutineKey = selectedDayKey;
+    const sourceDay = state.schedule[selectedDayKey];
+    if (!sourceDay) return;
+
+    // Análisis de conflicto con el lunes siguiente
+    const monday = state.schedule.lunes;
+    const sourceMuscle = (sourceDay.muscleGroup || '').toLowerCase();
+    const mondayMuscle = (monday.muscleGroup || '').toLowerCase();
+
+    const isBackSource = sourceMuscle.includes('espalda');
+    const isBackMonday = mondayMuscle.includes('espalda');
+    const isChestSource = sourceMuscle.includes('pecho');
+    const isChestMonday = mondayMuscle.includes('pecho');
+    const isLegSource = sourceMuscle.includes('pierna');
+    const isLegMonday = mondayMuscle.includes('pierna');
+
+    const willConflictMonday = (
+      (isBackSource && isBackMonday) ||
+      (isChestSource && isChestMonday) ||
+      (isLegSource && isLegMonday)
+    );
+
+    let recalcHtml = '';
+    if (willConflictMonday) {
+      const tuesday = state.schedule.martes;
+      recalcHtml = `
+        <div class="sunday-recalc-card">
+          <strong style="color: #f59e0b; display: block; margin-bottom: 4px;">⚠️ Recálculo Preventivo Requerido para la Semana Entrante:</strong>
+          <p style="margin: 0 0 6px 0;">
+            Si entrenas <strong>${sourceDay.muscleGroup}</strong> hoy Domingo, mañana Lunes tocaría el mismo grupo muscular sin las 48h mínimas de descanso.
+          </p>
+          <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 6px; font-size: 0.78rem;">
+            🔄 <strong>Ajuste Automático:</strong> El Lunes pasará a ser <em>${tuesday.title}</em> y el Martes será <em>${monday.title}</em>. De este modo, tendrás descanso óptimo y mantendrás el 100% de tu volumen semanal.
+          </div>
+        </div>
+      `;
+    } else {
+      recalcHtml = `
+        <div class="sunday-recalc-card is-optimal">
+          <strong style="color: #10b981; display: block; margin-bottom: 4px;">✅ Recálculo Validado sin Conflictos:</strong>
+          <p style="margin: 0;">
+            Mañana Lunes entrenarás <strong>${monday.title}</strong> (${monday.muscleGroup}), trabajando fibras musculares distintas a las de hoy. La secuencia semanal continuará con total armonía.
+          </p>
+        </div>
+      `;
+    }
+
+    contentEl.innerHTML = `
+      <div class="sunday-confirm-box">
+        <span style="font-size: 0.72rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Rutina Seleccionada para Hoy Domingo</span>
+        <div class="sunday-confirm-routine-title">🏋️ ${sourceDay.dayName}: ${sourceDay.title}</div>
+        <div style="font-size: 0.82rem; color: #cbd5e1;">
+          <strong>Grupo Muscular:</strong> ${sourceDay.muscleGroup} · ${(sourceDay.exercises || []).length} ejercicios de hipertrofia
+        </div>
+      </div>
+      ${recalcHtml}
+    `;
+
+    closeSundayRecoveryDialog();
+
+    if (typeof confirmDialog.showModal === 'function') {
+      try { confirmDialog.showModal(); } catch (_) { confirmDialog.setAttribute('open', ''); }
+    } else {
+      confirmDialog.setAttribute('open', '');
+    }
+    confirmDialog.hidden = false;
+    confirmDialog.setAttribute('open', '');
+  }
+
+  function closeSundayConfirmDialog() {
+    const dialog = document.getElementById('sunday-confirm-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    }
+    dialog.hidden = true;
+    dialog.removeAttribute('open');
+  }
+
+  function applySundayRoutine(selectedDayKey = pendingSundayRoutineKey) {
+    if (!selectedDayKey || !state.schedule[selectedDayKey]) return false;
+    const sourceDay = state.schedule[selectedDayKey];
+    if (!sourceDay.exercises || sourceDay.exercises.length === 0) return false;
+
+    const sunday = state.schedule.domingo;
+    sunday.exercises = deepClone(sourceDay.exercises).map(ex => ({
+      ...ex,
+      completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
+    }));
+    sunday.title = `${sourceDay.title} (Recuperado)`;
+    sunday.subtitle = `Sesión dominical recuperada de ${sourceDay.dayName} — ${sourceDay.subtitle}`;
+    sunday.muscleGroup = sourceDay.muscleGroup;
+    sunday.accentHue = sourceDay.accentHue;
+    sunday.estimatedMinutes = sourceDay.estimatedMinutes || 55;
+    sunday.status = 'reprogrammed';
+    sunday.originalSourceDay = selectedDayKey;
+
+    // Recálculo de días siguientes si hay conflicto con Lunes
+    const monday = state.schedule.lunes;
+    const sourceMuscle = (sourceDay.muscleGroup || '').toLowerCase();
+    const mondayMuscle = (monday.muscleGroup || '').toLowerCase();
+
+    const isBackSource = sourceMuscle.includes('espalda');
+    const isBackMonday = mondayMuscle.includes('espalda');
+    const isChestSource = sourceMuscle.includes('pecho');
+    const isChestMonday = mondayMuscle.includes('pecho');
+    const isLegSource = sourceMuscle.includes('pierna');
+    const isLegMonday = mondayMuscle.includes('pierna');
+
+    const willConflictMonday = (
+      (isBackSource && isBackMonday) ||
+      (isChestSource && isChestMonday) ||
+      (isLegSource && isLegMonday)
+    );
+
+    if (willConflictMonday) {
+      swapDays('lunes', 'martes');
+    }
+
+    closeSundayConfirmDialog();
+    closeSundayRecoveryDialog();
+    state.selectedDay = 'domingo';
+    saveState();
+    renderAll();
+    showCelebrationToast(`⚡ Rutina de ${sourceDay.dayName} cargada en Domingo.${willConflictMonday ? ' Recálculo Lunes/Martes aplicado.' : ''}`);
+    return true;
+  }
+
   function closeProfileOnboardingDialog() {
     const dialog = document.getElementById('profile-onboarding-dialog');
     if (!dialog) return;
@@ -1516,10 +1795,25 @@
     const currentRealDay = detectDefaultDay();
     const isViewingToday = (state.selectedDay === currentRealDay);
     const dayCompleted = isDayCompleted(state.selectedDay);
+    const isSunday = (state.selectedDay === 'domingo');
     const startBtn = document.getElementById('btn-start-day-workout');
+
     if (startBtn) {
-      if (isViewingToday) {
-        startBtn.classList.remove('btn-move-muscle-cta');
+      startBtn.classList.remove('btn-move-muscle-cta', 'btn-sunday-recover-cta');
+      if (isSunday) {
+        const sundayHasExercises = (state.schedule.domingo?.exercises?.length > 0);
+        if (dayCompleted) {
+          startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
+          startBtn.classList.add('is-day-completed-cta');
+        } else if (sundayHasExercises) {
+          startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
+          startBtn.classList.remove('is-day-completed-cta');
+        } else {
+          startBtn.classList.add('btn-sunday-recover-cta');
+          startBtn.textContent = '🚀 Iniciar Día de Entrenamiento';
+          startBtn.classList.remove('is-day-completed-cta');
+        }
+      } else if (isViewingToday) {
         if (dayCompleted) {
           startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
           startBtn.classList.add('is-day-completed-cta');
@@ -1535,12 +1829,18 @@
         startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
       }
     }
+
     const daySecondaryMenu = document.getElementById('day-secondary-menu');
     if (daySecondaryMenu) {
-      daySecondaryMenu.hidden = !isViewingToday;
-      if (!isViewingToday) {
+      daySecondaryMenu.hidden = (!isViewingToday || isSunday);
+      if (daySecondaryMenu.hidden) {
         daySecondaryMenu.open = false;
       }
+    }
+
+    const anatomyCollapsible = document.getElementById('anatomy-collapsible');
+    if (anatomyCollapsible) {
+      anatomyCollapsible.hidden = isSunday;
     }
 
     const headerStartBtn = document.getElementById('btn-header-start-day');
@@ -2574,26 +2874,11 @@
         emptyLi.append(h3, p, actionsDiv);
       } else {
         const h3 = document.createElement('h3');
-        h3.textContent = '🌿 Domingo Libre / Día Comodín de Recuperación';
+        h3.textContent = '🌿 Domingo Libre / Día Comodín';
         const p = document.createElement('p');
         p.textContent =
-          'Si algún día de Lunes a Sábado no pudiste entrenar, puedes trasladar su rutina aquí al Domingo con un toque:';
-
-        const quickWrap = document.createElement('div');
-        quickWrap.className = 'quick-import-days';
-
-        for (const dayKey of DAYS_ORDER.slice(0, 6)) {
-          const d = state.schedule[dayKey];
-          if (d.exercises.length > 0) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'btn-secondary';
-            btn.textContent = `Traer ${d.dayName} (${d.title})`;
-            btn.addEventListener('click', () => moveDayToSunday(dayKey));
-            quickWrap.appendChild(btn);
-          }
-        }
-        emptyLi.append(h3, p, quickWrap);
+          'Hoy es tu día de descanso semanal. Si deseas recuperar o repetir una rutina de la semana, presiona el botón "Iniciar Día de Entrenamiento" de arriba.';
+        emptyLi.append(h3, p);
       }
 
       listEl.appendChild(emptyLi);
@@ -4978,6 +5263,18 @@
     document.getElementById('btn-cancel-move-muscle')?.addEventListener('click', closeMoveMuscleDialog);
     document.getElementById('btn-close-move-muscle-dialog')?.addEventListener('click', closeMoveMuscleDialog);
 
+    // Modal de Recuperación Dominical y Confirmación de Rutina
+    document.getElementById('btn-close-sunday-recover')?.addEventListener('click', closeSundayRecoveryDialog);
+    document.getElementById('btn-cancel-sunday-recover')?.addEventListener('click', closeSundayRecoveryDialog);
+    document.getElementById('btn-close-sunday-confirm')?.addEventListener('click', closeSundayConfirmDialog);
+    document.getElementById('btn-back-to-sunday-recover')?.addEventListener('click', () => {
+      closeSundayConfirmDialog();
+      openSundayRecoveryDialog();
+    });
+    document.getElementById('btn-confirm-apply-sunday')?.addEventListener('click', () => {
+      applySundayRoutine();
+    });
+
     // Botón de salir (X) del panel de perfil de usuario
     document.getElementById('btn-close-profile-dialog')?.addEventListener('click', closeProfileOnboardingDialog);
 
@@ -5032,6 +5329,21 @@
     // Controles de la Pantalla de Entrenamiento Activo (#workout-focus-screen) y Navegación Inferior
     document.getElementById('btn-start-day-workout')?.addEventListener('click', () => {
       const currentRealDay = detectDefaultDay();
+      if (state.selectedDay === 'domingo') {
+        const sundayHasExercises = (state.schedule.domingo?.exercises?.length > 0);
+        if (isDayCompleted('domingo')) {
+          const sessionRecord = (state.history || []).find(h => h.dayId === 'domingo') || (state.history && state.history[0]);
+          const projection = calculateNextWorkoutProjection('domingo');
+          openWorkoutResultsDialog(sessionRecord, projection);
+          return;
+        }
+        if (!sundayHasExercises) {
+          openSundayRecoveryDialog();
+          return;
+        }
+        openConfirmStartWorkoutDialog(state.selectedDay, null);
+        return;
+      }
       if (state.selectedDay !== currentRealDay) {
         openMoveMuscleDialog(state.selectedDay);
       } else {
@@ -5040,6 +5352,21 @@
     });
     document.getElementById('btn-header-start-day')?.addEventListener('click', () => {
       const currentRealDay = detectDefaultDay();
+      if (state.selectedDay === 'domingo') {
+        const sundayHasExercises = (state.schedule.domingo?.exercises?.length > 0);
+        if (isDayCompleted('domingo')) {
+          const sessionRecord = (state.history || []).find(h => h.dayId === 'domingo') || (state.history && state.history[0]);
+          const projection = calculateNextWorkoutProjection('domingo');
+          openWorkoutResultsDialog(sessionRecord, projection);
+          return;
+        }
+        if (!sundayHasExercises) {
+          openSundayRecoveryDialog();
+          return;
+        }
+        openConfirmStartWorkoutDialog(state.selectedDay, null);
+        return;
+      }
       if (state.selectedDay !== currentRealDay) {
         openMoveMuscleDialog(state.selectedDay);
       } else {
@@ -5262,7 +5589,7 @@
     document.getElementById('btn-results-prev-3')?.addEventListener('click', () => setResultsTab(1));
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
-    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog'].forEach(dlgId => {
+    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog', 'sunday-recovery-dialog', 'sunday-confirm-dialog'].forEach(dlgId => {
       const dlg = document.getElementById(dlgId);
       if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
         dlg.addEventListener('click', event => {
@@ -5589,6 +5916,13 @@
     openMoveMuscleDialog,
     closeMoveMuscleDialog,
     moveMuscleToCurrentDay,
+    // APIs Gestión y Recálculo Dominical con Control Biomecánico
+    calculateSundayRecoveryOptions,
+    openSundayRecoveryDialog,
+    closeSundayRecoveryDialog,
+    openSundayConfirmDialog,
+    closeSundayConfirmDialog,
+    applySundayRoutine,
     // APIs Dynamic Series & Reps v1.9.1
     cycleExerciseReps,
     adjustExerciseSeriesCount,

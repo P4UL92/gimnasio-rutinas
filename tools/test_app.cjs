@@ -1523,9 +1523,13 @@ const dayMenuNotToday = doc.getElementById('day-secondary-menu');
 assert.ok(dayMenuNotToday, 'Debe existir el elemento #day-secondary-menu');
 assert.equal(dayMenuNotToday.hidden, true, 'El botón ...Opciones del día NO debe mostrarse en días distintos al actual');
 
-// Al volver al día actual, ...Opciones del día debe estar visible
+// Al volver al día actual
 app.selectDay(currentDayToday);
-assert.equal(doc.getElementById('day-secondary-menu').hidden, false, 'El botón ...Opciones del día debe mostrarse en el día actual');
+if (currentDayToday === 'domingo') {
+  assert.equal(doc.getElementById('day-secondary-menu').hidden, true, 'En domingo NO debe haber botón de opciones del día');
+} else {
+  assert.equal(doc.getElementById('day-secondary-menu').hidden, false, 'El botón ...Opciones del día debe mostrarse en el día actual');
+}
 
 // 43.2 Retiro de la opción de buscar ejercicio en la rutina
 assert.equal(doc.getElementById('exercise-search-input'), null, 'La barra de búsqueda de ejercicio debe estar removida de la interfaz del día');
@@ -1590,11 +1594,86 @@ assert.ok(cssContent.includes('.btn-header-profile'), 'styles.css debe definir e
 assert.ok(cssContent.includes('.btn-profile-tag'), 'styles.css debe definir estilos responsive con elipsis para .btn-profile-tag');
 assert.ok(cssContent.includes('.btn-profile-avatar'), 'styles.css debe definir avatar para el botón de perfil');
 
+// =========================================================================
+// SUITE 44: INTERFAZ DOMINICAL CON CONTROL BIOMECÁNICO DE DESCANSO Y RECÁLCULO
+// =========================================================================
+console.log('Ejecutando Suite 44: Interfaz Dominical, Control Biomecánico de Descanso y Recálculo...');
+
+// 44.1 Configuración de Domingo en pantalla principal
+app.restoreOriginalSchedule();
+app.selectDay('domingo');
+
+const sundayStartBtn = doc.getElementById('btn-start-day-workout');
+assert.ok(sundayStartBtn, 'Debe existir el botón principal de inicio en domingo');
+assert.ok(sundayStartBtn.textContent.includes('Iniciar Día de Entrenamiento'), 'El botón en domingo debe titular "Iniciar Día de Entrenamiento"');
+assert.ok(sundayStartBtn.classList.contains('btn-sunday-recover-cta'), 'El botón debe tener la clase temática .btn-sunday-recover-cta');
+
+// 44.2 Elementos prohibidos en Domingo: Sin opciones de día, sin mapa anatómico, sin opciones de días incrustadas
+const sundayMenu = doc.getElementById('day-secondary-menu');
+assert.equal(sundayMenu.hidden, true, 'En Domingo NO debe haber el botón de ...Opciones del día');
+
+const sundayAnatomy = doc.getElementById('anatomy-collapsible');
+assert.equal(sundayAnatomy.hidden, true, 'En Domingo NO debe mostrarse el mapa anatómico');
+
+const quickImportDays = doc.querySelector('#exercises-list .quick-import-days');
+assert.equal(quickImportDays, null, 'En Domingo NO deben mostrarse opciones de recuperación incrustadas en la lista');
+
+// 44.3 Apertura del Panel de Recuperación Dominical
+sundayStartBtn.click();
+const recoverDialog = doc.getElementById('sunday-recovery-dialog');
+assert.ok(recoverDialog.hasAttribute('open') || !recoverDialog.hidden, 'Hacer clic en Iniciar Día de Entrenamiento en domingo debe abrir #sunday-recovery-dialog');
+
+// 44.4 Cálculo Biomecánico de Horas de Descanso
+const recoveryOpts = app.calculateSundayRecoveryOptions();
+assert.equal(recoveryOpts.length, 6, 'Debe evaluar los 6 días de Lunes a Sábado');
+
+// Sábado debe estar bloqueado (entrenado ayer sábado ~18h)
+const optSabado = recoveryOpts.find(o => o.dayKey === 'sabado');
+assert.ok(optSabado, 'Debe evaluar sábado');
+assert.equal(optSabado.canTrain, false, 'Sábado debe estar bloqueado por falta de descanso (< 48h)');
+assert.ok(optSabado.reason.includes('ayer sábado'), 'El motivo de bloqueo de sábado debe indicar descanso insuficiente');
+
+// Miércoles (si tiene piernas/glúteos coincidente con sábado) debe estar bloqueado por músculo reciente
+const optMiercoles = recoveryOpts.find(o => o.dayKey === 'miercoles');
+if (optMiercoles && (optMiercoles.muscleGroup.toLowerCase().includes('pierna') || optMiercoles.muscleGroup.toLowerCase().includes('glúteo'))) {
+  assert.equal(optMiercoles.canTrain, false, 'Días que compartan pierna/glúteo estimulado ayer deben estar bloqueados');
+}
+
+// Lunes y Martes (torso/espalda/pecho) deben estar aptos (>= 48h)
+const optLunes = recoveryOpts.find(o => o.dayKey === 'lunes');
+assert.ok(optLunes, 'Debe evaluar lunes');
+assert.equal(optLunes.canTrain, true, 'Lunes debe estar disponible y recuperado');
+assert.ok(optLunes.hoursSince >= 48, 'Lunes debe tener más de 48h de recuperación');
+
+// 44.5 Selección de rutina apta y apertura del Panel de Confirmación con Recálculo
+app.openSundayConfirmDialog('lunes');
+const sundayConfirmDlg = doc.getElementById('sunday-confirm-dialog');
+assert.ok(sundayConfirmDlg.hasAttribute('open') || !sundayConfirmDlg.hidden, 'Elegir una rutina debe abrir #sunday-confirm-dialog');
+
+const confirmContent = doc.getElementById('sunday-confirm-content');
+assert.ok(confirmContent.textContent.includes('Lunes'), 'El panel de confirmación debe detallar la rutina elegida');
+assert.ok(confirmContent.textContent.includes('Recálculo Preventivo Requerido') || confirmContent.textContent.includes('Ajuste Automático'), 'Debe advertir sobre el recálculo necesario para los días siguientes');
+
+// 44.6 Aplicación de la Rutina y Recálculo Automático
+app.applySundayRoutine('lunes');
+
+// Domingo ahora debe tener los ejercicios de la rutina de lunes cargados
+const sundayExercises = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.equal(sundayExercises.length, 6, 'Domingo debe tener cargados los 6 ejercicios de la rutina elegida');
+
+// Botón de inicio de domingo ahora debe permitir iniciar el entrenamiento activo
+const updatedSundayBtn = doc.getElementById('btn-start-day-workout');
+assert.ok(updatedSundayBtn.textContent.includes('Pantalla Enfoque') || updatedSundayBtn.textContent.includes('Iniciar'), 'El botón debe reflejar la rutina lista');
+
+// Los diálogos deben estar cerrados
+assert.ok(!recoverDialog.hasAttribute('open') || recoverDialog.hidden, 'El diálogo de recuperación debe estar cerrado');
+assert.ok(!sundayConfirmDlg.hasAttribute('open') || sundayConfirmDlg.hidden, 'El diálogo de confirmación debe estar cerrado');
+
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 43 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 44 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
