@@ -163,10 +163,7 @@
           </div>
         </details>
 
-        <div class="section-header-row">
-          <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
-          <span class="unit-legend">Visualización y datos del entrenamiento programado</span>
-        </div>
+        <h2 id="exercises-heading" class="visually-hidden">Ejercicios</h2>
 
         <ul id="exercises-list" class="exercises-list">
           <!-- Tarjetas de ejercicios con sprites rasterizados de 3 fases renderizadas por app.js -->
@@ -216,6 +213,9 @@
           <div class="focus-ex-title-row">
             <h2 id="focus-ex-title" class="focus-ex-title">Jalón al pecho en polea (agarre estrecho)</h2>
             <div class="focus-ex-header-actions">
+              <button type="button" id="btn-focus-warmup-cta" class="btn-focus-warmup-cta" title="Ver y completar calentamiento previo">
+                <span class="gym-ico gym-ico-flame" aria-hidden="true"></span> Calentamiento
+              </button>
               <button type="button" id="btn-focus-help" class="btn-focus-help" aria-expanded="false" title="Ver máquina, músculo y técnica de ejecución">
                 <span class="help-btn-icon">❓</span> Máquina & Info
               </button>
@@ -1595,6 +1595,45 @@
             ✕ Cancelar
           </button>
         </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Demostración y Completado de Calentamiento Previo -->
+  <dialog id="warmup-preview-dialog" class="gym-dialog warmup-preview-dialog" closedby="any" aria-labelledby="warmup-preview-title">
+    <div class="dialog-body warmup-preview-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">CALENTAMIENTO ARTICULAR PREVIO</span>
+          <h2 id="warmup-preview-title">Rotaciones Escapulares</h2>
+        </div>
+        <button type="button" id="btn-close-warmup-preview" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="warmup-preview-media">
+        <div class="warmup-preview-frame">
+          <img id="warmup-preview-img" src="assets/icons/warmup-scapular.png" alt="Demostración visual del calentamiento" class="warmup-preview-large-img" width="140" height="140">
+        </div>
+        <div class="warmup-preview-badges-row">
+          <span id="warmup-preview-duration" class="warmup-progress-pill">⏱️ 60s</span>
+          <span id="warmup-preview-status" class="warmup-status-badge">Pendiente de activación</span>
+        </div>
+      </div>
+
+      <div class="warmup-preview-desc-box">
+        <strong style="color: #f8fafc; display: block; margin-bottom: 4px;">🎯 Instrucción Técnica del Ejercicio:</strong>
+        <p id="warmup-preview-instruction" class="warmup-preview-text">
+          Realiza movimientos circulares lentos juntando y separando las escápulas para activar el plano escapular y lubricar los manguitos rotadores.
+        </p>
+      </div>
+
+      <div class="dialog-actions-row" style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" id="btn-toggle-warmup-complete" class="btn-primary" style="flex: 1 1 200px;">
+          ✓ Marcar Calentamiento como Completado
+        </button>
+        <button type="button" id="btn-cancel-warmup-preview" class="btn-ghost btn-close-danger" style="flex: 0 0 auto;">
+          Cerrar
+        </button>
       </div>
     </div>
   </dialog>

@@ -853,10 +853,8 @@ const firstCard = mondayCards[0];
 
 const cardPillEquip = firstCard.querySelector('.exercise-preview-pill.pill-equip');
 const cardPillMuscle = firstCard.querySelector('.exercise-preview-pill.pill-muscle');
-assert.ok(cardPillEquip, 'La tarjeta debe mostrar directamente la máquina/implemento como dato informativo');
-assert.ok(cardPillMuscle, 'La tarjeta debe mostrar directamente el músculo principal como dato informativo');
-assert.ok(cardPillEquip.textContent.includes('Máquina') || cardPillEquip.textContent.includes('Polea'));
-assert.ok(cardPillMuscle.textContent.includes('Dorsal') || cardPillMuscle.textContent.includes('Músculo'));
+assert.equal(cardPillEquip, null, 'Máquina / Implemento debe haber sido eliminado de la tarjeta según solicitud');
+assert.equal(cardPillMuscle, null, 'Músculo Principal debe haber sido eliminado de la tarjeta según solicitud');
 
 // 33.4 Verificar botón de ayuda e información en la pantalla de entrenamiento (Focus Mode)
 const focusHelpBtn = doc.getElementById('btn-focus-help');
@@ -1545,7 +1543,7 @@ previewCards.forEach((card, idx) => {
   const title = card.querySelector('h3.exercise-card-title');
   assert.ok(title && title.textContent.trim().length > 0, `Card ${idx + 1} debe mostrar el nombre del ejercicio`);
 
-  // Debe tener los 4 datos informativos solicitados
+  // Solo Carga y Repeticiones (Máquina y Músculo eliminados según solicitud)
   const pillLoad = card.querySelector('.exercise-preview-pill.pill-load');
   const pillReps = card.querySelector('.exercise-preview-pill.pill-reps');
   const pillEquip = card.querySelector('.exercise-preview-pill.pill-equip');
@@ -1553,8 +1551,8 @@ previewCards.forEach((card, idx) => {
 
   assert.ok(pillLoad, `Card ${idx + 1} debe mostrar la carga/nivel`);
   assert.ok(pillReps, `Card ${idx + 1} debe mostrar las repeticiones/series`);
-  assert.ok(pillEquip, `Card ${idx + 1} debe mostrar la máquina/implemento`);
-  assert.ok(pillMuscle, `Card ${idx + 1} debe mostrar el músculo principal`);
+  assert.equal(pillEquip, null, `Card ${idx + 1} NO debe mostrar Máquina/Implemento`);
+  assert.equal(pillMuscle, null, `Card ${idx + 1} NO debe mostrar Músculo Principal`);
 
   // NO debe tener botones de Ver Ejercicio, Opciones y Técnica, ni Marca actual
   assert.equal(card.querySelector('.btn-open-ex-focus'), null, `Card ${idx + 1} NO debe tener el botón de Ver ejercicio`);
@@ -1748,8 +1746,90 @@ assert.ok(cssContent.includes('.gym-ico-gear'), 'styles.css debe definir el íco
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
+// =========================================================================
+// SUITE 46: LIMPIEZA DE TEXTOS EN EJERCICIOS, CALENTAMIENTO CON IMÁGENES Y REEMPLAZO DOMINGO
+// =========================================================================
+console.log('Ejecutando Suite 46: Limpieza de Textos, Calentamiento con Imágenes y Reemplazo Domingo...');
+
+// 46.1 Eliminación del texto de cabecera de la sección de ejercicios
+app.selectDay('lunes');
+assert.equal(doc.querySelector('.exercises-section .unit-legend'), null, 'El texto "Visualización y datos del entrenamiento programado" debe estar eliminado');
+assert.ok(!doc.body.textContent.includes('Visualización y datos del entrenamiento programado'), 'El texto no debe existir en el documento');
+const exHeading = doc.getElementById('exercises-heading');
+assert.ok(!exHeading || exHeading.textContent.trim() === '' || exHeading.classList.contains('visually-hidden'), 'El texto "Ejercicios de Lunes (Estándar 4 series × 12 reps)" debe estar eliminado');
+
+// 46.2 Eliminación de "Frecuencia X..." y "Descanso" en subtítulos y etiquetas
+app.selectDay('viernes');
+const fridaySub = doc.getElementById('day-subtitle');
+assert.ok(!fridaySub.textContent.includes('Frecuencia 2'), 'El subtítulo de Viernes no debe decir "Frecuencia 2"');
+assert.ok(!fridaySub.textContent.includes('en Polea/Máquina'), 'El subtítulo no debe incluir "en Polea/Máquina"');
+
+app.selectDay('domingo');
+const sundayDurationPill = doc.getElementById('day-duration-pill');
+if (sundayDurationPill) {
+  assert.ok(!sundayDurationPill.textContent.includes('Descanso'), 'La píldora de duración no debe mostrar el texto "Descanso"');
+}
+
+// 46.3 Calentamiento con imágenes y responsive
+app.selectDay('lunes');
+const warmupSteps = doc.querySelectorAll('#warmup-steps-list .warmup-step-item');
+assert.ok(warmupSteps.length > 0, 'Deben renderizarse los pasos de calentamiento');
+
+warmupSteps.forEach((item, idx) => {
+  const img = item.querySelector('.warmup-step-thumb-img');
+  assert.ok(img, `Paso ${idx + 1} de calentamiento debe tener imagen de demostración`);
+  assert.ok(img.getAttribute('src').includes('warmup-'), `La imagen del paso ${idx + 1} debe provenir de assets/icons/warmup-*`);
+});
+
+const warmupPill = doc.getElementById('warmup-progress-pill');
+assert.ok(warmupPill, 'Debe existir #warmup-progress-pill');
+assert.ok(warmupPill.textContent.includes('pasos de activación'), 'El pill debe contener el contador de pasos de activación');
+
+// 46.4 Modal de Demostración de Calentamiento Previo
+assert.equal(typeof app.openWarmupPreviewDialog, 'function', 'GymApp debe exportar openWarmupPreviewDialog');
+const testStep = { id: 'w1', label: 'Rotaciones escapulares', duration: '60s' };
+const testVisual = app.getWarmupStepVisual(testStep, app.getState().schedule.lunes);
+app.openWarmupPreviewDialog(testStep, testVisual, 'lunes');
+
+const warmupModal = doc.getElementById('warmup-preview-dialog');
+assert.ok(warmupModal.hasAttribute('open') || !warmupModal.hidden, 'El modal de demostración de calentamiento debe abrirse');
+const previewImg = doc.getElementById('warmup-preview-img');
+assert.ok(previewImg && previewImg.getAttribute('src').includes('warmup-'), 'El modal debe mostrar la imagen grande de calentamiento');
+
+app.closeWarmupPreviewDialog();
+assert.ok(!warmupModal.hasAttribute('open') || warmupModal.hidden, 'El modal de calentamiento debe cerrarse');
+
+// 46.5 Reemplazo de día en Domingo: Actualización de los demás días y donor NO seleccionado
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 45 Suites de pruebas pasaron con éxito.');
+app.selectDay('domingo');
+const beforeSchedule = JSON.parse(JSON.stringify(app.getState().schedule));
+
+app.applySundayRoutine('lunes');
+
+// Domingo debe tener la rutina y quedar seleccionado
+assert.equal(app.getState().selectedDay, 'domingo', 'Domingo debe quedar seleccionado tras el reemplazo');
+
+// El día donor (lunes) NO debe estar seleccionado
+const dayTabs = doc.querySelectorAll('#day-tabs-list .day-tab-btn');
+dayTabs.forEach(btn => {
+  if (btn.dataset.day === 'lunes') {
+    assert.notEqual(btn.getAttribute('aria-current'), 'page', 'Lunes NO debe quedar seleccionado');
+  }
+  if (btn.dataset.day === 'domingo') {
+    assert.equal(btn.getAttribute('aria-current'), 'page', 'Domingo debe estar activo y seleccionado');
+  }
+});
+
+// Los demás días deben haberse actualizado (secuencia rotada/desplazada)
+const afterSchedule = app.getState().schedule;
+assert.notEqual(afterSchedule.lunes.title, beforeSchedule.lunes.title, 'Lunes debe haberse actualizado con la siguiente rutina');
+assert.equal(afterSchedule.lunes.title, beforeSchedule.martes.title, 'Lunes debe haber recibido la rutina de Martes para continuar la semana');
+
+// Re-verificación final absoluta: 0 etiquetas <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 46 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

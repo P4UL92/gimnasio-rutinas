@@ -1331,41 +1331,47 @@
       completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
     }));
     sunday.title = `${sourceDay.title} (Recuperado)`;
-    sunday.subtitle = `Sesión dominical recuperada de ${sourceDay.dayName} — ${sourceDay.subtitle}`;
+    sunday.subtitle = `Sesión dominical recuperada de ${sourceDay.dayName}`;
     sunday.muscleGroup = sourceDay.muscleGroup;
     sunday.accentHue = sourceDay.accentHue;
     sunday.estimatedMinutes = sourceDay.estimatedMinutes || 55;
     sunday.status = 'reprogrammed';
     sunday.originalSourceDay = selectedDayKey;
 
-    // Recálculo de días siguientes si hay conflicto con Lunes
-    const monday = state.schedule.lunes;
-    const sourceMuscle = (sourceDay.muscleGroup || '').toLowerCase();
-    const mondayMuscle = (monday.muscleGroup || '').toLowerCase();
+    // Actualización de los demás días:
+    // Al reemplazar un día de entrenamiento al domingo (día actual),
+    // se actualizan los demás días desplazando la secuencia semanal
+    // para continuar la progresión armónicamente sin repetir grupos musculares:
+    const trainingDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const srcIndex = trainingDays.indexOf(selectedDayKey);
 
-    const isBackSource = sourceMuscle.includes('espalda');
-    const isBackMonday = mondayMuscle.includes('espalda');
-    const isChestSource = sourceMuscle.includes('pecho');
-    const isChestMonday = mondayMuscle.includes('pecho');
-    const isLegSource = sourceMuscle.includes('pierna');
-    const isLegMonday = mondayMuscle.includes('pierna');
-
-    const willConflictMonday = (
-      (isBackSource && isBackMonday) ||
-      (isChestSource && isChestMonday) ||
-      (isLegSource && isLegMonday)
-    );
-
-    if (willConflictMonday) {
-      swapDays('lunes', 'martes');
+    if (srcIndex !== -1) {
+      const snapshot = deepClone(state.schedule);
+      for (let i = 0; i < trainingDays.length; i++) {
+        const currentTargetKey = trainingDays[i];
+        const nextSourceKey = trainingDays[(srcIndex + 1 + i) % trainingDays.length];
+        const donor = snapshot[nextSourceKey];
+        state.schedule[currentTargetKey].title = donor.title;
+        state.schedule[currentTargetKey].subtitle = donor.subtitle;
+        state.schedule[currentTargetKey].muscleGroup = donor.muscleGroup;
+        state.schedule[currentTargetKey].accentHue = donor.accentHue;
+        state.schedule[currentTargetKey].estimatedMinutes = donor.estimatedMinutes;
+        state.schedule[currentTargetKey].exercises = deepClone(donor.exercises).map(ex => ({
+          ...ex,
+          completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
+        }));
+      }
     }
 
     closeSundayConfirmDialog();
     closeSundayRecoveryDialog();
+
+    // El día de entrenamiento que fue el reemplazante NO debe quedar seleccionado.
+    // Queda seleccionado DOMINGO (día actual):
     state.selectedDay = 'domingo';
     saveState();
     renderAll();
-    showCelebrationToast(`⚡ Rutina de ${sourceDay.dayName} cargada en Domingo.${willConflictMonday ? ' Recálculo Lunes/Martes aplicado.' : ''}`);
+    showCelebrationToast(`⚡ Rutina de ${sourceDay.dayName} aplicada a Domingo. Calendario semanal actualizado.`);
     return true;
   }
 
@@ -1765,7 +1771,13 @@
       setsCounterEl.textContent = `${doneSets} / ${totalSets} series`;
     }
     if (durationEl) {
-      durationEl.textContent = day.estimatedMinutes > 0 ? `~${day.estimatedMinutes} min` : 'Descanso';
+      if (day.estimatedMinutes > 0) {
+        durationEl.textContent = `~${day.estimatedMinutes} min`;
+        durationEl.style.display = '';
+      } else {
+        durationEl.textContent = '';
+        durationEl.style.display = 'none';
+      }
     }
 
     if (volumePillEl && GYM_VISUALS) {
@@ -1907,23 +1919,7 @@
       <strong class="pill-val">${repsSummary}</strong>
     `;
 
-    // 3. Máquina / Implemento
-    const pillEquip = document.createElement('div');
-    pillEquip.className = 'exercise-preview-pill pill-equip';
-    pillEquip.innerHTML = `
-      <span class="pill-label">⚙️ Máquina / Implemento</span>
-      <strong class="pill-val">${ex.equipment || 'Máquina / Polea'}</strong>
-    `;
-
-    // 4. Músculo Principal
-    const pillMuscle = document.createElement('div');
-    pillMuscle.className = 'exercise-preview-pill pill-muscle';
-    pillMuscle.innerHTML = `
-      <span class="pill-label">🎯 Músculo Principal</span>
-      <strong class="pill-val">${ex.muscle || ex.targetZone || 'Músculo principal'}</strong>
-    `;
-
-    infoGrid.append(pillLoad, pillReps, pillEquip, pillMuscle);
+    infoGrid.append(pillLoad, pillReps);
     contentCol.appendChild(infoGrid);
 
     visualLayout.append(illustrationWrap, contentCol);
@@ -2702,6 +2698,124 @@
     showCelebrationToast('🔥 ¡Calentamiento articular completado! Listo para tus series efectivas.');
   }
 
+  let activeWarmupPreviewTarget = null;
+
+  function getWarmupStepVisual(step, day) {
+    const text = `${step.label || ''} ${step.id || ''} ${day?.muscleGroup || ''}`.toLowerCase();
+
+    if (text.includes('escapular') || text.includes('rotacion') || text.includes('rotaciones') || text.includes('torácica')) {
+      return {
+        imgUrl: 'assets/icons/warmup-scapular.png',
+        title: 'Rotaciones Escapulares y Movilidad Torácica',
+        instruction: 'Realiza círculos lentos y amplios con los hombros juntando y separando las escápulas para activar el plano escapular y lubricar la articulación.'
+      };
+    }
+    if (text.includes('dislocacion') || text.includes('bastón') || text.includes('banda') || text.includes('hombro')) {
+      return {
+        imgUrl: 'assets/icons/warmup-dislocate.png',
+        title: 'Dislocaciones de Hombro con Banda / Bastón',
+        instruction: 'Con agarre amplio y brazos rectos, pasa la banda o bastón por encima de la cabeza hacia la espalda baja sintiendo la apertura torácica sin forzar.'
+      };
+    }
+    if (text.includes('rotador') || text.includes('externa') || text.includes('manguito')) {
+      return {
+        imgUrl: 'assets/icons/warmup-rotator.png',
+        title: 'Rotación Externa de Manguito Rotador',
+        instruction: 'Pega el codo a la cintura a 90 grados y rota externamente el antebrazo manteniendo la tensión controlada en el manguito.'
+      };
+    }
+    if (text.includes('apertura') || text.includes('pectoral') || text.includes('pecho')) {
+      return {
+        imgUrl: 'assets/icons/warmup-chest-open.png',
+        title: 'Aperturas Dinámicas y Movilidad Pectoral',
+        instruction: 'Abre los brazos en cruz con retracción escapular activa para oxigenar y expandir las fibras esternales del pectoral antes de empujar carga.'
+      };
+    }
+    if (text.includes('cadera') || text.includes('90/90') || text.includes('pélvico') || text.includes('flexores')) {
+      return {
+        imgUrl: 'assets/icons/warmup-hip-mobility.png',
+        title: 'Movilidad Dinámica de Cadera 90/90',
+        instruction: 'Sentado en el suelo con rodillas y caderas en 90 grados, rota alternando hacia adentro y afuera para lubricar la articulación femoroacetabular.'
+      };
+    }
+    if (text.includes('glúteo') || text.includes('puente') || text.includes('isométrico')) {
+      return {
+        imgUrl: 'assets/icons/warmup-glute-bridge.png',
+        title: 'Puente de Glúteo Isométrico y Activación',
+        instruction: 'Apoya los pies planos en el suelo, eleva la pelvis contrayendo los glúteos en el punto máximo durante 1 a 2 segundos antes de descender.'
+      };
+    }
+    if (text.includes('aproximación') || text.includes('polea') || text.includes('prensa') || text.includes('máquina')) {
+      return {
+        imgUrl: 'assets/icons/warmup-cable-warmup.png',
+        title: 'Serie de Aproximación al 40% (Sin fatiga)',
+        instruction: 'Serie de activación neurológica y articular con el 40% de tu carga de trabajo. 15 repeticiones rítmicas para fijar el patrón motor.'
+      };
+    }
+    if (text.includes('core') || text.includes('plancha') || text.includes('bird-dog') || text.includes('abdominal')) {
+      return {
+        imgUrl: 'assets/icons/warmup-core-plank.png',
+        title: 'Activación de Core y Estabilidad Lumbo-Pélvica',
+        instruction: 'Mantén la plancha abdominal con respiración controlada y glúteos compactos para blindar la zona lumbar antes de tus levantamientos.'
+      };
+    }
+    return {
+      imgUrl: 'assets/icons/warmup-scapular.png',
+      title: step.label,
+      instruction: 'Ejecución técnica controlada y fluida, enfocada en lubricar las articulaciones y preparar los tendones para la carga de trabajo.'
+    };
+  }
+
+  function openWarmupPreviewDialog(step, visual, dayId = state.selectedDay) {
+    const dialog = document.getElementById('warmup-preview-dialog');
+    if (!dialog) return;
+
+    activeWarmupPreviewTarget = { step, visual, dayId };
+
+    const titleEl = document.getElementById('warmup-preview-title');
+    const imgEl = document.getElementById('warmup-preview-img');
+    const durEl = document.getElementById('warmup-preview-duration');
+    const statusEl = document.getElementById('warmup-preview-status');
+    const instructionEl = document.getElementById('warmup-preview-instruction');
+    const btnToggle = document.getElementById('btn-toggle-warmup-complete');
+
+    const dayWarmupMap = (state.warmupByDay && state.warmupByDay[dayId]) || {};
+    const isDone = Boolean(dayWarmupMap[step.id]);
+
+    if (titleEl) titleEl.textContent = visual.title;
+    if (imgEl) {
+      imgEl.src = visual.imgUrl;
+      imgEl.alt = visual.title;
+    }
+    if (durEl) durEl.textContent = `⏱️ ${step.duration}`;
+    if (statusEl) {
+      statusEl.textContent = isDone ? '✓ Completado' : 'Pendiente de activación';
+      statusEl.className = `warmup-status-badge ${isDone ? 'is-done' : ''}`;
+    }
+    if (instructionEl) instructionEl.textContent = visual.instruction;
+    if (btnToggle) {
+      btnToggle.textContent = isDone ? '↩️ Desmarcar Calentamiento' : '✓ Marcar Calentamiento como Completado';
+      btnToggle.className = isDone ? 'btn-ghost' : 'btn-primary';
+    }
+
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeWarmupPreviewDialog() {
+    const dialog = document.getElementById('warmup-preview-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+    }
+    activeWarmupPreviewTarget = null;
+  }
+
   function renderWarmupChecklist() {
     const card = document.getElementById('warmup-checklist-card');
     const titleEl = document.getElementById('warmup-title-text');
@@ -2726,16 +2840,53 @@
       const isDone = Boolean(dayWarmupMap[step.id]);
       if (isDone) doneCount += 1;
 
+      const visual = getWarmupStepVisual(step, day);
+
       const li = document.createElement('li');
-      li.className = 'warmup-step-item';
-      const badge = document.createElement('div');
-      badge.className = 'warmup-step-btn is-preview-only';
-      badge.dataset.stepId = step.id;
-      badge.innerHTML = `
-        <span class="warmup-step-name">🔥 ${step.label}</span>
-        <strong class="warmup-step-dur">${step.duration}</strong>
+      li.className = `warmup-step-item ${isDone ? 'is-completed' : ''}`;
+      li.dataset.stepId = step.id;
+
+      const stepCard = document.createElement('div');
+      stepCard.className = 'warmup-step-card warmup-step-btn';
+      stepCard.role = 'button';
+      stepCard.tabIndex = 0;
+      stepCard.title = 'Toca para ver la técnica y completar este calentamiento';
+      stepCard.dataset.stepId = step.id;
+      if (isDone) {
+        stepCard.setAttribute('aria-pressed', 'true');
+      }
+
+      stepCard.innerHTML = `
+        <div class="warmup-step-thumb-wrap">
+          <img src="${visual.imgUrl}" alt="${step.label}" class="warmup-step-thumb-img" width="42" height="42">
+        </div>
+        <div class="warmup-step-body">
+          <span class="warmup-step-name">${step.label}</span>
+          <div class="warmup-step-meta">
+            <span class="warmup-step-dur">⏱️ ${step.duration}</span>
+            <span class="warmup-step-status ${isDone ? 'is-done' : ''}">${isDone ? '✓ Completado' : 'Pendiente'}</span>
+          </div>
+        </div>
+        <button type="button" class="btn-check-warmup ${isDone ? 'is-done' : ''}" aria-label="Marcar como completado">
+          ${isDone ? '✓' : '○'}
+        </button>
       `;
-      li.appendChild(badge);
+
+      stepCard.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-check-warmup')) {
+          toggleWarmupStep(dayId, step.id);
+        } else {
+          openWarmupPreviewDialog(step, visual, dayId);
+        }
+      });
+      stepCard.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openWarmupPreviewDialog(step, visual, dayId);
+        }
+      });
+
+      li.appendChild(stepCard);
       listEl.appendChild(li);
     }
 
@@ -2743,7 +2894,7 @@
       titleEl.textContent = `Calentamiento Articular (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
     }
     if (pillEl) {
-      pillEl.textContent = `${doneCount} / ${steps.length} pasos de activación`;
+      pillEl.innerHTML = `<span class="warmup-step-count">${doneCount} / ${steps.length}</span> <span class="warmup-step-label">pasos de activación</span>`;
       pillEl.classList.toggle('is-done', doneCount === steps.length);
     }
   }
@@ -2838,7 +2989,7 @@
     if (!currentDay) return;
 
     if (headingEl) {
-      headingEl.textContent = `Ejercicios de ${currentDay.dayName} (Estándar 4 series × 12 reps)`;
+      headingEl.textContent = '';
     }
 
     if (currentDay.exercises.length === 0) {
@@ -4026,7 +4177,7 @@
     const nextBtn = document.getElementById('btn-focus-next-ex');
 
     if (exercises.length === 0) {
-      if (counterLabel) counterLabel.textContent = 'Día de Descanso / Sin ejercicios';
+      if (counterLabel) counterLabel.textContent = 'Sin ejercicios programados';
       if (pillsContainer) pillsContainer.innerHTML = '';
       return null;
     }
@@ -5383,6 +5534,48 @@
       applySundayRoutine();
     });
 
+    // Modal de Demostración y Completado de Calentamiento Previo
+    document.getElementById('btn-close-warmup-preview')?.addEventListener('click', closeWarmupPreviewDialog);
+    document.getElementById('btn-cancel-warmup-preview')?.addEventListener('click', closeWarmupPreviewDialog);
+    document.getElementById('btn-toggle-warmup-complete')?.addEventListener('click', () => {
+      if (!activeWarmupPreviewTarget) return;
+      const { step, visual, dayId } = activeWarmupPreviewTarget;
+      toggleWarmupStep(dayId, step.id);
+
+      const dayWarmupMap = (state.warmupByDay && state.warmupByDay[dayId]) || {};
+      const isDone = Boolean(dayWarmupMap[step.id]);
+
+      const statusEl = document.getElementById('warmup-preview-status');
+      const btnToggle = document.getElementById('btn-toggle-warmup-complete');
+
+      if (statusEl) {
+        statusEl.textContent = isDone ? '✓ Completado' : 'Pendiente de activación';
+        statusEl.className = `warmup-status-badge ${isDone ? 'is-done' : ''}`;
+      }
+      if (btnToggle) {
+        btnToggle.textContent = isDone ? '↩️ Desmarcar Calentamiento' : '✓ Marcar Calentamiento como Completado';
+        btnToggle.className = isDone ? 'btn-ghost' : 'btn-primary';
+      }
+
+      if (isDone) {
+        showCelebrationToast(`🔥 ¡${visual.title} completado!`);
+        setTimeout(() => closeWarmupPreviewDialog(), 600);
+      }
+    });
+
+    // Botón de calentamiento en Pantalla Enfoque (#workout-focus-screen)
+    document.getElementById('btn-focus-warmup-cta')?.addEventListener('click', () => {
+      const day = state.schedule[state.selectedDay];
+      if (!day || !GYM_VISUALS || typeof GYM_VISUALS.getWarmupProtocolForDay !== 'function') return;
+      const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
+      if (steps.length === 0) return;
+
+      const dayWarmupMap = (state.warmupByDay && state.warmupByDay[state.selectedDay]) || {};
+      const pendingStep = steps.find(s => !dayWarmupMap[s.id]) || steps[0];
+      const visual = getWarmupStepVisual(pendingStep, day);
+      openWarmupPreviewDialog(pendingStep, visual, state.selectedDay);
+    });
+
     // Botón de salir (X) del panel de perfil de usuario
     document.getElementById('btn-close-profile-dialog')?.addEventListener('click', closeProfileOnboardingDialog);
 
@@ -5697,7 +5890,7 @@
     document.getElementById('btn-results-prev-3')?.addEventListener('click', () => setResultsTab(1));
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
-    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog', 'sunday-recovery-dialog', 'sunday-confirm-dialog'].forEach(dlgId => {
+    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog', 'sunday-recovery-dialog', 'sunday-confirm-dialog', 'warmup-preview-dialog'].forEach(dlgId => {
       const dlg = document.getElementById(dlgId);
       if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
         dlg.addEventListener('click', event => {
@@ -6031,6 +6224,10 @@
     openSundayConfirmDialog,
     closeSundayConfirmDialog,
     applySundayRoutine,
+    // APIs Calentamiento Articular con Ilustraciones y Demostración
+    openWarmupPreviewDialog,
+    closeWarmupPreviewDialog,
+    getWarmupStepVisual,
     // APIs Collapsibles Suaves e Iconos
     initSmoothCollapsibles,
     // APIs Dynamic Series & Reps v1.9.1
