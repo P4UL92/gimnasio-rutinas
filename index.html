@@ -145,44 +145,26 @@
         </div>
       </section>
 
-      <search class="exercise-search-bar" aria-label="Filtrar ejercicios del día o de la semana">
-        <form id="search-form" class="search-form">
-          <label for="exercise-search-input" class="sr-only">Buscar ejercicio o músculo</label>
-          <input
-            type="search"
-            id="exercise-search-input"
-            name="q"
-            placeholder="Buscar ejercicio (ej. espalda, polea, bíceps, pierna...)"
-            autocomplete="off"
-          >
-          <button type="button" id="btn-clear-search" class="btn-clear-search" hidden>Limpiar</button>
-        </form>
-      </search>
-
       <section aria-labelledby="exercises-heading" class="exercises-section">
-        <!-- Checklist Interactivo de Calentamiento Articular (5 min) -->
+        <!-- Panel Informativo de Calentamiento Articular (Solo Muestra · 5 min) -->
         <details id="warmup-checklist-card" class="warmup-checklist-card">
           <summary class="warmup-summary">
             <div class="warmup-summary-left">
               <span class="warmup-badge">🔥 CALENTAMIENTO</span>
               <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
             </div>
-            <span id="warmup-progress-pill" class="warmup-progress-pill">0 / 4 listos</span>
+            <span id="warmup-progress-pill" class="warmup-progress-pill">4 pasos de activación</span>
           </summary>
           <div class="warmup-body">
             <ul id="warmup-steps-list" class="warmup-steps-list">
               <!-- Pasos de calentamiento generados por app.js -->
             </ul>
-            <div class="warmup-actions-row">
-              <button type="button" id="btn-start-warmup-timer" class="btn-secondary">⏱️ Temporizador Calentamiento (5:00)</button>
-              <button type="button" id="btn-complete-all-warmup" class="btn-ghost">✓ Marcar todos</button>
-            </div>
           </div>
         </details>
 
         <div class="section-header-row">
           <h2 id="exercises-heading" class="section-title">Ejercicios del Día (4 series × 12 reps)</h2>
-          <span class="unit-legend">Toca <strong>▶ Entrenar</strong> para abrir el ejercicio o <strong>⚙️ Ajustes</strong> para más opciones</span>
+          <span class="unit-legend">Visualización y datos del entrenamiento programado</span>
         </div>
 
         <ul id="exercises-list" class="exercises-list">

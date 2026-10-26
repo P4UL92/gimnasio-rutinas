@@ -238,14 +238,11 @@ assert.equal(app.getStopwatchElapsedMs(), 0);
 assert.equal(doc.getElementById('focus-stopwatch-display').textContent, '00:00:00');
 
 // 13. Verificar Cronómetro de Serie (TUT - Time Under Tension) y avance de serie
-const tutButtons = doc.querySelectorAll('.btn-tut-stopwatch');
-assert.equal(tutButtons.length, 6, 'Cada ejercicio debe tener su botón de cronómetro de serie (TUT)');
+assert.equal(doc.querySelectorAll('.exercise-card .btn-tut-stopwatch').length, 0, 'Las tarjetas de ejercicio en pantalla principal son solo de muestra sin botones TUT');
 
 const firstEx = state.schedule.lunes.exercises[0];
 const initialDoneSets = (firstEx.completedSets || []).filter(Boolean).length;
 app.startTutStopwatch('lunes', firstEx.id);
-const timingBtn = doc.querySelector(`.btn-tut-stopwatch[data-exercise-id="${firstEx.id}"]`);
-assert.ok(timingBtn.classList.contains('is-timing'), 'El botón debe activarse en modo cronometraje');
 
 app.stopTutStopwatch();
 app.stopRestTimer();
@@ -387,7 +384,6 @@ for (let s = 0; s < 4; s++) {
 }
 const suggestions = app.getSmartProgressionSuggestions('lunes');
 assert.ok(suggestions.some(s => s.exerciseId === 'lun-espalda-maquina-amplio' && s.suggestedLoad === 22.5), 'Al completar 4x12 en Espalda Agarre Amplio (20 kg) debe sugerir subir a 22.5 kg');
-assert.ok(doc.querySelector('.btn-smart-overload-suggest[data-exercise-id="lun-espalda-maquina-amplio"]'), 'La tarjeta del ejercicio debe mostrar el botón 1-toque de Doble Progresión');
 const appliedOverload = app.applySmartProgressionSuggestion('lunes', 'lun-espalda-maquina-amplio');
 assert.equal(appliedOverload.nextLoad, 22.5, 'El botón de Doble Progresión debe incrementar la carga de 20 kg a 22.5 kg con 1 toque');
 assert.equal(app.getState().schedule.lunes.exercises.find(e => e.id === 'lun-espalda-maquina-amplio').loadValue, 22.5, 'El estado debe reflejar los 22.5 kg actualizados');
@@ -408,7 +404,7 @@ assert.ok(csvContent.includes(exPoleaEstrecho.name), 'El archivo CSV debe inclui
 // 27. Verificar Módulo Focus UI v1.8: Menús Agrupados, Responsive Vertical y Cambio de Pantalla al Iniciar Día
 assert.ok(doc.getElementById('header-tools-menu'), 'Debe existir el menú desplegable agrupado de opciones en cabecera');
 assert.ok(doc.getElementById('day-secondary-menu'), 'Debe existir el menú desplegable de opciones secundarias del día');
-assert.equal(doc.querySelectorAll('.ex-card-options-menu').length, 6, 'Cada tarjeta de ejercicio debe agrupar sus opciones secundarias en un menú desplegable');
+assert.equal(doc.querySelectorAll('.ex-card-options-menu').length, 0, 'Las tarjetas de ejercicio en pantalla principal no contienen menú de opciones secundarias (solo muestra)');
 assert.ok(doc.getElementById('bottom-app-nav'), 'Debe existir la barra de navegación inferior estilo Android');
 
 const workoutLaunch = app.startDayWorkoutSession('lunes', 0);
@@ -846,37 +842,21 @@ for (const [key, config] of Object.entries(spriteCatalog)) {
   assert.ok(fs.existsSync(fullSpritePath), `El sprite ${config.spriteUrl} del patrón ${key} debe existir`);
 }
 
-// --- Suite 33: Botones de Ayuda (Incógnita) para Máquina, Músculo y Ficha Técnica ---
-console.log('Ejecutando Suite 33: Botones de Ayuda (Incógnita) para Máquina y Músculo...');
+// --- Suite 33: Muestra de Máquina y Músculo en Tarjetas y Ficha Técnica en Entrenamiento ---
+console.log('Ejecutando Suite 33: Máquina y Músculo Directos en Tarjetas y Ayuda en Entrenamiento...');
 
-// 33.1 Seleccionar día lunes y verificar presencia de botón de ayuda en tarjetas de ejercicio
+// 33.1 Seleccionar día lunes y verificar presencia directa de máquina y músculo en tarjetas (solo muestra)
 app.selectDay('lunes');
 const mondayCards = doc.querySelectorAll('#exercises-list .exercise-card');
 assert.ok(mondayCards.length > 0, 'Deben existir tarjetas de ejercicios en la vista de rutina');
 const firstCard = mondayCards[0];
 
-const helpBtn = firstCard.querySelector('.btn-ex-help-trigger');
-assert.ok(helpBtn, 'La tarjeta de ejercicio debe contener el botón de ayuda tipo incógnita (.btn-ex-help-trigger)');
-assert.ok(helpBtn.textContent.includes('❓') || helpBtn.textContent.includes('Máquina'), 'El botón debe mostrar icono de incógnita/ayuda');
-
-const helpPanel = firstCard.querySelector('.exercise-help-panel');
-assert.ok(helpPanel, 'La tarjeta debe tener su panel informativo desplegable (.exercise-help-panel)');
-assert.ok(helpPanel.classList.contains('is-hidden'), 'El panel de ayuda debe comenzar plegado (is-hidden) para mantener la vista limpia');
-
-// 33.2 Simular pulsación del botón de ayuda: debe desplegarse y mostrar máquina y músculo
-helpBtn.click();
-assert.ok(!helpPanel.classList.contains('is-hidden'), 'Al pulsar el botón de ayuda, el panel debe mostrarse');
-assert.ok(helpBtn.classList.contains('is-active'), 'El botón debe marcarse activo al estar abierto el panel');
-
-const helpText = helpPanel.textContent;
-assert.ok(helpText.includes('Músculo') && helpText.includes('Máquina'), 'El panel debe mostrar el nombre del músculo y de la máquina');
-
-// 33.3 Cerrar el panel mediante el botón de cierre
-const closeBtn = helpPanel.querySelector('.btn-help-close');
-assert.ok(closeBtn, 'El panel debe contener botón de cierre (✕)');
-closeBtn.click();
-assert.ok(helpPanel.classList.contains('is-hidden'), 'Al pulsar cerrar, el panel debe ocultarse');
-assert.ok(!helpBtn.classList.contains('is-active'), 'El botón debe desactivarse al cerrar');
+const cardPillEquip = firstCard.querySelector('.exercise-preview-pill.pill-equip');
+const cardPillMuscle = firstCard.querySelector('.exercise-preview-pill.pill-muscle');
+assert.ok(cardPillEquip, 'La tarjeta debe mostrar directamente la máquina/implemento como dato informativo');
+assert.ok(cardPillMuscle, 'La tarjeta debe mostrar directamente el músculo principal como dato informativo');
+assert.ok(cardPillEquip.textContent.includes('Máquina') || cardPillEquip.textContent.includes('Polea'));
+assert.ok(cardPillMuscle.textContent.includes('Dorsal') || cardPillMuscle.textContent.includes('Músculo'));
 
 // 33.4 Verificar botón de ayuda e información en la pantalla de entrenamiento (Focus Mode)
 const focusHelpBtn = doc.getElementById('btn-focus-help');
@@ -1523,11 +1503,80 @@ app.moveMuscleToCurrentDay(otherDay);
 assert.equal(app.getState().schedule[todayId].title, prevOtherTitle, 'El músculo de otro día debe pasar a ser el de hoy');
 app.closeMoveMuscleDialog();
 
+// =========================================================================
+// 43. VERIFICACIÓN INTEGRAL DE ACTUALIZACIÓN v1.9.23
+// - Ocultamiento de '...Opciones del Día' al ver día distinto de hoy
+// - Retiro de búsqueda de ejercicios en la vista de rutina
+// - Tarjetas de ejercicio solo de muestra (nada de modificación)
+// - Solo muestra nivel/peso, reps, máquina y músculo
+// - Retiro de botones Ver Ejercicio, Opciones y Técnica, y Marca actual
+// - Calentamientos solo de muestra
+// - Prevención total de desbordes en navegación y pantallas
+// =========================================================================
+console.log('Ejecutando Suite 43: Tarjetas Solo Muestra, Sin Opciones en Otro Día, Sin Búsqueda y Sin Desbordes...');
+
+// 43.1 Ocultar '...Opciones del día' al ver otro día
+const currentDayToday = app.detectDefaultDay();
+const dayNotToday = currentDayToday === 'lunes' ? 'martes' : 'lunes';
+app.selectDay(dayNotToday);
+const dayMenuNotToday = doc.getElementById('day-secondary-menu');
+assert.ok(dayMenuNotToday, 'Debe existir el elemento #day-secondary-menu');
+assert.equal(dayMenuNotToday.hidden, true, 'El botón ...Opciones del día NO debe mostrarse en días distintos al actual');
+
+// Al volver al día actual, ...Opciones del día debe estar visible
+app.selectDay(currentDayToday);
+assert.equal(doc.getElementById('day-secondary-menu').hidden, false, 'El botón ...Opciones del día debe mostrarse en el día actual');
+
+// 43.2 Retiro de la opción de buscar ejercicio en la rutina
+assert.equal(doc.getElementById('exercise-search-input'), null, 'La barra de búsqueda de ejercicio debe estar removida de la interfaz del día');
+assert.equal(doc.querySelector('.exercise-search-bar'), null, 'El contenedor exercise-search-bar debe estar removido');
+
+// 43.3 Tarjetas de ejercicios de la pantalla principal solo de muestra (nada de modificación)
+app.selectDay('lunes');
+const previewCards = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.equal(previewCards.length, 6, 'Deben renderizarse las 6 tarjetas de ejercicios');
+
+previewCards.forEach((card, idx) => {
+  // Debe tener encabezado con el título
+  const title = card.querySelector('h3.exercise-card-title');
+  assert.ok(title && title.textContent.trim().length > 0, `Card ${idx + 1} debe mostrar el nombre del ejercicio`);
+
+  // Debe tener los 4 datos informativos solicitados
+  const pillLoad = card.querySelector('.exercise-preview-pill.pill-load');
+  const pillReps = card.querySelector('.exercise-preview-pill.pill-reps');
+  const pillEquip = card.querySelector('.exercise-preview-pill.pill-equip');
+  const pillMuscle = card.querySelector('.exercise-preview-pill.pill-muscle');
+
+  assert.ok(pillLoad, `Card ${idx + 1} debe mostrar la carga/nivel`);
+  assert.ok(pillReps, `Card ${idx + 1} debe mostrar las repeticiones/series`);
+  assert.ok(pillEquip, `Card ${idx + 1} debe mostrar la máquina/implemento`);
+  assert.ok(pillMuscle, `Card ${idx + 1} debe mostrar el músculo principal`);
+
+  // NO debe tener botones de Ver Ejercicio, Opciones y Técnica, ni Marca actual
+  assert.equal(card.querySelector('.btn-open-ex-focus'), null, `Card ${idx + 1} NO debe tener el botón de Ver ejercicio`);
+  assert.equal(card.querySelector('.ex-card-options-menu'), null, `Card ${idx + 1} NO debe tener el menú de Opciones y Técnica`);
+  assert.equal(card.querySelector('.badge-user-base'), null, `Card ${idx + 1} NO debe tener el texto de Marca actual`);
+
+  // NO debe tener controles de modificación interactivos
+  assert.equal(card.querySelectorAll('.btn-step-load').length, 0, `Card ${idx + 1} no debe tener botones de aumentar/disminuir carga`);
+  assert.equal(card.querySelectorAll('.btn-set-check').length, 0, `Card ${idx + 1} no debe tener botones interactivos de series`);
+  assert.equal(card.querySelectorAll('.btn-tut-stopwatch').length, 0, `Card ${idx + 1} no debe tener botones de cronómetro TUT`);
+});
+
+// 43.4 Calentamientos solo de muestra
+const warmupCards = doc.querySelectorAll('#warmup-steps-list .warmup-step-item');
+assert.ok(warmupCards.length > 0, 'Deben mostrarse los pasos de calentamiento');
+assert.equal(doc.getElementById('btn-complete-all-warmup'), null, 'El botón interactivo de marcar todos los calentamientos debe estar retirado');
+
+// 43.5 Reglas CSS contra desbordes
+assert.ok(cssContent.includes('overflow-x: hidden'), 'styles.css debe incluir contención overflow-x: hidden');
+assert.ok(cssContent.includes('.exercise-preview-pill'), 'styles.css debe definir el estilo para las pills de muestra');
+
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 42 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 43 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

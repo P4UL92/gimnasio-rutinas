@@ -1536,6 +1536,14 @@
         startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
       }
     }
+    const daySecondaryMenu = document.getElementById('day-secondary-menu');
+    if (daySecondaryMenu) {
+      daySecondaryMenu.hidden = !isViewingToday;
+      if (!isViewingToday) {
+        daySecondaryMenu.open = false;
+      }
+    }
+
     const headerStartBtn = document.getElementById('btn-header-start-day');
     if (headerStartBtn) {
       headerStartBtn.hidden = true;
@@ -1544,15 +1552,20 @@
 
   function createExerciseCard(dayId, ex) {
     const li = document.createElement('li');
-    li.className = 'exercise-card';
+    li.className = 'exercise-card is-preview-only';
     li.dataset.exerciseId = ex.id;
 
-    const doneCount = (ex.completedSets || []).filter(Boolean).length;
-    const totalSets = Number(ex.sets) || 4;
-    if (doneCount === totalSets && totalSets > 0) {
-      li.classList.add('is-all-done');
-    }
+    // Encabezado superior con el nombre del ejercicio (mantiene estructura esperada)
+    const cardHeader = document.createElement('header');
+    cardHeader.className = 'exercise-top exercise-card-header';
 
+    const h3 = document.createElement('h3');
+    h3.className = 'exercise-card-title';
+    h3.textContent = ex.name;
+    cardHeader.appendChild(h3);
+    li.appendChild(cardHeader);
+
+    // Layout visual: Ilustración rasterizada del ejercicio + Panel informativo
     const visualLayout = document.createElement('div');
     visualLayout.className = 'exercise-visual-layout';
 
@@ -1570,356 +1583,49 @@
     });
 
     const contentCol = document.createElement('div');
-    contentCol.className = 'exercise-content-col';
+    contentCol.className = 'exercise-content-col exercise-preview-col';
 
-    const topRow = document.createElement('header');
-    topRow.className = 'exercise-top exercise-card-header';
+    // Grilla informativa de solo muestra (nada de modificación):
+    // Carga (Nivel/Peso), Repeticiones, Máquina y Músculo
+    const infoGrid = document.createElement('div');
+    infoGrid.className = 'exercise-preview-info-grid';
 
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'exercise-title-group';
-
-    const h3 = document.createElement('h3');
-    h3.className = 'exercise-card-title';
-    h3.textContent = ex.name;
-    titleGroup.appendChild(h3);
-
-    const metaRow = document.createElement('div');
-    metaRow.className = 'exercise-meta';
-
-    // Botón de ayuda tipo incógnita para desplegar máquina, músculo y técnica
-    const btnHelp = document.createElement('button');
-    btnHelp.type = 'button';
-    btnHelp.className = 'btn-ex-help-trigger';
-    btnHelp.setAttribute('aria-expanded', 'false');
-    btnHelp.setAttribute('aria-label', `Información de máquina y músculo para ${ex.name}`);
-    btnHelp.title = 'Toca para ver el nombre de la máquina, músculo trabajado y técnica de ejecución';
-    btnHelp.innerHTML = '<span class="help-btn-icon">❓</span><span class="help-btn-label">Máquina & Músculo</span>';
-    metaRow.appendChild(btnHelp);
-
-    if (ex.userBase) {
-      const baseBadge = document.createElement('span');
-      baseBadge.className = 'badge badge-user-base';
-      baseBadge.textContent = '★ Marca actual';
-      metaRow.appendChild(baseBadge);
-    }
-
-    if (ex.isSwappedAlternative) {
-      const swappedBadge = document.createElement('span');
-      swappedBadge.className = 'badge badge-swapped-alt';
-      swappedBadge.textContent = '🔄 Sustituto';
-      metaRow.appendChild(swappedBadge);
-    }
-
-    titleGroup.appendChild(metaRow);
-
-    // Panel de Ayuda Desplegable (Ficha Técnica e Implementos)
-    const helpPanel = document.createElement('div');
-    helpPanel.className = 'exercise-help-panel is-hidden';
-    helpPanel.setAttribute('role', 'region');
-    helpPanel.setAttribute('aria-label', `Ficha informativa de ${ex.name}`);
-
-    const helpHeader = document.createElement('div');
-    helpHeader.className = 'help-panel-header';
-    const helpTitle = document.createElement('span');
-    helpTitle.className = 'help-panel-title';
-    helpTitle.textContent = 'ℹ️ Implementos, Músculo y Guía';
-    const btnCloseHelp = document.createElement('button');
-    btnCloseHelp.type = 'button';
-    btnCloseHelp.className = 'btn-help-close';
-    btnCloseHelp.setAttribute('aria-label', 'Cerrar ficha informativa');
-    btnCloseHelp.textContent = '✕';
-    helpHeader.append(helpTitle, btnCloseHelp);
-
-    const helpGrid = document.createElement('div');
-    helpGrid.className = 'help-panel-grid';
-
-    const itemMuscle = document.createElement('div');
-    itemMuscle.className = 'help-panel-chip';
-    itemMuscle.innerHTML = `<span class="help-chip-label">🎯 Músculo que se trabajará:</span>`;
-    const strongMuscle = document.createElement('strong');
-    strongMuscle.className = 'help-chip-val';
-    strongMuscle.textContent = ex.muscle || 'Músculo principal';
-    itemMuscle.appendChild(strongMuscle);
-
-    const itemEquip = document.createElement('div');
-    itemEquip.className = 'help-panel-chip';
-    itemEquip.innerHTML = `<span class="help-chip-label">⚙️ Nombre de la Máquina / Implemento:</span>`;
-    const strongEquip = document.createElement('strong');
-    strongEquip.className = 'help-chip-val';
-    strongEquip.textContent = ex.equipment || 'Máquina / Polea';
-    itemEquip.appendChild(strongEquip);
-
-    const itemRest = document.createElement('div');
-    itemRest.className = 'help-panel-chip';
-    itemRest.innerHTML = `<span class="help-chip-label">⏱️ Descanso sugerido:</span><span class="help-chip-val">${ex.restSeconds || 75} segundos entre series</span>`;
-
-    const itemRir = document.createElement('div');
-    itemRir.className = 'help-panel-chip';
-    const rirVal = ex.targetRir || 'RIR 2';
-    itemRir.innerHTML = `<span class="help-chip-label">🎯 Esfuerzo (RIR):</span><span class="help-chip-val">${rirVal}</span>`;
-
-    helpGrid.append(itemMuscle, itemEquip, itemRest, itemRir);
-    helpPanel.append(helpHeader, helpGrid);
-
-    if (ex.note) {
-      const noteBox = document.createElement('div');
-      noteBox.className = 'help-panel-note';
-      const noteIcon = document.createElement('span');
-      noteIcon.className = 'help-note-icon';
-      noteIcon.textContent = '💡';
-      const noteContent = document.createElement('div');
-      noteContent.className = 'help-note-content';
-      const noteTitle = document.createElement('strong');
-      noteTitle.textContent = 'Instrucciones y técnica:';
-      const noteText = document.createElement('p');
-      noteText.textContent = ex.note;
-      noteContent.append(noteTitle, noteText);
-      noteBox.append(noteIcon, noteContent);
-      helpPanel.appendChild(noteBox);
-    }
-
-    const toggleHelp = (e) => {
-      e?.stopPropagation();
-      const isHidden = helpPanel.classList.contains('is-hidden');
-      if (isHidden) {
-        helpPanel.classList.remove('is-hidden');
-        btnHelp.classList.add('is-active');
-        btnHelp.setAttribute('aria-expanded', 'true');
-      } else {
-        helpPanel.classList.add('is-hidden');
-        btnHelp.classList.remove('is-active');
-        btnHelp.setAttribute('aria-expanded', 'false');
-      }
-    };
-    btnHelp.addEventListener('click', toggleHelp);
-    btnCloseHelp.addEventListener('click', toggleHelp);
-
-    const loadBox = document.createElement('div');
-    loadBox.className = 'load-control-box';
-
-    const btnMinus = document.createElement('button');
-    btnMinus.type = 'button';
-    btnMinus.className = 'btn-step-load';
-    btnMinus.setAttribute('aria-label', `Disminuir carga en ${ex.name}`);
-    btnMinus.textContent = '−';
-    btnMinus.addEventListener('click', () => adjustExerciseLoad(dayId, ex.id, -1));
-
+    // 1. Nivel / Peso
     const badgeInfo = formatLoadBadge(ex);
-    const btnUnit = document.createElement('button');
-    btnUnit.type = 'button';
-    btnUnit.className = `btn-toggle-unit ${badgeInfo.cssClass}`;
-    btnUnit.title = 'Toca para alternar entre kg y Nivel de polea';
+    const pillLoad = document.createElement('div');
+    pillLoad.className = 'exercise-preview-pill pill-load';
+    pillLoad.innerHTML = `
+      <span class="pill-label">🏋️ Carga / Nivel</span>
+      <strong class="pill-val">${badgeInfo.main}${badgeInfo.sub ? ` (${badgeInfo.sub})` : ''}</strong>
+    `;
 
-    const unitMain = document.createElement('span');
-    unitMain.textContent = badgeInfo.main;
-    const unitSub = document.createElement('span');
-    unitSub.className = 'unit-subtext';
-    unitSub.textContent = badgeInfo.sub;
-    btnUnit.append(unitMain, unitSub);
-    btnUnit.addEventListener('click', () => toggleExerciseLoadUnit(dayId, ex.id));
+    // 2. Repeticiones
+    const repsSummary = formatExerciseRepsSummary(ex);
+    const pillReps = document.createElement('div');
+    pillReps.className = 'exercise-preview-pill pill-reps badge-reps-prescribed';
+    pillReps.innerHTML = `
+      <span class="pill-label">🔁 Series y Reps</span>
+      <strong class="pill-val">${repsSummary}</strong>
+    `;
 
-    const btnPlus = document.createElement('button');
-    btnPlus.type = 'button';
-    btnPlus.className = 'btn-step-load';
-    btnPlus.setAttribute('aria-label', `Aumentar carga en ${ex.name}`);
-    btnPlus.textContent = '+';
-    btnPlus.addEventListener('click', () => adjustExerciseLoad(dayId, ex.id, 1));
+    // 3. Máquina / Implemento
+    const pillEquip = document.createElement('div');
+    pillEquip.className = 'exercise-preview-pill pill-equip';
+    pillEquip.innerHTML = `
+      <span class="pill-label">⚙️ Máquina / Implemento</span>
+      <strong class="pill-val">${ex.equipment || 'Máquina / Polea'}</strong>
+    `;
 
-    loadBox.append(btnMinus, btnUnit, btnPlus);
-    topRow.append(titleGroup, loadBox);
-    li.append(topRow, helpPanel);
+    // 4. Músculo Principal
+    const pillMuscle = document.createElement('div');
+    pillMuscle.className = 'exercise-preview-pill pill-muscle';
+    pillMuscle.innerHTML = `
+      <span class="pill-label">🎯 Músculo Principal</span>
+      <strong class="pill-val">${ex.muscle || ex.targetZone || 'Músculo principal'}</strong>
+    `;
 
-    // CONTROLES ESENCIALES EN PANTALLA: Series y Repeticiones (4 × 12)
-    const setsRow = document.createElement('div');
-    setsRow.className = 'sets-tracker-row';
-
-    for (let s = 0; s < totalSets; s++) {
-      const isDone = Boolean(ex.completedSets && ex.completedSets[s]);
-      const setBtn = document.createElement('button');
-      setBtn.type = 'button';
-      setBtn.className = 'btn-set-check';
-      setBtn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-
-      const sNum = document.createElement('span');
-      sNum.className = 'set-num';
-      sNum.textContent = isDone ? `✓ Serie ${s + 1}` : `Serie ${s + 1}`;
-
-      const sReps = document.createElement('span');
-      sReps.className = 'set-reps';
-      const sRepsCount = getExerciseSetReps(ex, s);
-      sReps.textContent = `${sRepsCount} reps`;
-
-      setBtn.append(sNum, sReps);
-      setBtn.addEventListener('click', () => toggleSetCompletion(dayId, ex.id, s));
-      setsRow.appendChild(setBtn);
-    }
-    contentCol.appendChild(setsRow);
-
-    // Asistente de Doble Progresión Inteligente (Cuando se completan las 4 series × 12 reps)
-    if (doneCount === totalSets && totalSets > 0) {
-      const overloadBanner = document.createElement('div');
-      overloadBanner.className = 'smart-overload-banner';
-      const nextVal = ex.loadType === 'nivel' ? Number(ex.loadValue) + 1 : Number(ex.loadValue) + 2.5;
-      const nextLabel = ex.loadType === 'nivel' ? `Nivel ${nextVal}` : `${nextVal} kg`;
-
-      const msgSpan = document.createElement('span');
-      msgSpan.textContent = `🚀 ¡${totalSets}×${ex.reps} dominado! Listo para sobrecarga progresiva:`;
-
-      const btnApplyOverload = document.createElement('button');
-      btnApplyOverload.type = 'button';
-      btnApplyOverload.className = 'btn-smart-overload-suggest';
-      btnApplyOverload.dataset.exerciseId = ex.id;
-      btnApplyOverload.textContent = `⚡ Subir a ${nextLabel} (+1 toque)`;
-      btnApplyOverload.addEventListener('click', () => applySmartProgressionSuggestion(dayId, ex.id));
-
-      overloadBanner.append(msgSpan, btnApplyOverload);
-      contentCol.appendChild(overloadBanner);
-    }
-
-    // Barra Inferior Compacta: Botón "▶ Entrenar" (cambia a Pantalla de Ejercicio) + Menú Agrupado "⚙️ Ajustes y Técnica"
-    const bottomActionsRow = document.createElement('div');
-    bottomActionsRow.className = 'ex-card-compact-bar';
-
-    const btnFocusEx = document.createElement('button');
-    btnFocusEx.type = 'button';
-    btnFocusEx.className = 'btn-open-ex-focus';
-    btnFocusEx.dataset.exerciseId = ex.id;
-    btnFocusEx.title = 'Abrir este ejercicio en la pantalla dedicada de entrenamiento';
-    const isTodayCard = (dayId === detectDefaultDay());
-    btnFocusEx.textContent = isTodayCard
-      ? `▶ Entrenar (${ex.restSeconds || 75}s descanso)`
-      : `👁️ Ver Ejercicio (${ex.restSeconds || 75}s descanso)`;
-    btnFocusEx.addEventListener('click', () => {
-      const currentRealDay = detectDefaultDay();
-      if (dayId !== currentRealDay) {
-        openMoveMuscleDialog(dayId);
-      } else {
-        const dayObj = state.schedule[dayId];
-        const idx = dayObj ? dayObj.exercises.findIndex(item => item.id === ex.id) : 0;
-        openConfirmStartWorkoutDialog(dayId, idx >= 0 ? idx : 0);
-      }
-    });
-
-    // Menú desplegable que agrupa las opciones no esenciales para despejar la vista vertical
-    const optionsMenu = document.createElement('details');
-    optionsMenu.className = 'ex-card-options-menu';
-    const isTimingThis = tutState.activeExerciseId === ex.id;
-    if (isTimingThis) {
-      optionsMenu.open = true;
-    }
-
-    const optionsSummary = document.createElement('summary');
-    optionsSummary.className = 'ex-card-options-summary';
-    const setModeKey = ex.setMode || 'normal';
-    const modeCatalog = (GYM_VISUALS && GYM_VISUALS.SET_MODE_CATALOG) || {};
-    const modeMeta = modeCatalog[setModeKey] || { badge: '⚡ Serie Normal', desc: '4×12' };
-    const rirLabel = ex.targetRir || 'RIR 2';
-    optionsSummary.innerHTML = `<span>⚙️ Opciones y Técnica</span> <small class="ex-options-pill">${rirLabel}${ex.isSwappedAlternative ? ' · 🔄 Sustituto' : ''}</small>`;
-
-    const optionsBody = document.createElement('div');
-    optionsBody.className = 'ex-card-options-body';
-
-    // Fila de Modo de Serie (Normal, Dropset, Superserie, Rest-Pause), RIR, Calculadora y Máquina Ocupada
-    const intensityRow = document.createElement('div');
-    intensityRow.className = 'ex-intensity-row';
-
-    const btnModeChip = document.createElement('button');
-    btnModeChip.type = 'button';
-    btnModeChip.className = `btn-set-mode-chip mode-${setModeKey}`;
-    btnModeChip.dataset.exerciseId = ex.id;
-    btnModeChip.title = `${modeMeta.desc}. Toca para abrir el panel de técnica y descanso.`;
-    btnModeChip.textContent = modeMeta.badge;
-    btnModeChip.addEventListener('click', () => openSetModeModal(dayId, ex.id));
-
-    const btnRirChip = document.createElement('button');
-    btnRirChip.type = 'button';
-    btnRirChip.className = 'btn-rir-chip';
-    btnRirChip.dataset.exerciseId = ex.id;
-    btnRirChip.title = 'Repeticiones en Reserva (RIR) / Esfuerzo percibido. Toca para ver explicación y configurar.';
-    btnRirChip.textContent = `🎯 ${rirLabel}`;
-    btnRirChip.addEventListener('click', () => openRirModal(dayId, ex.id));
-
-    const btnCalcChip = document.createElement('button');
-    btnCalcChip.type = 'button';
-    btnCalcChip.className = 'btn-rir-chip';
-    btnCalcChip.title = 'Abrir calculadora de discos olímpicos y 1RM con la carga de este ejercicio';
-    btnCalcChip.textContent = '🧮 Discos / 1RM';
-    btnCalcChip.addEventListener('click', () => {
-      const effKg = GYM_VISUALS && typeof GYM_VISUALS.resolveEffectiveLoadKg === 'function'
-        ? GYM_VISUALS.resolveEffectiveLoadKg(ex)
-        : Number(ex.loadValue) || 20;
-      openCalculatorDialog(effKg, ex.reps || 12);
-    });
-
-    const btnAltSwapChip = document.createElement('button');
-    btnAltSwapChip.type = 'button';
-    btnAltSwapChip.className = `btn-alt-swap-chip ${ex.isSwappedAlternative ? 'is-swapped' : ''}`;
-    btnAltSwapChip.dataset.exerciseId = ex.id;
-    btnAltSwapChip.title = ex.isSwappedAlternative
-      ? 'Volver al ejercicio titular original'
-      : '¿Máquina o polea ocupada? Toca para cambiar por su ejercicio equivalente biomecánico';
-    btnAltSwapChip.textContent = ex.isSwappedAlternative ? '↩️ Volver a Original' : '🔄 Máquina Ocupada';
-    btnAltSwapChip.addEventListener('click', () => openExerciseSwapModal(dayId, ex.id));
-
-    const repsLabel = formatExerciseRepsSummary(ex);
-    const repsBadge = document.createElement('span');
-    repsBadge.className = 'badge-reps-prescribed';
-    repsBadge.title = 'Series y repeticiones dinámicas establecidas por la aplicación';
-    repsBadge.textContent = `📊 ${repsLabel}`;
-
-    const btnEdit = document.createElement('button');
-    btnEdit.type = 'button';
-    btnEdit.className = 'btn-edit-ex';
-    btnEdit.textContent = '✏️ Editar';
-    btnEdit.addEventListener('click', () => openExerciseDialog(ex));
-
-    intensityRow.append(btnModeChip, btnRirChip, repsBadge, btnCalcChip, btnAltSwapChip, btnEdit);
-    optionsBody.appendChild(intensityRow);
-
-    const tutRow = document.createElement('div');
-    tutRow.className = 'set-stopwatch-row';
-
-    const tutBtn = document.createElement('button');
-    tutBtn.type = 'button';
-    tutBtn.className = 'btn-tut-stopwatch';
-    tutBtn.dataset.exerciseId = ex.id;
-    if (isTimingThis) {
-      tutBtn.classList.add('is-timing');
-      const mins = Math.floor(tutState.elapsedSeconds / 60);
-      const secs = tutState.elapsedSeconds % 60;
-      const timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      tutBtn.innerHTML = `<span class="tut-icon">⏹️</span> Finalizar Serie (${timeStr})`;
-    } else {
-      tutBtn.innerHTML = `<span class="tut-icon">⏱️</span> Iniciar Serie (TUT)`;
-    }
-    tutBtn.addEventListener('click', () => {
-      if (tutState.activeExerciseId === ex.id) {
-        stopTutStopwatch();
-      } else {
-        openTutModal(dayId, ex.id);
-      }
-    });
-
-    const tutInfo = document.createElement('span');
-    tutInfo.className = 'tut-status-text';
-    if (isTimingThis) {
-      const cad = getCadencePhaseForSecond(tutState.elapsedSeconds);
-      tutInfo.innerHTML = `<span class="tut-cadence-banner ${cad.phaseClass}">${cad.text} · Rep ~${cad.repNum}/${ex.reps || 12}</span>`;
-    } else {
-      tutInfo.textContent = 'Mide tiempo bajo tensión (TUT 3-1-1) y avanza serie';
-    }
-
-    tutRow.append(tutBtn, tutInfo);
-    optionsBody.appendChild(tutRow);
-
-    const noteP = document.createElement('p');
-    noteP.className = 'exercise-note-body';
-    noteP.textContent = ex.note || 'Mantén técnica estricta y controla la fase excéntrica.';
-    optionsBody.appendChild(noteP);
-
-    optionsMenu.append(optionsSummary, optionsBody);
-    bottomActionsRow.append(btnFocusEx, optionsMenu);
-    contentCol.appendChild(bottomActionsRow);
+    infoGrid.append(pillLoad, pillReps, pillEquip, pillMuscle);
+    contentCol.appendChild(infoGrid);
 
     visualLayout.append(illustrationWrap, contentCol);
     li.appendChild(visualLayout);
@@ -2722,17 +2428,15 @@
       if (isDone) doneCount += 1;
 
       const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'warmup-step-btn';
-      btn.dataset.stepId = step.id;
-      btn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-      btn.innerHTML = `
-        <span>${isDone ? '✅' : '⬜'} ${step.label}</span>
-        <strong>${step.duration}</strong>
+      li.className = 'warmup-step-item';
+      const badge = document.createElement('div');
+      badge.className = 'warmup-step-btn is-preview-only';
+      badge.dataset.stepId = step.id;
+      badge.innerHTML = `
+        <span class="warmup-step-name">🔥 ${step.label}</span>
+        <strong class="warmup-step-dur">${step.duration}</strong>
       `;
-      btn.addEventListener('click', () => toggleWarmupStep(dayId, step.id));
-      li.appendChild(btn);
+      li.appendChild(badge);
       listEl.appendChild(li);
     }
 
@@ -2740,7 +2444,7 @@
       titleEl.textContent = `Calentamiento Articular (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
     }
     if (pillEl) {
-      pillEl.textContent = `${doneCount} / ${steps.length} listos`;
+      pillEl.textContent = `${doneCount} / ${steps.length} pasos de activación`;
       pillEl.classList.toggle('is-done', doneCount === steps.length);
     }
   }
