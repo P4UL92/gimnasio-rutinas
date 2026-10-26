@@ -1572,6 +1572,24 @@ assert.equal(doc.getElementById('btn-complete-all-warmup'), null, 'El botón int
 assert.ok(cssContent.includes('overflow-x: hidden'), 'styles.css debe incluir contención overflow-x: hidden');
 assert.ok(cssContent.includes('.exercise-preview-pill'), 'styles.css debe definir el estilo para las pills de muestra');
 
+// 43.6 Verificación Responsive del Botón de Perfil de Usuario en Pantalla Principal
+const btnProfile = doc.getElementById('btn-header-profile');
+assert.ok(btnProfile, 'Debe existir el botón #btn-header-profile');
+assert.ok(btnProfile.querySelector('.btn-profile-avatar'), 'El botón de perfil debe incluir avatar/icono dedicado .btn-profile-avatar');
+const tagProfile = doc.getElementById('header-profile-tag');
+assert.ok(tagProfile, 'El botón de perfil debe incluir el tag .btn-profile-tag');
+
+// Verificar apertura y cierre del panel de usuario
+btnProfile.click();
+assert.ok(doc.getElementById('profile-onboarding-dialog').hasAttribute('open') || !doc.getElementById('profile-onboarding-dialog').hidden, 'Al hacer clic en el botón de perfil debe abrirse el diálogo');
+app.closeProfileOnboardingDialog();
+assert.ok(!doc.getElementById('profile-onboarding-dialog').hasAttribute('open') || doc.getElementById('profile-onboarding-dialog').hidden, 'Al cerrar el diálogo debe quedar oculto');
+
+// Verificar estilos responsive y contención en CSS
+assert.ok(cssContent.includes('.btn-header-profile'), 'styles.css debe definir estilos dedicados para .btn-header-profile');
+assert.ok(cssContent.includes('.btn-profile-tag'), 'styles.css debe definir estilos responsive con elipsis para .btn-profile-tag');
+assert.ok(cssContent.includes('.btn-profile-avatar'), 'styles.css debe definir avatar para el botón de perfil');
+
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 

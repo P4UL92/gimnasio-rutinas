@@ -3154,13 +3154,58 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   align-items: center;
   gap: 8px;
   position: relative;
+  flex-shrink: 0;
 }
 
-.btn-header-start {
+.btn-header-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 36px;
   padding: 6px 12px;
-  font-size: 0.8rem;
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: linear-gradient(145deg, rgba(22, 31, 51, 0.95), rgba(15, 23, 42, 0.95));
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.80rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  max-width: 175px;
+}
+
+.btn-header-profile:hover {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(22, 31, 51, 0.95));
+  border-color: var(--accent-emerald);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-header-profile:active {
+  transform: scale(0.96);
+}
+
+.btn-profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-profile-tag {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 130px;
+  vertical-align: middle;
 }
 
 .header-tools-menu {
@@ -3169,11 +3214,29 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 
 .header-tools-trigger {
   list-style: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   min-height: 36px;
   padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.80rem;
   font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: rgba(22, 31, 51, 0.7);
+  color: var(--text-secondary);
   cursor: pointer;
   user-select: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.header-tools-trigger:hover {
+  color: var(--text-primary);
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.8);
 }
 
 .header-tools-trigger::-webkit-details-marker {
@@ -4299,11 +4362,23 @@ body.animations-paused .focus-sprite-frame {
     flex-shrink: 0;
     gap: 6px;
   }
-  .btn-header-profile,
+  .btn-header-profile {
+    min-height: 34px;
+    padding: 4px 8px;
+    font-size: 0.74rem;
+    max-width: 125px;
+    gap: 5px;
+  }
+  .btn-profile-avatar {
+    font-size: 0.78rem;
+  }
+  .btn-profile-tag {
+    max-width: 85px;
+  }
   .header-tools-trigger {
     min-height: 34px;
-    padding: 5px 8px;
-    font-size: 0.76rem;
+    padding: 4px 8px;
+    font-size: 0.74rem;
     white-space: nowrap;
   }
   .day-tabs-list {
@@ -4390,6 +4465,58 @@ body.animations-paused .focus-sprite-frame {
       opacity: 0;
       transform: translateY(100%);
     }
+  }
+}
+
+@media (max-width: 440px) {
+  .brand-row {
+    gap: 6px;
+  }
+  .brand-identity h1 {
+    font-size: 0.94rem;
+  }
+  .brand-icon-badge {
+    width: 28px;
+    height: 28px;
+  }
+  .brand-logo-img {
+    width: 28px;
+    height: 28px;
+  }
+  .header-quick-actions {
+    gap: 4px;
+  }
+  .btn-header-profile {
+    padding: 4px 6px;
+    max-width: 104px;
+    font-size: 0.72rem;
+    gap: 3px;
+  }
+  .btn-profile-tag {
+    max-width: 68px;
+    font-size: 0.72rem;
+  }
+  .header-tools-trigger {
+    padding: 4px 6px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .brand-identity h1 {
+    font-size: 0.86rem;
+  }
+  .btn-header-profile {
+    padding: 3px 5px;
+    max-width: 86px;
+  }
+  .btn-profile-tag {
+    max-width: 52px;
+    font-size: 0.68rem;
+  }
+  .header-tools-trigger {
+    padding: 3px 5px;
+    font-size: 0.68rem;
   }
 }
 
@@ -4661,10 +4788,6 @@ body.animations-paused .focus-sprite-frame {
   font-size: 0.85rem;
 }
 
-.btn-header-profile {
-  font-size: 0.78rem;
-  padding: 5px 10px;
-}
 
 /* ==========================================================================
    MODAL DE EXPLICACIÓN Y CONFIGURACIÓN DE TÉCNICA DE SERIE Y DESCANSO

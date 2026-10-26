@@ -1095,10 +1095,9 @@
     if (!dialog) return;
     if (typeof dialog.close === 'function') {
       try { dialog.close(); } catch (_) {}
-    } else {
-      dialog.hidden = true;
-      dialog.removeAttribute('open');
     }
+    dialog.hidden = true;
+    dialog.removeAttribute('open');
   }
 
   function resetWeeklySeriesProgress() {
@@ -3046,8 +3045,14 @@
     if (typeof dialog.showModal === 'function') {
       try {
         dialog.showModal();
-      } catch (_) {}
+      } catch (_) {
+        dialog.setAttribute('open', '');
+      }
+    } else {
+      dialog.setAttribute('open', '');
     }
+    dialog.hidden = false;
+    dialog.setAttribute('open', '');
   }
 
   function saveUserProfile(profileData) {
@@ -3081,11 +3086,11 @@
     const headerTag = document.getElementById('header-profile-tag');
     if (headerTag) {
       if (p && p.configured) {
-        const levelEmoji = p.fitnessLevel === 'beginner' ? '🟢' : p.fitnessLevel === 'advanced' ? '🔴' : '🟡';
-        headerTag.textContent = `${levelEmoji} ${p.name || 'Atleta'} (${p.weightKg || 75}kg)`;
-        headerTag.title = `Perfil activo: ${p.primaryGoal} · ${p.fitnessLevel}`;
+        headerTag.textContent = `${p.name || 'Atleta'} · ${p.weightKg || 75}kg`;
+        headerTag.title = `Perfil activo: ${p.name || 'Atleta'} (${p.weightKg || 75}kg) · ${p.fitnessLevel}`;
       } else {
-        headerTag.textContent = '⚙️ Configurar Perfil';
+        headerTag.textContent = 'Mi Perfil';
+        headerTag.title = 'Configurar parámetros de perfil de entrenamiento';
       }
     }
 
