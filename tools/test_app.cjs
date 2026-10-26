@@ -1672,8 +1672,84 @@ assert.ok(!sundayConfirmDlg.hasAttribute('open') || sundayConfirmDlg.hidden, 'El
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
+// =========================================================================
+// SUITE 45: EXPANSIÓN Y CONTRACCIÓN SUAVE DE PANELES E ÍCONOS ÚNICOS DE GYM
+// =========================================================================
+console.log('Ejecutando Suite 45: Expansión y Contracción Suave de Paneles e Íconos Propios de Gym...');
+
+// 45.1 Efecto suave y fluido de expansión y contracción de paneles
+assert.equal(typeof app.initSmoothCollapsibles, 'function', 'GymApp debe exportar initSmoothCollapsibles');
+app.initSmoothCollapsibles();
+
+const accordionEl = doc.querySelector('.overview-accordion');
+assert.ok(accordionEl, 'Debe existir al menos un acordeón .overview-accordion');
+assert.equal(accordionEl.dataset.smoothBound, 'true', 'El acordeón debe estar vinculado al controlador de expansión suave');
+
+const summaryEl = accordionEl.querySelector('summary');
+assert.ok(summaryEl, 'El acordeón debe tener su elemento summary');
+
+// Simular clic para abrir/cerrar suavemente
+const initialOpen = accordionEl.open;
+summaryEl.click();
+// El estado debe alternar correctamente
+assert.equal(accordionEl.open, !initialOpen, 'El clic en summary debe alternar el estado de apertura');
+
+// Reglas CSS de animación suave y chevron rotatorio
+assert.ok(cssContent.includes('details.overview-accordion'), 'styles.css debe definir estilos de transición para details.overview-accordion');
+assert.ok(cssContent.includes('panelSmoothExpand'), 'styles.css debe definir keyframes panelSmoothExpand para entrada suave');
+assert.ok(cssContent.includes('transform: rotate(-135deg)'), 'styles.css debe definir la rotación de chevron fluido en [open]');
+
+// 45.2 Íconos propios de gimnasio (sin íconos de sistema, estilo fuerza/hierro/plomo)
+const fsMod = require('fs');
+const pathMod = require('path');
+const iconDir = pathMod.join(__dirname, '../assets/icons');
+
+const expectedIcons = [
+  'gym-barbell.png',
+  'gym-dumbbell.png',
+  'gym-plate.png',
+  'gym-biceps.png',
+  'gym-trophy.png',
+  'gym-lightning.png',
+  'gym-calendar.png',
+  'gym-stats.png',
+  'gym-user.png',
+  'gym-gear.png',
+  'gym-shield.png',
+  'gym-shaker.png',
+  'gym-timer.png',
+  'gym-restore.png',
+  'gym-flame.png',
+  'gym-rocket.png'
+];
+
+expectedIcons.forEach(iconName => {
+  const iconPath = pathMod.join(iconDir, iconName);
+  assert.ok(fsMod.existsSync(iconPath), `Debe existir el archivo de ícono propio ${iconName}`);
+  const stat = fsMod.statSync(iconPath);
+  assert.ok(stat.size > 200, `El archivo ${iconName} debe ser un PNG válido no vacío`);
+});
+
+// 45.3 Verificación de uso en la interfaz (Navegación inferior con íconos propios de gym)
+const navBarbell = doc.querySelector('.bottom-nav-btn[data-nav-screen="plan"] .gym-ico-barbell');
+const navStats = doc.querySelector('.bottom-nav-btn[data-nav-screen="stats"] .gym-ico-stats');
+const navGear = doc.querySelector('.bottom-nav-btn[data-nav-screen="hub"] .gym-ico-gear');
+
+assert.ok(navBarbell, 'El botón de Rutina debe usar el ícono propio .gym-ico-barbell');
+assert.ok(navStats, 'El botón de Progreso debe usar el ícono propio .gym-ico-stats');
+assert.ok(navGear, 'El botón de Menú/Extras debe usar el ícono propio .gym-ico-gear');
+
+// 45.4 Estilos CSS para el sistema de íconos
+assert.ok(cssContent.includes('.gym-ico'), 'styles.css debe definir la clase base .gym-ico');
+assert.ok(cssContent.includes('.gym-ico-barbell'), 'styles.css debe definir el ícono barbell');
+assert.ok(cssContent.includes('.gym-ico-stats'), 'styles.css debe definir el ícono stats');
+assert.ok(cssContent.includes('.gym-ico-gear'), 'styles.css debe definir el ícono gear');
+
+// Re-verificación final absoluta: 0 etiquetas <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 44 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 45 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

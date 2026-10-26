@@ -4950,7 +4950,115 @@
     }
   }
 
+  // =========================================================================
+  // CONTROLADOR DE EXPANSIÓN Y CONTRACCIÓN SUAVE DE PANELES (COLLAPSIBLES)
+  // =========================================================================
+  function initSmoothCollapsibles() {
+    const collapsibles = document.querySelectorAll(
+      'details.overview-accordion, details.warmup-checklist-card, details.anatomy-collapsible, details.header-metrics-drawer'
+    );
+
+    collapsibles.forEach(details => {
+      if (details.dataset.smoothBound === 'true') return;
+      details.dataset.smoothBound = 'true';
+
+      const summary = details.querySelector('summary');
+      if (!summary) return;
+
+      let isAnimating = false;
+
+      summary.addEventListener('click', event => {
+        // En navegadores o entornos sin animate (ej. Node/JSDOM en tests) o si se pide reduced motion
+        if (typeof details.animate !== 'function' || (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)) {
+          return; // Comportamiento nativo de toggle
+        }
+
+        event.preventDefault();
+        if (isAnimating) return;
+
+        const isOpen = details.open;
+
+        if (isOpen) {
+          // --- CONTRACCIÓN SUAVE (SHRINK) ---
+          isAnimating = true;
+          details.style.overflow = 'hidden';
+          const startHeight = details.offsetHeight;
+          const endHeight = summary.offsetHeight;
+
+          const anim = details.animate([
+            { height: `${startHeight}px`, opacity: 1 },
+            { height: `${endHeight}px`, opacity: 0.92 }
+          ], {
+            duration: 280,
+            easing: 'cubic-bezier(0.2, 0, 0, 1)'
+          });
+
+          const finishShrink = () => {
+            details.open = false;
+            details.style.height = '';
+            details.style.overflow = '';
+            isAnimating = false;
+          };
+
+          anim.onfinish = finishShrink;
+          anim.oncancel = finishShrink;
+        } else {
+          // Si pertenece a un grupo de acordeón exclusivo (name="gym-info", etc.)
+          const groupName = details.getAttribute('name');
+          if (groupName) {
+            document.querySelectorAll(`details[name="${groupName}"][open]`).forEach(sibling => {
+              if (sibling !== details) {
+                const sibSummary = sibling.querySelector('summary');
+                const sibStartHeight = sibling.offsetHeight;
+                const sibEndHeight = sibSummary ? sibSummary.offsetHeight : 44;
+                sibling.style.overflow = 'hidden';
+                const sibAnim = sibling.animate([
+                  { height: `${sibStartHeight}px`, opacity: 1 },
+                  { height: `${sibEndHeight}px`, opacity: 0.92 }
+                ], {
+                  duration: 260,
+                  easing: 'cubic-bezier(0.2, 0, 0, 1)'
+                });
+                sibAnim.onfinish = () => {
+                  sibling.open = false;
+                  sibling.style.height = '';
+                  sibling.style.overflow = '';
+                };
+              }
+            });
+          }
+
+          // --- EXPANSIÓN SUAVE (EXPAND) ---
+          isAnimating = true;
+          const startHeight = summary.offsetHeight;
+          details.open = true;
+          details.style.overflow = 'hidden';
+          const targetHeight = details.offsetHeight;
+
+          const anim = details.animate([
+            { height: `${startHeight}px`, opacity: 0.88 },
+            { height: `${targetHeight}px`, opacity: 1 }
+          ], {
+            duration: 320,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+          });
+
+          const finishExpand = () => {
+            details.style.height = '';
+            details.style.overflow = '';
+            isAnimating = false;
+          };
+
+          anim.onfinish = finishExpand;
+          anim.oncancel = finishExpand;
+        }
+      });
+    });
+  }
+
   function bindEvents() {
+    initSmoothCollapsibles();
+
     const btnWake = document.getElementById('btn-toggle-wakelock');
     if (btnWake) {
       btnWake.addEventListener('click', () => {
@@ -5923,6 +6031,8 @@
     openSundayConfirmDialog,
     closeSundayConfirmDialog,
     applySundayRoutine,
+    // APIs Collapsibles Suaves e Iconos
+    initSmoothCollapsibles,
     // APIs Dynamic Series & Reps v1.9.1
     cycleExerciseReps,
     adjustExerciseSeriesCount,
