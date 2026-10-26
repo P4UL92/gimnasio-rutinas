@@ -1799,19 +1799,28 @@
 
       if (startBtn) {
         startBtn.classList.remove('is-day-completed-cta', 'btn-move-muscle-cta', 'btn-sunday-recover-cta');
-        if (isViewingToday) {
-          if (dayCompleted) {
-            startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
-            startBtn.classList.add('is-day-completed-cta');
+        const currentIsRest = isRestDay(currentRealDay);
+        if (currentIsRest) {
+          startBtn.style.display = '';
+          startBtn.hidden = false;
+          if (isViewingToday) {
+            if (dayCompleted) {
+              startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
+              startBtn.classList.add('is-day-completed-cta');
+            } else {
+              startBtn.classList.add('btn-sunday-recover-cta');
+              startBtn.textContent = 'Iniciar día de ejercicio';
+            }
           } else {
-            startBtn.classList.add('btn-sunday-recover-cta');
-            startBtn.textContent = 'Iniciar día de ejercicio';
+            startBtn.classList.add('btn-move-muscle-cta');
+            const targetDay = state.schedule[currentRealDay];
+            const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
+            startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
           }
         } else {
-          startBtn.classList.add('btn-move-muscle-cta');
-          const targetDay = state.schedule[currentRealDay];
-          const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
-          startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
+          // Solo se debe mostrar el botón cuando el día actual sea el de descanso
+          startBtn.style.display = 'none';
+          startBtn.hidden = true;
         }
       }
       return;
@@ -1899,6 +1908,8 @@
     }
 
     if (startBtn) {
+      startBtn.style.display = '';
+      startBtn.hidden = false;
       startBtn.classList.remove('btn-move-muscle-cta', 'btn-sunday-recover-cta');
       if (isSunday || isViewingToday) {
         if (dayCompleted) {
@@ -2901,7 +2912,8 @@
     }
 
     if (titleEl) {
-      titleEl.textContent = `Protocolo de Calentamiento y Activación (${day.muscleGroup.split('·')[0].trim()}) · 5 min`;
+      const muscle = day.muscleGroup ? day.muscleGroup.split('·')[0].trim() : 'Músculo';
+      titleEl.textContent = `Calentamiento (${muscle}) - 5 min`;
     }
     if (pillEl) {
       pillEl.innerHTML = `<span class="warmup-step-count">${steps.length}</span> <span class="warmup-step-label">pasos de activación</span>`;
@@ -4010,7 +4022,7 @@
 
     const dayTabsNav = document.getElementById('day-tabs-nav');
     if (dayTabsNav) {
-      dayTabsNav.hidden = isWorkout;
+      dayTabsNav.hidden = (activeScreen !== 'plan');
     }
 
     const appHeader = document.querySelector('.app-header');

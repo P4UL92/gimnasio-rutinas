@@ -28,21 +28,6 @@
           <span class="btn-profile-avatar" aria-hidden="true">👤</span>
           <span id="header-profile-tag" class="btn-profile-tag">Mi Perfil</span>
         </button>
-
-        <!-- Menú Agrupado de Opciones Secundarias de Cabecera -->
-        <details id="header-tools-menu" class="header-tools-menu">
-          <summary class="btn-ghost header-tools-trigger" aria-label="Abrir menú de herramientas y ajustes">
-            ⚙️ Opciones
-          </summary>
-          <div class="header-actions header-tools-dropdown">
-            <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
-              🧮 Calc. Discos / 1RM
-            </button>
-            <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar o reiniciar días">
-              🗓️ Restaura Días
-            </button>
-          </div>
-        </details>
       </div>
     </div>
 
@@ -133,10 +118,10 @@
           <!-- Mapa Anatómico Corporal Agrupado en Desplegable para Pantallas Verticales -->
           <details class="anatomy-collapsible" id="anatomy-collapsible">
             <summary class="anatomy-collapsible-summary">
-              <span>🧬 Mapa Anatómico de Músculos Trabajados Hoy</span>
+              <span>🧬 Mapa Anatómico de Músculos</span>
               <span class="anatomy-toggle-hint">Ver ▾</span>
             </summary>
-            <div class="day-anatomy-panel" id="day-anatomy-panel" aria-label="Mapa anatómico de músculos trabajados hoy">
+            <div class="day-anatomy-panel" id="day-anatomy-panel" aria-label="Mapa anatómico de músculos">
               <!-- Renderizado por visual-engine.js -->
             </div>
           </details>
@@ -149,7 +134,7 @@
           <summary class="warmup-summary">
             <div class="warmup-summary-left">
               <span class="warmup-badge">🔥 CALENTAMIENTO</span>
-              <strong id="warmup-title-text">Protocolo Articular y Activación · 5 min</strong>
+              <strong id="warmup-title-text">Calentamiento (Músculo) - 5 min</strong>
             </div>
             <span id="warmup-progress-pill" class="warmup-progress-pill">4 pasos de activación</span>
           </summary>
@@ -495,6 +480,26 @@
             </button>
             <button type="button" id="btn-reset-profile" class="btn-ghost">
               🔄 Resetear a Valores de Fábrica
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <!-- Acordeón: Herramientas y Ajustes de Rutina (Calculadora y Restauración) -->
+      <details class="overview-accordion" name="gym-info" id="tools-settings-accordion">
+        <summary>
+          <span class="summary-title">⚙️ Herramientas y Ajustes de Rutina</span>
+        </summary>
+        <div class="overview-content">
+          <p class="overview-intro">
+            Calcula discos para barra olímpica o pilas de placas en poleas, y administra o restaura la distribución de tus días de entrenamiento.
+          </p>
+          <div class="profile-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+            <button type="button" id="btn-open-calc-dialog" class="btn-primary" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
+              🧮 Calc. Discos / 1RM
+            </button>
+            <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar o reiniciar días">
+              🗓️ Restaura Días
             </button>
           </div>
         </div>

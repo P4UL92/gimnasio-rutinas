@@ -404,8 +404,10 @@ assert.ok(csvContent.includes('REPORTE OFICIAL GYM RUTINAS PRO'), 'El archivo CS
 assert.ok(csvContent.includes('Gran bombeo dorsal Nivel 6, sin fatiga articular'), 'El archivo CSV debe incluir las notas de la bitácora de sesiones');
 assert.ok(csvContent.includes(exPoleaEstrecho.name), 'El archivo CSV debe incluir el plan semanal de ejercicios');
 
-// 27. Verificar Módulo Focus UI v1.8: Menús Agrupados, Responsive Vertical y Cambio de Pantalla al Iniciar Día
-assert.ok(doc.getElementById('header-tools-menu'), 'Debe existir el menú desplegable agrupado de opciones en cabecera');
+// 27. Verificar Módulo Focus UI v1.8: Subopciones en Menú/Extras y Sin Botón de Opciones en Cabecera
+assert.equal(doc.getElementById('header-tools-menu'), null, 'El botón/menú de opciones NO debe existir en la cabecera');
+assert.ok(doc.querySelector('#screen-hub #btn-open-calc-dialog'), 'La calculadora de discos debe estar dentro de la pestaña Menú/Extras (#screen-hub)');
+assert.ok(doc.querySelector('#screen-hub #btn-restore-schedule'), 'Restaura Días debe estar dentro de la pestaña Menú/Extras (#screen-hub)');
 assert.ok(doc.getElementById('day-secondary-menu'), 'Debe existir el menú desplegable de opciones secundarias del día');
 assert.equal(doc.querySelectorAll('.ex-card-options-menu').length, 0, 'Las tarjetas de ejercicio en pantalla principal no contienen menú de opciones secundarias (solo muestra)');
 assert.ok(doc.getElementById('bottom-app-nav'), 'Debe existir la barra de navegación inferior estilo Android');
@@ -1611,9 +1613,7 @@ if (todayKey44 === 'domingo') {
   assert.equal(sundayStartBtn.textContent.trim(), 'Iniciar día de ejercicio', 'El botón en domingo debe titular "Iniciar día de ejercicio"');
   assert.ok(sundayStartBtn.classList.contains('btn-sunday-recover-cta'), 'El botón debe tener la clase temática .btn-sunday-recover-cta');
 } else {
-  const curName = app.getState().schedule[todayKey44].dayName;
-  assert.ok(sundayStartBtn.textContent.includes(`Mover entrenamiento a Hoy (${curName})`), 'En domingo siendo otro día debe ofrecer mover a Hoy');
-  assert.ok(sundayStartBtn.classList.contains('btn-move-muscle-cta'), 'El botón debe tener la clase temática .btn-move-muscle-cta');
+  assert.equal(sundayStartBtn.style.display, 'none', 'En día de descanso no se muestra el botón si el día actual no es de descanso');
 }
 
 // 44.2 Elementos prohibidos en Domingo: Sin opciones de día, sin mapa anatómico, sin opciones de días incrustadas
@@ -1857,8 +1857,8 @@ assert.ok(navHubIco && navHubIco.textContent.includes('⚙️'), 'Bottom nav Men
 const profileAvatar = doc.querySelector('.btn-header-profile .btn-profile-avatar');
 assert.ok(profileAvatar && profileAvatar.textContent.includes('👤'), 'Header perfil debe tener emoji 👤');
 
-const headerToolsSummary = doc.querySelector('#header-tools-menu summary');
-assert.ok(headerToolsSummary && headerToolsSummary.textContent.includes('⚙️ Opciones'), 'Header herramientas debe mostrar ⚙️ Opciones');
+const hubToolsSummary = doc.querySelector('#screen-hub #tools-settings-accordion summary');
+assert.ok(hubToolsSummary && hubToolsSummary.textContent.includes('Herramientas'), 'Menú/Extras debe incluir el acordeón de Herramientas y Ajustes');
 
 const warmupBadge = doc.querySelector('.warmup-badge');
 assert.ok(warmupBadge && warmupBadge.textContent.includes('🔥 CALENTAMIENTO'), 'Badge de calentamiento debe mostrar 🔥 CALENTAMIENTO');
@@ -1940,8 +1940,8 @@ assert.ok(emptyDayBox, 'Debe renderizarse el panel de día de descanso');
 assert.ok(emptyDayBox.querySelector('h3').textContent.includes('Día de descanso'), 'El encabezado debe decir "Día de descanso"');
 assert.ok(!emptyDayBox.textContent.includes('Domingo Libre / Día Comodín'), 'NO debe contener "Domingo Libre / Día Comodín"');
 
-// Botón de mover a Hoy especifica el día cuando se ve otro día
-const targetOtherDay47 = defaultDayKey === 'domingo' ? 'lunes' : 'domingo';
+// Botón de mover a Hoy especifica el día cuando se ve otro día de entrenamiento
+const targetOtherDay47 = defaultDayKey === 'martes' ? 'miercoles' : 'martes';
 app.selectDay(targetOtherDay47);
 const moveBtn = doc.getElementById('btn-start-day-workout');
 const todayName = app.getState().schedule[defaultDayKey].dayName;
@@ -2133,11 +2133,65 @@ assert.equal(pillsAfterFinish49[1].classList.contains('is-active'), true, 'La p�
 
 app.exitWorkoutScreen();
 
+// ==========================================
+// SUITE 50: Reubicación de Subopciones a Menú/Extras, Responsive de Perfil, Pestaña de Días Exclusiva en Rutina, Día de Descanso y Textos Limpios
+// ==========================================
+console.log('Ejecutando Suite 50: Reubicación de Subopciones a Menú/Extras, Responsive de Perfil, Pestaña de Días Exclusiva en Rutina, Día de Descanso y Textos Limpios...');
+
+// 50.1 Subopciones en Menú/Extras y sin botón de opciones en cabecera
+assert.equal(doc.getElementById('header-tools-menu'), null, 'No debe existir el botón/menú de opciones en la cabecera');
+const calcBtn50 = doc.querySelector('#screen-hub #btn-open-calc-dialog');
+const restoreBtn50 = doc.querySelector('#screen-hub #btn-restore-schedule');
+assert.ok(calcBtn50, 'El botón de Calc. Discos / 1RM debe estar dentro de #screen-hub');
+assert.ok(restoreBtn50, 'El botón de Restaura Días debe estar dentro de #screen-hub');
+
+// 50.2 Menú y Perfil de Usuario responsive
+const profileBtn50 = doc.getElementById('btn-header-profile');
+assert.ok(profileBtn50, 'Debe existir el botón de perfil de usuario en la cabecera');
+const profileTag50 = doc.getElementById('header-profile-tag');
+assert.ok(profileTag50 && profileTag50.textContent.length > 0, 'El botón de perfil debe mostrar el tag del usuario');
+const profileDialog50 = doc.getElementById('profile-onboarding-dialog');
+assert.ok(profileDialog50, 'Debe existir el diálogo de perfil de usuario');
+const closeProfileBtn50 = doc.getElementById('btn-close-profile-dialog');
+assert.ok(closeProfileBtn50 && closeProfileBtn50.classList.contains('btn-close-danger'), 'El botón de cerrar perfil debe tener estilo rojo peligro');
+
+// 50.3 Barra de días (#day-tabs-nav) visible SOLO en la pestaña Rutina (plan)
+app.switchAppScreen('plan');
+const dayTabsNav50 = doc.getElementById('day-tabs-nav');
+assert.equal(dayTabsNav50.hidden, false, 'La lista superior de días debe estar visible en la pestaña Rutina');
+
+app.switchAppScreen('stats');
+assert.equal(dayTabsNav50.hidden, true, 'La lista superior de días debe estar oculta en la pestaña Progreso');
+
+app.switchAppScreen('hub');
+assert.equal(dayTabsNav50.hidden, true, 'La lista superior de días debe estar oculta en la pestaña Menú/Extras');
+
+app.switchAppScreen('plan');
+assert.equal(dayTabsNav50.hidden, false, 'La lista superior de días debe volver a mostrarse al regresar a Rutina');
+
+// 50.4 Día de descanso en pantalla principal: botón de mover entrenamiento solo si el día actual es de descanso
+// Cuando el día actual es un día normal (por ejemplo, Lunes) y el usuario visualiza Domingo (descanso):
+app.selectDay('domingo');
+const startBtnRestDay = doc.getElementById('btn-start-day-workout');
+assert.equal(startBtnRestDay.style.display, 'none', 'En el día de descanso NO debe mostrarse el botón de mover entrenamiento si el día actual no es de descanso');
+
+// 50.5 Mapa Anatómico de Músculos sin "Trabajados Hoy"
+const anatomySummary = doc.querySelector('.anatomy-collapsible-summary span');
+assert.ok(anatomySummary && anatomySummary.textContent.includes('Mapa Anatómico de Músculos'), 'Debe decir Mapa Anatómico de Músculos');
+assert.ok(!anatomySummary.textContent.includes('Trabajados Hoy'), 'No debe incluir el texto Trabajados Hoy');
+
+// 50.6 Título de Calentamiento con formato: Calentamiento (Músculo X) - X min.
+app.selectDay('lunes');
+const warmupTitle50 = doc.getElementById('warmup-title-text');
+assert.ok(warmupTitle50.textContent.startsWith('Calentamiento (Espalda)'), 'El título de calentamiento de Lunes debe iniciar con Calentamiento (Espalda)');
+assert.ok(warmupTitle50.textContent.includes('5 min'), 'El título de calentamiento debe indicar los minutos (- 5 min)');
+assert.ok(!warmupTitle50.textContent.includes('Protocolo Articular y Activación'), 'No debe incluir textos largos como Protocolo Articular y Activación');
+
 // Verificación absoluta de CERO etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir con 0% <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 49 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 50 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
