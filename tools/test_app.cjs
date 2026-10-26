@@ -220,25 +220,22 @@ assert.equal(
   'Al recorrer desde Jueves, Sábado pasa al Domingo'
 );
 
-// 12. Verificar Cronómetro de Sesión (Inicio, Vuelta, Pausa, Reinicio)
+// 12. Verificar Cronómetro de Sesión y Retiro de Panel del Resumen Principal
 app.restoreOriginalSchedule();
 app.selectDay('lunes');
-assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
+assert.equal(doc.getElementById('session-stopwatch-digits'), null, 'El panel de cronómetro de sesión fue removido de la pantalla principal');
+assert.equal(doc.getElementById('compact-stopwatch-digits'), null, 'El texto Sesión: XX:XX:XX fue removido de la pantalla principal');
+assert.equal(doc.getElementById('workout-stopwatch-bar'), null, 'El contenedor workout-stopwatch-bar fue retirado del resumen');
+
 app.startSessionStopwatch();
-assert.equal(doc.getElementById('btn-stopwatch-toggle').textContent.trim(), '⏸ Pausar');
 assert.ok(app.getStopwatchElapsedMs() >= 0);
+assert.equal(doc.getElementById('focus-stopwatch-display').textContent.length, 8);
 
 app.lapSessionStopwatch();
-const laps = doc.querySelectorAll('#stopwatch-laps-list .lap-item');
-assert.equal(laps.length, 1, 'Debe haber 1 vuelta registrada');
-assert.ok(laps[0].textContent.includes('Vuelta 1'));
-
 app.pauseSessionStopwatch();
-assert.equal(doc.getElementById('btn-stopwatch-toggle').textContent.trim(), '▶ Iniciar');
-
 app.resetSessionStopwatch();
-assert.equal(doc.getElementById('session-stopwatch-digits').textContent, '00:00:00');
-assert.equal(doc.querySelectorAll('#stopwatch-laps-list .lap-item').length, 0);
+assert.equal(app.getStopwatchElapsedMs(), 0);
+assert.equal(doc.getElementById('focus-stopwatch-display').textContent, '00:00:00');
 
 // 13. Verificar Cronómetro de Serie (TUT - Time Under Tension) y avance de serie
 const tutButtons = doc.querySelectorAll('.btn-tut-stopwatch');
@@ -1426,11 +1423,111 @@ app.closeWorkoutResultsDialog();
 app.startDayWorkoutSession('lunes');
 assert.notEqual(app.getState().activeScreen, 'workout', 'startDayWorkoutSession tampoco debe abrir la interfaz de workout');
 
+// =========================================================================
+// 42. VERIFICACIÓN INTEGRAL DE ACTUALIZACIÓN v1.9.22
+// - Retiro de opciones redundantes de la barra superior
+// - Panel de Restaurar Días específicos o todos
+// - Botón Cerrar (X) rojo institucional en perfil de usuario
+// - Detección del día actual y panel de reorganización/desplazamiento muscular
+// - Navegación principal limpia de 3 opciones con transición lateral de paneles
+// - Limpieza de cronómetro/sesión en drawer y texto complementario en hub
+// - Nuevos íconos de gym/fuerza oscuros y metálicos
+// =========================================================================
+console.log('Ejecutando Suite 42: Opciones Limpias, Restaurar Días, Reorganización Muscular, Botón Rojo y Estilo Gym...');
+
+// 42.1 Opciones removidas de la cabecera
+assert.equal(doc.getElementById('btn-toggle-voice-coach'), null, 'Coach Activo debe estar retirado');
+assert.equal(doc.getElementById('btn-toggle-wakelock'), null, 'Pantalla Activa/Fija debe estar retirada');
+assert.equal(doc.getElementById('btn-toggle-animations'), null, 'Pausar Animaciones debe estar retirada');
+assert.equal(doc.getElementById('btn-reset-week-progress'), null, 'Reiniciar Series directo debe estar retirado');
+
+// 42.2 Panel de Restaurar Días
+const restoreScheduleBtn = doc.getElementById('btn-restore-schedule');
+assert.ok(restoreScheduleBtn, 'El botón de Restaurar Días debe existir en las herramientas');
+const restoreDaysDlg = doc.getElementById('restore-days-dialog');
+assert.ok(restoreDaysDlg, 'Debe existir el diálogo #restore-days-dialog');
+
+// Abrir diálogo de restaurar días
+app.openRestoreDaysDialog();
+assert.ok(restoreDaysDlg.hasAttribute('open') || !restoreDaysDlg.hidden, 'El diálogo de restaurar días debe abrirse');
+const dayCheckboxes = restoreDaysDlg.querySelectorAll('input[name="restoreDayOption"]');
+assert.equal(dayCheckboxes.length, 7, 'Debe haber un checkbox por cada día de la semana');
+
+// Probar función de restaurar días seleccionados
+app.getState().schedule.lunes.exercises[0].completedSets = [true, true, true, true];
+assert.equal(app.getState().schedule.lunes.exercises[0].completedSets.filter(Boolean).length, 4);
+app.restoreSelectedDays(['lunes']);
+assert.equal(app.getState().schedule.lunes.exercises[0].completedSets.filter(Boolean).length, 0, 'Lunes debe haberse reiniciado');
+app.closeRestoreDaysDialog();
+
+// 42.3 Botón de salida (X) en el panel de usuario
+const profileDlg = doc.getElementById('profile-onboarding-dialog');
+const closeProfileBtn = doc.getElementById('btn-close-profile-dialog');
+assert.ok(profileDlg && closeProfileBtn, 'Debe existir el diálogo de perfil y su botón de salida');
+assert.ok(closeProfileBtn.classList.contains('btn-close-danger'), 'El botón X de salida debe tener la clase .btn-close-danger de color rojo');
+assert.ok(cssContent.includes('.btn-close-danger') || cssContent.includes('#btn-close-profile-dialog'), 'styles.css debe definir el estilo rojo para el botón X');
+
+// Abrir y cerrar perfil
+app.openProfileOnboardingDialog();
+assert.ok(profileDlg.hasAttribute('open') || !profileDlg.hidden, 'El diálogo de perfil debe abrirse');
+closeProfileBtn.click();
+assert.ok(!profileDlg.hasAttribute('open') || profileDlg.hidden, 'El diálogo de perfil debe cerrarse al hacer clic en X');
+
+// 42.4 Navegación de 3 opciones y transiciones laterales
+const bottomNav = doc.getElementById('bottom-app-nav');
+assert.ok(bottomNav, 'Debe existir #bottom-app-nav');
+const navButtons = bottomNav.querySelectorAll('.bottom-nav-btn');
+assert.equal(navButtons.length, 3, 'La barra de navegación debe tener exactamente 3 opciones (plan, stats, hub), sin opción redundante de entrenar');
+assert.equal(doc.querySelector('.bottom-nav-btn[data-nav-screen="workout"]'), null, 'No debe existir el botón Entrenar en la barra de navegación');
+
+// Probar transiciones laterales de panel
+app.switchAppScreen('stats');
+const statsScreen = doc.getElementById('screen-stats');
+assert.ok(statsScreen.classList.contains('slide-in-right') || statsScreen.classList.contains('slide-in-left'), 'El panel de estadísticas debe tener clase de animación lateral');
+
+app.switchAppScreen('plan');
+const planScreen = doc.getElementById('screen-plan');
+assert.ok(planScreen.classList.contains('slide-in-right') || planScreen.classList.contains('slide-in-left'), 'El panel del plan debe tener clase de animación lateral');
+
+// 42.5 Limpieza en Hub y Drawer
+assert.equal(doc.getElementById('workout-stopwatch-bar'), null, 'El cronómetro del drawer debe estar removido');
+assert.equal(doc.getElementById('compact-stopwatch-digits'), null, 'El texto Sesión: XX:XX:XX debe estar removido');
+const hubScreen = doc.getElementById('screen-hub');
+assert.ok(!hubScreen.textContent.includes('Opciones complementarias agrupadas'), 'El texto Opciones complementarias agrupadas debe estar retirado');
+
+// 42.6 Íconos de Gym y Fuerza con estilo oscuro y metálico
+const gymIcons = doc.querySelectorAll('.gym-strength-icon');
+assert.ok(gymIcons.length >= 3, 'Deben existir los íconos de fuerza de gimnasio');
+assert.ok(cssContent.includes('.gym-strength-icon'), 'styles.css debe definir los estilos de .gym-strength-icon');
+
+// 42.7 Detección de día actual y Reorganización Muscular
+const todayId = app.detectDefaultDay();
+assert.ok(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].includes(todayId));
+
+// Simular selección de otro día
+const otherDay = todayId === 'lunes' ? 'miercoles' : 'lunes';
+app.selectDay(otherDay);
+const dayCta = doc.getElementById('btn-start-day-workout');
+assert.ok(dayCta.classList.contains('btn-move-muscle-cta'), 'Al ver otro día, el CTA debe transformarse en botón de mover entrenamiento');
+assert.ok(dayCta.textContent.includes('Mover'), 'El texto debe indicar mover entrenamiento a hoy');
+
+// Abrir panel de confirmación de movimiento muscular
+app.openMoveMuscleDialog(otherDay);
+const moveDlg = doc.getElementById('move-muscle-confirm-dialog');
+assert.ok(moveDlg.hasAttribute('open') || !moveDlg.hidden, 'El diálogo de reorganización debe estar abierto');
+assert.ok(moveDlg.textContent.includes('actualizarán') || moveDlg.textContent.includes('reorganizarán'), 'Debe advertir que se actualizarán los demás días');
+
+// Ejecutar movimiento muscular
+const prevOtherTitle = app.getState().schedule[otherDay].title;
+app.moveMuscleToCurrentDay(otherDay);
+assert.equal(app.getState().schedule[todayId].title, prevOtherTitle, 'El músculo de otro día debe pasar a ser el de hoy');
+app.closeMoveMuscleDialog();
+
 // Re-verificación final absoluta: 0 etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe seguir teniendo CERO etiquetas <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las pruebas v1.9.21 (Panel de Estadísticas por Pestañas, Copa Superior, Botón Anaranjado y Protección de Día Culminado) pasaron con éxito.');
+console.log('PASS: Todas las 42 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

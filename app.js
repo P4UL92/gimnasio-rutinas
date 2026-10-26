@@ -98,9 +98,8 @@
           }
         }
       }
-      if (!DAYS_ORDER.includes(parsed.selectedDay)) {
-        parsed.selectedDay = 'lunes';
-      }
+      // Verificar y seleccionar siempre el día actual correspondiente al abrir la aplicación
+      parsed.selectedDay = detectDefaultDay();
       if (!Array.isArray(parsed.history)) {
         parsed.history = [];
       }
@@ -962,6 +961,146 @@
     renderAll();
   }
 
+  function openRestoreDaysDialog() {
+    const dialog = document.getElementById('restore-days-dialog');
+    if (!dialog) return;
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeRestoreDaysDialog() {
+    const dialog = document.getElementById('restore-days-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function restoreSelectedDays(daysList) {
+    if (!Array.isArray(daysList) || daysList.length === 0) return 0;
+    const fresh = createInitialState();
+    let count = 0;
+    for (const dayKey of daysList) {
+      if (DAYS_ORDER.includes(dayKey) && fresh.schedule[dayKey]) {
+        state.schedule[dayKey] = deepClone(fresh.schedule[dayKey]);
+        count++;
+      }
+    }
+    saveState();
+    renderAll();
+    showCelebrationToast(`🗓️ ${count} día(s) restablecido(s) a los valores originales`);
+    return count;
+  }
+
+  function openMoveMuscleDialog(sourceDayId) {
+    const dialog = document.getElementById('move-muscle-confirm-dialog');
+    if (!dialog) return;
+
+    const currentRealDay = detectDefaultDay();
+    const sourceDay = state.schedule[sourceDayId];
+    const targetDay = state.schedule[currentRealDay];
+
+    const muscleEl = document.getElementById('move-target-muscle');
+    const sourceEl = document.getElementById('move-source-day');
+    const currentEl = document.getElementById('move-current-day');
+
+    if (muscleEl && sourceDay) muscleEl.textContent = sourceDay.muscleGroup;
+    if (sourceEl && sourceDay) sourceEl.textContent = `${sourceDay.dayName} (${sourceDay.title})`;
+    if (currentEl && targetDay) currentEl.textContent = `${targetDay.dayName} (Hoy)`;
+
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeMoveMuscleDialog() {
+    const dialog = document.getElementById('move-muscle-confirm-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function moveMuscleToCurrentDay(sourceDayId = state.selectedDay) {
+    const todayId = detectDefaultDay();
+    if (sourceDayId === todayId) return false;
+
+    const trainingDays = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const freshSchedule = deepClone(state.schedule);
+
+    if (trainingDays.includes(sourceDayId) && trainingDays.includes(todayId)) {
+      const srcIdx = trainingDays.indexOf(sourceDayId);
+      const dstIdx = trainingDays.indexOf(todayId);
+      const offset = (srcIdx - dstIdx + trainingDays.length) % trainingDays.length;
+
+      trainingDays.forEach((dKey, i) => {
+        const fromKey = trainingDays[(i + offset) % trainingDays.length];
+        const donor = freshSchedule[fromKey];
+        state.schedule[dKey] = {
+          ...state.schedule[dKey],
+          muscleGroup: donor.muscleGroup,
+          title: donor.title,
+          subtitle: donor.subtitle,
+          accentHue: donor.accentHue,
+          exercises: deepClone(donor.exercises).map(ex => ({
+            ...ex,
+            completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
+          }))
+        };
+      });
+    } else {
+      const srcIdx = DAYS_ORDER.indexOf(sourceDayId);
+      const dstIdx = DAYS_ORDER.indexOf(todayId);
+      const offset = (srcIdx - dstIdx + DAYS_ORDER.length) % DAYS_ORDER.length;
+
+      DAYS_ORDER.forEach((dKey, i) => {
+        const fromKey = DAYS_ORDER[(i + offset) % DAYS_ORDER.length];
+        const donor = freshSchedule[fromKey];
+        state.schedule[dKey] = {
+          ...state.schedule[dKey],
+          muscleGroup: donor.muscleGroup,
+          title: donor.title,
+          subtitle: donor.subtitle,
+          accentHue: donor.accentHue,
+          exercises: deepClone(donor.exercises).map(ex => ({
+            ...ex,
+            completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
+          }))
+        };
+      });
+    }
+
+    state.selectedDay = todayId;
+    saveState();
+    renderAll();
+    showCelebrationToast(`🔄 Músculo ${state.schedule[todayId].muscleGroup} asignado a hoy (${state.schedule[todayId].dayName}). Calendario semanal actualizado.`);
+    return true;
+  }
+
+  function closeProfileOnboardingDialog() {
+    const dialog = document.getElementById('profile-onboarding-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
   function resetWeeklySeriesProgress() {
     for (const dayKey of DAYS_ORDER) {
       for (const ex of state.schedule[dayKey].exercises) {
@@ -1375,24 +1514,31 @@
       }
     }
 
+    const currentRealDay = detectDefaultDay();
+    const isViewingToday = (state.selectedDay === currentRealDay);
     const dayCompleted = isDayCompleted(state.selectedDay);
     const startBtn = document.getElementById('btn-start-day-workout');
     if (startBtn) {
-      if (dayCompleted) {
-        startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
-        startBtn.classList.add('is-day-completed-cta');
+      if (isViewingToday) {
+        startBtn.classList.remove('btn-move-muscle-cta');
+        if (dayCompleted) {
+          startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
+          startBtn.classList.add('is-day-completed-cta');
+        } else {
+          startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
+          startBtn.classList.remove('is-day-completed-cta');
+        }
       } else {
-        startBtn.textContent = '🚀 Iniciar Día de Ejercicio (Pantalla Enfoque)';
         startBtn.classList.remove('is-day-completed-cta');
+        startBtn.classList.add('btn-move-muscle-cta');
+        const targetDay = state.schedule[currentRealDay];
+        const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
+        startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
       }
     }
     const headerStartBtn = document.getElementById('btn-header-start-day');
     if (headerStartBtn) {
-      if (dayCompleted) {
-        headerStartBtn.textContent = '📊 Estadísticas';
-      } else {
-        headerStartBtn.textContent = '▶ Iniciar';
-      }
+      headerStartBtn.hidden = true;
     }
   }
 
@@ -1639,11 +1785,19 @@
     btnFocusEx.className = 'btn-open-ex-focus';
     btnFocusEx.dataset.exerciseId = ex.id;
     btnFocusEx.title = 'Abrir este ejercicio en la pantalla dedicada de entrenamiento';
-    btnFocusEx.textContent = `▶ Entrenar (${ex.restSeconds || 75}s descanso)`;
+    const isTodayCard = (dayId === detectDefaultDay());
+    btnFocusEx.textContent = isTodayCard
+      ? `▶ Entrenar (${ex.restSeconds || 75}s descanso)`
+      : `👁️ Ver Ejercicio (${ex.restSeconds || 75}s descanso)`;
     btnFocusEx.addEventListener('click', () => {
-      const dayObj = state.schedule[dayId];
-      const idx = dayObj ? dayObj.exercises.findIndex(item => item.id === ex.id) : 0;
-      openConfirmStartWorkoutDialog(dayId, idx >= 0 ? idx : 0);
+      const currentRealDay = detectDefaultDay();
+      if (dayId !== currentRealDay) {
+        openMoveMuscleDialog(dayId);
+      } else {
+        const dayObj = state.schedule[dayId];
+        const idx = dayObj ? dayObj.exercises.findIndex(item => item.id === ex.id) : 0;
+        openConfirmStartWorkoutDialog(dayId, idx >= 0 ? idx : 0);
+      }
     });
 
     // Menú desplegable que agrupa las opciones no esenciales para despejar la vista vertical
@@ -3666,23 +3820,9 @@
   // Módulo Focus UI v1.8: Navegación Direccional Multi-Pantalla y Modo Entrenamiento Activo
   // =========================================================================
   const SCREENS_ORDER = ['plan', 'workout', 'stats', 'hub'];
+  const MAIN_SCREENS_ORDER = ['plan', 'stats', 'hub'];
 
-  function navigateWithDirection(updateDOM, direction = 'forward') {
-    if (typeof document === 'undefined' || typeof document.startViewTransition !== 'function') {
-      updateDOM();
-      return;
-    }
-    try {
-      document.startViewTransition({
-        update: updateDOM,
-        types: [direction]
-      });
-    } catch (_) {
-      updateDOM();
-    }
-  }
-
-  function syncScreenVisibility() {
+  function syncScreenVisibility(direction = 'right') {
     const activeScreen = SCREENS_ORDER.includes(state.activeScreen) ? state.activeScreen : 'plan';
     const mainEl = document.getElementById('main-content');
     if (mainEl) {
@@ -3696,6 +3836,11 @@
       const isCurrent = panel.dataset.screenPanel === activeScreen;
       panel.hidden = !isCurrent;
       panel.classList.toggle('is-active-screen', isCurrent);
+      if (isCurrent && !isWorkout) {
+        panel.classList.remove('slide-in-right', 'slide-in-left');
+        void panel.offsetWidth;
+        panel.classList.add(direction === 'right' ? 'slide-in-right' : 'slide-in-left');
+      }
     });
 
     document.querySelectorAll('#bottom-app-nav .bottom-nav-btn').forEach(btn => {
@@ -3731,25 +3876,17 @@
 
   function switchAppScreen(targetScreen, options = {}) {
     if (!SCREENS_ORDER.includes(targetScreen)) return state.activeScreen;
-    const prevIdx = SCREENS_ORDER.indexOf(state.activeScreen || 'plan');
-    const nextIdx = SCREENS_ORDER.indexOf(targetScreen);
-    const direction = nextIdx >= prevIdx ? 'forward' : 'backward';
+    const prevIdx = MAIN_SCREENS_ORDER.indexOf(state.activeScreen || 'plan');
+    const nextIdx = MAIN_SCREENS_ORDER.indexOf(targetScreen);
+    const direction = (nextIdx >= prevIdx || prevIdx === -1) ? 'right' : 'left';
 
-    const performSwitch = () => {
-      state.activeScreen = targetScreen;
-      if (typeof options.exerciseIndex === 'number' && options.exerciseIndex >= 0) {
-        state.activeExerciseIndex = options.exerciseIndex;
-      }
-      saveState();
-      syncScreenVisibility();
-      renderWorkoutFocusScreen();
-    };
-
-    if (options.instant) {
-      performSwitch();
-    } else {
-      navigateWithDirection(performSwitch, direction);
+    state.activeScreen = targetScreen;
+    if (typeof options.exerciseIndex === 'number' && options.exerciseIndex >= 0) {
+      state.activeExerciseIndex = options.exerciseIndex;
     }
+    saveState();
+    syncScreenVisibility(direction);
+    renderWorkoutFocusScreen();
     return state.activeScreen;
   }
 
@@ -5103,8 +5240,37 @@
 
     const btnRestoreSchedule = document.getElementById('btn-restore-schedule');
     if (btnRestoreSchedule) {
-      btnRestoreSchedule.addEventListener('click', restoreOriginalSchedule);
+      btnRestoreSchedule.addEventListener('click', openRestoreDaysDialog);
     }
+
+    document.getElementById('btn-restore-selected-days')?.addEventListener('click', () => {
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="restoreDayOption"]:checked'));
+      const selectedKeys = checkedBoxes.map(cb => cb.value);
+      if (selectedKeys.length === 0) {
+        showCelebrationToast('⚠️ Selecciona al menos un día para restaurar');
+        return;
+      }
+      restoreSelectedDays(selectedKeys);
+      closeRestoreDaysDialog();
+    });
+    document.getElementById('btn-restore-all-days')?.addEventListener('click', () => {
+      restoreOriginalSchedule();
+      closeRestoreDaysDialog();
+      showCelebrationToast('🗓️ Semana completa restablecida a los valores originales');
+    });
+    document.getElementById('btn-cancel-restore-days')?.addEventListener('click', closeRestoreDaysDialog);
+    document.getElementById('btn-close-restore-days-dialog')?.addEventListener('click', closeRestoreDaysDialog);
+
+    // Modal de Confirmación de Mover Músculo al Día de Hoy
+    document.getElementById('btn-confirm-move-muscle')?.addEventListener('click', () => {
+      moveMuscleToCurrentDay(state.selectedDay);
+      closeMoveMuscleDialog();
+    });
+    document.getElementById('btn-cancel-move-muscle')?.addEventListener('click', closeMoveMuscleDialog);
+    document.getElementById('btn-close-move-muscle-dialog')?.addEventListener('click', closeMoveMuscleDialog);
+
+    // Botón de salir (X) del panel de perfil de usuario
+    document.getElementById('btn-close-profile-dialog')?.addEventListener('click', closeProfileOnboardingDialog);
 
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('exercise-search-input');
@@ -5156,10 +5322,20 @@
 
     // Controles de la Pantalla de Entrenamiento Activo (#workout-focus-screen) y Navegación Inferior
     document.getElementById('btn-start-day-workout')?.addEventListener('click', () => {
-      openConfirmStartWorkoutDialog(state.selectedDay, null);
+      const currentRealDay = detectDefaultDay();
+      if (state.selectedDay !== currentRealDay) {
+        openMoveMuscleDialog(state.selectedDay);
+      } else {
+        openConfirmStartWorkoutDialog(state.selectedDay, null);
+      }
     });
     document.getElementById('btn-header-start-day')?.addEventListener('click', () => {
-      openConfirmStartWorkoutDialog(state.selectedDay, null);
+      const currentRealDay = detectDefaultDay();
+      if (state.selectedDay !== currentRealDay) {
+        openMoveMuscleDialog(state.selectedDay);
+      } else {
+        openConfirmStartWorkoutDialog(state.selectedDay, null);
+      }
     });
     document.getElementById('btn-confirm-start-proceed')?.addEventListener('click', () => {
       const launch = pendingWorkoutLaunch;
@@ -5377,7 +5553,7 @@
     document.getElementById('btn-results-prev-3')?.addEventListener('click', () => setResultsTab(1));
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
-    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog'].forEach(dlgId => {
+    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog'].forEach(dlgId => {
       const dlg = document.getElementById(dlgId);
       if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
         dlg.addEventListener('click', event => {
@@ -5399,16 +5575,7 @@
     document.querySelectorAll('#bottom-app-nav .bottom-nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.navScreen;
-        if (target === 'workout') {
-          if (isDayCompleted(state.selectedDay)) {
-            const sessionRecord = (state.history || []).find(h => h.dayId === state.selectedDay) || (state.history && state.history[0]);
-            const projection = calculateNextWorkoutProjection(state.selectedDay);
-            openWorkoutResultsDialog(sessionRecord, projection);
-            showCelebrationToast('🏆 Entrenamiento del día ya culminado. Mostrando estadísticas.');
-          } else if (state.activeScreen !== 'workout') {
-            openConfirmStartWorkoutDialog(state.selectedDay, state.activeExerciseIndex || 0);
-          }
-        } else if (target) {
+        if (target) {
           switchAppScreen(target);
         }
       });
@@ -5702,8 +5869,17 @@
     getUserProfile,
     saveUserProfile,
     openProfileOnboardingDialog,
+    closeProfileOnboardingDialog,
     renderUserProfileSummary,
     accommodateMissedDayAction,
+    // APIs Restauración Selectiva y Mover Músculo al Día Actual
+    detectDefaultDay,
+    openRestoreDaysDialog,
+    closeRestoreDaysDialog,
+    restoreSelectedDays,
+    openMoveMuscleDialog,
+    closeMoveMuscleDialog,
+    moveMuscleToCurrentDay,
     // APIs Dynamic Series & Reps v1.9.1
     cycleExerciseReps,
     adjustExerciseSeriesCount,

@@ -27,9 +27,6 @@
         <button type="button" id="btn-header-profile" class="btn-ghost btn-header-profile" title="Ver o editar parámetros de tu perfil de entrenamiento">
           👤 <span id="header-profile-tag">Mi Perfil</span>
         </button>
-        <button type="button" id="btn-header-start-day" class="btn-primary btn-header-start" title="Abrir pantalla de entrenamiento activo del día">
-          ▶ Entrenar
-        </button>
 
         <!-- Menú Agrupado de Opciones Secundarias de Cabecera -->
         <details id="header-tools-menu" class="header-tools-menu">
@@ -40,35 +37,22 @@
             <button type="button" id="btn-open-calc-dialog" class="btn-ghost" title="Abrir Calculadora de Discos, Placas y Zonas 1RM">
               🧮 Calc. Discos / 1RM
             </button>
-            <button type="button" id="btn-toggle-voice-coach" class="btn-ghost" aria-pressed="false" title="Activar Entrenador de Voz (TTS) y Metrónomo de Cadencia 3-1-1 en series TUT">
-              🔊 Coach Voz / Cadencia
-            </button>
             <button type="button" id="btn-toggle-deload-mode" class="btn-ghost" aria-pressed="false" title="Activar o desactivar Semana de Descarga Articular (-20% carga sugerida y RIR 3)">
               🛡️ Modo Descarga
             </button>
-            <button type="button" id="btn-toggle-wakelock" class="btn-ghost" aria-pressed="false" title="Mantener pantalla encendida durante el entrenamiento (WakeLock)">
-              🔆 Pantalla Activa
-            </button>
-            <button type="button" id="btn-toggle-animations" class="btn-ghost" aria-pressed="true" title="Pausar o reanudar animaciones de ejercicios">
-              ⏸️ Pausar Anim.
-            </button>
-            <button type="button" id="btn-reset-week-progress" class="btn-ghost" title="Reiniciar series marcadas de la semana">
-              🔄 Reiniciar Series
-            </button>
-            <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar orden original Lunes a Sábado">
-              🗓️ Restaurar Días
+            <button type="button" id="btn-restore-schedule" class="btn-ghost" title="Restaurar o reiniciar días">
+              🗓️ Restaura Días
             </button>
           </div>
         </details>
       </div>
     </div>
 
-    <!-- Barra compacta desplegable para Cronómetro Global y Resumen Semanal (Ahorra espacio en vertical) -->
+    <!-- Barra compacta desplegable para Resumen Semanal (Ahorra espacio en vertical) -->
     <details id="header-metrics-drawer" class="header-metrics-drawer">
       <summary class="header-metrics-summary">
         <span class="compact-stat-pill">📊 Semana: <strong id="compact-week-pct">0%</strong></span>
-        <span class="compact-stat-pill">⏱️ Sesión: <strong id="compact-stopwatch-digits">00:00:00</strong></span>
-        <span class="compact-drawer-toggle">Resumen y Cronómetro ▾</span>
+        <span class="compact-drawer-toggle">Resumen Semanal ▾</span>
       </summary>
       <div class="header-metrics-body">
         <section class="weekly-summary-bar" aria-label="Progreso semanal">
@@ -93,33 +77,6 @@
           <div class="progress-track" role="region" aria-label="Porcentaje de entrenamiento semanal">
             <progress id="weekly-progress-bar" class="workout-progress" value="0" max="100" style="--progress-hue: 160;"></progress>
             <span id="weekly-progress-text" class="progress-caption">0% completado</span>
-          </div>
-        </section>
-
-        <!-- Barra del Cronómetro de Entrenamiento -->
-        <section class="workout-stopwatch-bar" id="workout-stopwatch-bar" aria-label="Cronómetro de entrenamiento">
-          <div class="stopwatch-main-row">
-            <div class="stopwatch-display-group">
-              <span class="stopwatch-pulse-dot" id="stopwatch-pulse-dot" aria-hidden="true"></span>
-              <div>
-                <span class="stopwatch-title">CRONÓMETRO DE SESIÓN</span>
-                <strong id="session-stopwatch-digits" class="stopwatch-digits">00:00:00</strong>
-              </div>
-            </div>
-            <div class="stopwatch-controls">
-              <button type="button" id="btn-stopwatch-toggle" class="btn-stopwatch-primary">
-                ▶ Iniciar
-              </button>
-              <button type="button" id="btn-stopwatch-lap" class="btn-stopwatch-secondary" disabled title="Marcar vuelta o serie">
-                🚩 Vuelta
-              </button>
-              <button type="button" id="btn-stopwatch-reset" class="btn-stopwatch-ghost" title="Reiniciar cronómetro">
-                ↺
-              </button>
-            </div>
-          </div>
-          <div id="stopwatch-laps-drawer" class="stopwatch-laps-drawer" hidden>
-            <ol id="stopwatch-laps-list" class="stopwatch-laps-list"></ol>
           </div>
         </section>
       </div>
@@ -514,7 +471,6 @@
       <section class="weekly-overview-section" aria-label="Módulos adicionales y herramientas">
         <div class="section-header-row">
           <h2 class="section-title">🧰 Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
-          <span class="unit-legend">Opciones complementarias agrupadas</span>
         </div>
 
       <!-- Acordeón 1: Mi Perfil Personalizado & Parámetros Biométricos -->
@@ -808,22 +764,18 @@
     </div>
   </main>
 
-  <!-- Barra de Navegación Inferior estilo Android (Vertical Responsive) -->
+  <!-- Barra de Navegación Inferior estilo Android (3 Opciones Principales de Fuerza) -->
   <nav id="bottom-app-nav" class="bottom-app-nav" aria-label="Navegación principal de pantallas">
     <button type="button" class="bottom-nav-btn is-active" data-nav-screen="plan" aria-current="page">
-      <span class="bottom-nav-icon" aria-hidden="true">📋</span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">🏋️</span>
       <span class="bottom-nav-label">Rutina</span>
     </button>
-    <button type="button" class="bottom-nav-btn" data-nav-screen="workout">
-      <span class="bottom-nav-icon" aria-hidden="true">🔥</span>
-      <span class="bottom-nav-label">Entrenar</span>
-    </button>
     <button type="button" class="bottom-nav-btn" data-nav-screen="stats">
-      <span class="bottom-nav-icon" aria-hidden="true">📊</span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">📈</span>
       <span class="bottom-nav-label">Progreso</span>
     </button>
     <button type="button" class="bottom-nav-btn" data-nav-screen="hub">
-      <span class="bottom-nav-icon" aria-hidden="true">🧰</span>
+      <span class="bottom-nav-icon gym-strength-icon" aria-hidden="true">⚙️</span>
       <span class="bottom-nav-label">Menú / Extras</span>
     </button>
   </nav>
@@ -883,7 +835,7 @@
           <span class="eyebrow">CALIBRACIÓN BIOMÉTRICA & OBJETIVO PERSONAL</span>
           <h2 id="profile-dialog-title">Perfil de Entrenamiento Único</h2>
         </div>
-        <button type="button" id="btn-close-profile-dialog" class="btn-icon-close" aria-label="Cerrar">✕</button>
+        <button type="button" id="btn-close-profile-dialog" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal de perfil">✕</button>
       </header>
 
       <div class="dialog-body profile-dialog-body">
@@ -1548,6 +1500,116 @@
           </button>
           <button type="button" id="btn-truncate-cancel" class="btn-ghost btn-truncate-resume">
             ↩️ Continuar Entrenando
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Restaurar Días Específicos o Todos -->
+  <dialog id="restore-days-dialog" class="gym-dialog restore-days-dialog" closedby="any" aria-labelledby="restore-days-dialog-title">
+    <div class="dialog-body restore-days-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">RESTAURACIÓN Y REINICIO DE RUTINAS</span>
+          <h2 id="restore-days-dialog-title">🗓️ Restaurar Días</h2>
+        </div>
+        <button type="button" id="btn-close-restore-days-dialog" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <p class="restore-dialog-lead">
+        Selecciona los días específicos que deseas restablecer a su entrenamiento y series originales, o reinicia todos los días de la semana:
+      </p>
+
+      <div class="restore-days-list" id="restore-days-checkboxes">
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="lunes" checked>
+          <span><strong>Lunes:</strong> Espalda y Bíceps</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="martes" checked>
+          <span><strong>Martes:</strong> Pecho, Hombro y Tríceps</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="miercoles" checked>
+          <span><strong>Miércoles:</strong> Piernas y Glúteos</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="jueves" checked>
+          <span><strong>Jueves:</strong> Espalda y Bíceps</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="viernes" checked>
+          <span><strong>Viernes:</strong> Pecho, Hombro y Tríceps</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="sabado" checked>
+          <span><strong>Sábado:</strong> Piernas y Glúteos</span>
+        </label>
+        <label class="restore-day-item">
+          <input type="checkbox" name="restoreDayOption" value="domingo">
+          <span><strong>Domingo:</strong> Comodín / Descanso</span>
+        </label>
+      </div>
+
+      <div class="restore-dialog-actions">
+        <button type="button" id="btn-restore-selected-days" class="btn-primary">
+          🔄 Restaurar Días Seleccionados
+        </button>
+        <button type="button" id="btn-restore-all-days" class="btn-secondary">
+          ⚡ Reiniciar Todos los Días
+        </button>
+        <button type="button" id="btn-cancel-restore-days" class="btn-secondary btn-close-danger">
+          ✕ Cancelar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal Nativo: Confirmación de Mover Músculo al Día de Hoy -->
+  <dialog id="move-muscle-confirm-dialog" class="gym-dialog move-muscle-dialog" closedby="any" aria-labelledby="move-muscle-dialog-title">
+    <div class="dialog-body move-muscle-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">MODIFICACIÓN DEL CALENDARIO DE ENTRENAMIENTO</span>
+          <h2 id="move-muscle-dialog-title">🔄 Mover Músculo al Día de Hoy</h2>
+        </div>
+        <button type="button" id="btn-close-move-muscle-dialog" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="move-muscle-content">
+        <p class="move-muscle-lead" id="move-muscle-desc">
+          ¿Deseas entrenar este grupo muscular el día de hoy?
+        </p>
+
+        <div class="move-muscle-preview-box" id="move-muscle-preview-box">
+          <div class="move-preview-row">
+            <span class="move-label">Músculo a entrenar hoy:</span>
+            <strong id="move-target-muscle" class="move-highlight">Piernas y Glúteos</strong>
+          </div>
+          <div class="move-preview-row">
+            <span class="move-label">Día origen:</span>
+            <span id="move-source-day">Miércoles</span>
+          </div>
+          <div class="move-preview-row">
+            <span class="move-label">Día actual (destino):</span>
+            <span id="move-current-day">Lunes</span>
+          </div>
+        </div>
+
+        <div class="move-muscle-warning-card">
+          <span class="warning-icon">⚠️</span>
+          <p class="warning-text">
+            <strong>Actualización en cadena:</strong> Se actualizarán y modificarán los entrenamientos de los demás días de la semana para adaptarse al cambio de músculo seleccionado y mantener la frecuencia de recuperación.
+          </p>
+        </div>
+
+        <div class="move-muscle-actions">
+          <button type="button" id="btn-confirm-move-muscle" class="btn-primary">
+            ✓ Sí, Modificar y Actualizar Calendario
+          </button>
+          <button type="button" id="btn-cancel-move-muscle" class="btn-secondary btn-close-danger">
+            ✕ Cancelar
           </button>
         </div>
       </div>
