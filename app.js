@@ -1842,8 +1842,9 @@
       titleEl.textContent = `${day.dayName}: ${day.title}`;
     }
     if (subtitleEl) {
-      // Subtítulo especifica el músculo
-      subtitleEl.textContent = day.muscleGroup || day.title;
+      // Se retira el texto redundante de ejercicios que se entrenarán debajo del título
+      subtitleEl.textContent = '';
+      subtitleEl.style.display = 'none';
     }
 
     const totalSets = day.exercises.reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
@@ -2745,63 +2746,72 @@
     if (text.includes('escapular') || text.includes('rotacion') || text.includes('rotaciones') || text.includes('torácica')) {
       return {
         imgUrl: 'assets/icons/warmup-scapular.png',
+        animUrl: 'assets/icons/warmup-scapular-anim.png',
         title: 'Rotaciones Escapulares y Movilidad Torácica',
-        instruction: 'Realiza círculos lentos y amplios con los hombros juntando y separando las escápulas para activar el plano escapular y lubricar la articulación.'
+        instruction: 'Fase 1: Protracción neutra. Fase 2: Elevación y rotación escapular superior. Fase 3: Retracción máxima juntando escápulas para activar el plano escapular y lubricar la articulación.'
       };
     }
     if (text.includes('dislocacion') || text.includes('bastón') || text.includes('banda') || text.includes('hombro')) {
       return {
         imgUrl: 'assets/icons/warmup-dislocate.png',
+        animUrl: 'assets/icons/warmup-dislocate-anim.png',
         title: 'Dislocaciones de Hombro con Banda / Bastón',
-        instruction: 'Con agarre amplio y brazos rectos, pasa la banda o bastón por encima de la cabeza hacia la espalda baja sintiendo la apertura torácica sin forzar.'
+        instruction: 'Fase 1: Bastón al frente a la cadera. Fase 2: Elevación overhead sobre la cabeza. Fase 3: Paso completo hacia atrás sintiendo la apertura torácica y movilidad escapulohumeral sin forzar.'
       };
     }
     if (text.includes('rotador') || text.includes('externa') || text.includes('manguito')) {
       return {
         imgUrl: 'assets/icons/warmup-rotator.png',
+        animUrl: 'assets/icons/warmup-rotator-anim.png',
         title: 'Rotación Externa de Manguito Rotador',
-        instruction: 'Pega el codo a la cintura a 90 grados y rota externamente el antebrazo manteniendo la tensión controlada en el manguito.'
+        instruction: 'Fase 1: Codo a 90° al abdomen. Fase 2: Rotación activa a 45°. Fase 3: Rotación externa completa a 90° con tensión controlada en infraespinoso y redondo menor.'
       };
     }
     if (text.includes('apertura') || text.includes('pectoral') || text.includes('pecho')) {
       return {
         imgUrl: 'assets/icons/warmup-chest-open.png',
+        animUrl: 'assets/icons/warmup-chest-open-anim.png',
         title: 'Aperturas Dinámicas y Movilidad Pectoral',
-        instruction: 'Abre los brazos en cruz con retracción escapular activa para oxigenar y expandir las fibras esternales del pectoral antes de empujar carga.'
+        instruction: 'Fase 1: Manos juntas al frente del pecho. Fase 2: Apertura diagonal activa. Fase 3: Apertura en cruz completa hacia atrás con retracción escapular activa para oxigenar fibras esternales.'
       };
     }
     if (text.includes('cadera') || text.includes('90/90') || text.includes('pélvico') || text.includes('flexores')) {
       return {
         imgUrl: 'assets/icons/warmup-hip-mobility.png',
+        animUrl: 'assets/icons/warmup-hip-mobility-anim.png',
         title: 'Movilidad Dinámica de Cadera 90/90',
-        instruction: 'Sentado en el suelo con rodillas y caderas en 90 grados, rota alternando hacia adentro y afuera para lubricar la articulación femoroacetabular.'
+        instruction: 'Fase 1: Sentado en suelo con caderas en 90°. Fase 2: Transición dinámica por el centro. Fase 3: Rotación completa hacia adentro y afuera lubricando la articulación femoroacetabular.'
       };
     }
     if (text.includes('glúteo') || text.includes('puente') || text.includes('isométrico')) {
       return {
         imgUrl: 'assets/icons/warmup-glute-bridge.png',
+        animUrl: 'assets/icons/warmup-glute-bridge-anim.png',
         title: 'Puente de Glúteo Isométrico y Activación',
-        instruction: 'Apoya los pies planos en el suelo, eleva la pelvis contrayendo los glúteos en el punto máximo durante 1 a 2 segundos antes de descender.'
+        instruction: 'Fase 1: Apoyo plano en suelo. Fase 2: Elevación pélvica media. Fase 3: Extensión pélvica máxima con bloqueo y contracción isométrica de glúteos de 1 a 2 segundos.'
       };
     }
     if (text.includes('aproximación') || text.includes('polea') || text.includes('prensa') || text.includes('máquina')) {
       return {
         imgUrl: 'assets/icons/warmup-cable-warmup.png',
+        animUrl: 'assets/icons/warmup-cable-warmup-anim.png',
         title: 'Serie de Aproximación al 40% (Sin fatiga)',
-        instruction: 'Serie de activación neurológica y articular con el 40% de tu carga de trabajo. 15 repeticiones rítmicas para fijar el patrón motor.'
+        instruction: 'Fase 1: Agarre alto en estiramiento previo. Fase 2: Tracción descendente controlada. Fase 3: Pico de contracción al pecho al 40% de carga para fijar el patrón motor sin fatiga.'
       };
     }
     if (text.includes('core') || text.includes('plancha') || text.includes('bird-dog') || text.includes('abdominal')) {
       return {
         imgUrl: 'assets/icons/warmup-core-plank.png',
+        animUrl: 'assets/icons/warmup-core-plank-anim.png',
         title: 'Activación de Core y Estabilidad Lumbo-Pélvica',
-        instruction: 'Mantén la plancha abdominal con respiración controlada y glúteos compactos para blindar la zona lumbar antes de tus levantamientos.'
+        instruction: 'Fase 1: Posición inicial en antebrazos. Fase 2: Despegue y alineación horizontal. Fase 3: Plancha isométrica rígida con respiración controlada y glúteos compactos para blindar la zona lumbar.'
       };
     }
     return {
       imgUrl: 'assets/icons/warmup-scapular.png',
+      animUrl: 'assets/icons/warmup-scapular-anim.png',
       title: step.label,
-      instruction: 'Ejecución técnica controlada y fluida, enfocada en lubricar las articulaciones y preparar los tendones para la carga de trabajo.'
+      instruction: 'Fase 1: Posición inicial. Fase 2: Recorrido biomecánico fluido. Fase 3: Máxima activación y lubricación articular.'
     };
   }
 
@@ -4167,15 +4177,23 @@
       card.className = 'warmup-exercise-card';
       card.innerHTML = `
         <div class="warmup-exercise-top">
-          <div class="warmup-animated-frame">
-            <img src="${visual.imgUrl}" alt="${step.label}" width="76" height="76">
+          <div class="warmup-animated-frame" title="Animación biomecánica en 3 fases: Inicio → Recorrido → Activación">
+            <div class="warmup-sprite-frame" style="background-image: url('${visual.animUrl || visual.imgUrl}');"></div>
+            <img src="${visual.animUrl || visual.imgUrl}" alt="${step.label}" class="warmup-sprite-img" width="1" height="1" style="position: absolute; opacity: 0; pointer-events: none;">
           </div>
           <div class="warmup-exercise-info">
             <div class="warmup-exercise-tag-row">
-              <span class="badge-warmup-tag">ACTIVACIÓN ARTICULAR</span>
+              <span class="badge-warmup-tag">ANIMACIÓN 3 FASES BIOMECÁNICAS</span>
               <span class="warmup-dur-pill">⏱️ ${step.duration}</span>
             </div>
             <h4 class="warmup-exercise-name">${visual.title || step.label}</h4>
+            <div class="warmup-phases-strip">
+              <span class="warmup-phase-item"><strong class="phase-num">1</strong> Inicio</span>
+              <span class="warmup-phase-arrow">→</span>
+              <span class="warmup-phase-item"><strong class="phase-num">2</strong> Recorrido</span>
+              <span class="warmup-phase-arrow">→</span>
+              <span class="warmup-phase-item is-peak"><strong class="phase-num">3</strong> Activación</span>
+            </div>
             <p class="warmup-exercise-desc">${visual.instruction}</p>
           </div>
         </div>
@@ -4190,7 +4208,7 @@
     state.workoutWarmupCompletedByDay[dayId] = true;
     state.activeExerciseIndex = 0;
     triggerHaptic([40, 20, 60]);
-    showCelebrationToast('🔥 ¡Calentamiento terminado! Ejercicios desbloqueados.');
+    showCelebrationToast('🔥 ¡Calentamiento culminado! Primer ejercicio desbloqueado.');
     saveState();
     renderWorkoutFocusScreen();
   }
@@ -4261,17 +4279,53 @@
     }
 
     const isWarmupActive = (state.activeExerciseIndex === -1);
+    const focusWarmupView = document.getElementById('focus-warmup-view');
+    const focusExerciseCard = document.getElementById('focus-exercise-card');
+
+    // Durante el calentamiento: SOLO se muestran los ejercicios de calentamiento
+    if (isWarmupActive) {
+      if (focusWarmupView) focusWarmupView.hidden = false;
+      if (focusExerciseCard) focusExerciseCard.hidden = true;
+      if (counterLabel) {
+        counterLabel.textContent = 'Fase de Calentamiento Articular';
+      }
+      if (prevBtn) {
+        prevBtn.disabled = true;
+        prevBtn.hidden = true;
+      }
+      if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.hidden = true;
+      }
+
+      if (pillsContainer) {
+        pillsContainer.innerHTML = `
+          <div class="focus-warmup-stepper-badge">
+            🔥 Calentamiento y Activación Articular (Obligatorio)
+          </div>
+        `;
+      }
+
+      renderFocusWarmupContent(day);
+      return null;
+    }
+
+    // Una vez culminados, RECIÉN se muestra el primer ejercicio para el músculo
+    if (focusWarmupView) focusWarmupView.hidden = true;
+    if (focusExerciseCard) focusExerciseCard.hidden = false;
+    if (prevBtn) prevBtn.hidden = false;
+    if (nextBtn) nextBtn.hidden = false;
 
     if (pillsContainer) {
       pillsContainer.innerHTML = '';
 
-      // Píldora inicial obligatoria: 🔥 Entrenamiento
+      // Píldora de calentamiento culminado para poder revisarlo si se desea
       const warmupPill = document.createElement('button');
       warmupPill.type = 'button';
-      warmupPill.className = `focus-step-pill focus-step-warmup ${isWarmupActive ? 'is-active' : ''} ${isWarmupDone ? 'is-completed' : ''}`;
+      warmupPill.className = 'focus-step-pill focus-step-warmup is-completed';
       warmupPill.dataset.exerciseIndex = '-1';
-      warmupPill.setAttribute('aria-label', 'Fase Inicial: Calentamiento de Entrenamiento');
-      warmupPill.textContent = isWarmupDone ? '✓ Entrenamiento' : '🔥 Entrenamiento';
+      warmupPill.setAttribute('aria-label', 'Revisar Calentamiento Articular');
+      warmupPill.textContent = '✓ Calentamiento';
       warmupPill.addEventListener('click', () => selectFocusExercise(-1));
       pillsContainer.appendChild(warmupPill);
 
@@ -4279,42 +4333,17 @@
         const itemTotal = Number(item.sets) || 4;
         const itemDone = (item.completedSets || []).filter(Boolean).length;
         const isAllDone = itemDone === itemTotal && itemTotal > 0;
-        const isLocked = !isWarmupDone;
 
         const pill = document.createElement('button');
         pill.type = 'button';
-        pill.className = `focus-step-pill ${!isWarmupActive && i === state.activeExerciseIndex ? 'is-active' : ''} ${isAllDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}`;
+        pill.className = `focus-step-pill ${i === state.activeExerciseIndex ? 'is-active' : ''} ${isAllDone ? 'is-completed' : ''}`;
         pill.dataset.exerciseIndex = String(i);
         pill.setAttribute('aria-label', `Ir a ejercicio ${i + 1}: ${item.name}`);
-
-        if (isLocked) {
-          pill.disabled = true;
-          pill.textContent = `🔒 ${i + 1}`;
-        } else {
-          pill.textContent = isAllDone ? `✓ ${i + 1}` : `${i + 1}`;
-          pill.addEventListener('click', () => selectFocusExercise(i));
-        }
+        pill.textContent = isAllDone ? `✓ ${i + 1}` : `${i + 1}`;
+        pill.addEventListener('click', () => selectFocusExercise(i));
         pillsContainer.appendChild(pill);
       });
     }
-
-    const focusWarmupView = document.getElementById('focus-warmup-view');
-    const focusExerciseCard = document.getElementById('focus-exercise-card');
-
-    if (isWarmupActive) {
-      if (focusWarmupView) focusWarmupView.hidden = false;
-      if (focusExerciseCard) focusExerciseCard.hidden = true;
-      if (counterLabel) {
-        counterLabel.textContent = 'Fase Inicial: Calentamiento de Entrenamiento';
-      }
-      if (prevBtn) prevBtn.disabled = true;
-      if (nextBtn) nextBtn.disabled = true;
-      renderFocusWarmupContent(day);
-      return null;
-    }
-
-    if (focusWarmupView) focusWarmupView.hidden = true;
-    if (focusExerciseCard) focusExerciseCard.hidden = false;
 
     const idx = state.activeExerciseIndex;
     const ex = exercises[idx];

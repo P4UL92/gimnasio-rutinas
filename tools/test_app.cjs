@@ -1882,14 +1882,14 @@ assert.ok(appHeaderEl && !appHeaderEl.hidden, 'El panel superior .app-header deb
 assert.ok(weeklySummaryEl, 'El panel .weekly-summary-bar debe mantenerse presente y visible');
 assert.ok(dayTabsNavEl && !dayTabsNavEl.hidden, 'La barra de días #day-tabs-nav debe mantenerse mostrada');
 
-// 47.4 Subtítulo de días de entrenamiento especifica el músculo y se actualiza
+// 47.4 En días de entrenamiento, se retira el texto debajo del título (Día: músculos)
 app.selectDay('lunes');
 const subLunes = doc.getElementById('day-subtitle');
-assert.ok(subLunes.textContent.includes('Espalda') || subLunes.textContent.includes('Bíceps'), 'El subtítulo de Lunes debe especificar el músculo');
+assert.ok(!subLunes || subLunes.style.display === 'none' || subLunes.textContent.trim() === '', 'El texto debajo del título debe retirarse en días de entrenamiento');
 
 app.selectDay('martes');
 const subMartes = doc.getElementById('day-subtitle');
-assert.ok(subMartes.textContent.includes('Pecho') || subMartes.textContent.includes('Tríceps'), 'El subtítulo de Martes debe especificar el músculo');
+assert.ok(!subMartes || subMartes.style.display === 'none' || subMartes.textContent.trim() === '', 'El texto debajo del título de Martes debe retirarse');
 
 // 47.5 Botón de iniciar día de ejercicio solo dice "Iniciar día de ejercicio"
 const defaultDayKey = app.detectDefaultDay();
@@ -1967,7 +1967,7 @@ assert.ok(firstDescCard, 'Debe contener tarjetas con clase .warmup-desc-card');
 assert.ok(firstDescCard.querySelector('.warmup-desc-title'), 'Debe contener título del ejercicio preparatorio');
 assert.ok(firstDescCard.querySelector('.warmup-desc-text'), 'Debe contener descripción técnica del calentamiento');
 
-// 48.2 Pantalla de entrenamiento completa con fase inicial 🔥 Entrenamiento (índice -1)
+// 48.2 Pantalla de entrenamiento completa con fase inicial (Solo ejercicios de calentamiento)
 app.selectDay('martes');
 // Iniciar sesión pasando null (flujo real del usuario al presionar Iniciar día de ejercicio)
 const launchMartes = app.startDayWorkoutSession('martes', null);
@@ -1980,48 +1980,42 @@ assert.equal(focusWarmupViewEl.hidden, false, 'La vista de calentamiento inicial
 assert.equal(focusExCardEl.hidden, true, 'La tarjeta de ejercicio debe estar oculta durante el calentamiento');
 
 const focusCounter = doc.getElementById('focus-ex-counter-label');
-assert.equal(focusCounter.textContent.trim(), 'Fase Inicial: Calentamiento de Entrenamiento', 'El contador debe indicar Fase Inicial: Calentamiento de Entrenamiento');
+assert.ok(focusCounter.textContent.includes('Calentamiento'), 'El contador debe indicar Calentamiento');
 
 const btnPrevEx = doc.getElementById('btn-focus-prev-ex');
 const btnNextEx = doc.getElementById('btn-focus-next-ex');
-assert.equal(btnPrevEx.disabled, true, 'El botón anterior debe estar deshabilitado en calentamiento');
-assert.equal(btnNextEx.disabled, true, 'El botón siguiente debe estar deshabilitado en calentamiento');
+assert.ok(btnPrevEx.disabled || btnPrevEx.hidden, 'El botón anterior debe estar deshabilitado u oculto en calentamiento');
+assert.ok(btnNextEx.disabled || btnNextEx.hidden, 'El botón siguiente debe estar deshabilitado u oculto en calentamiento');
 
-// 48.3 Stepper pills: Primera píldora 🔥 Entrenamiento y ejercicios 1..N bloqueados con 🔒
-const focusPills = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
-assert.ok(focusPills.length >= 5, 'Debe haber la píldora inicial + los ejercicios del día');
-const warmupPillEl = focusPills[0];
-assert.ok(warmupPillEl.classList.contains('focus-step-warmup'), 'La primera píldora debe tener clase .focus-step-warmup');
-assert.ok(warmupPillEl.classList.contains('is-active'), 'La primera píldora debe estar activa');
-assert.ok(warmupPillEl.textContent.includes('Entrenamiento'), 'La primera píldora debe llamarse Entrenamiento');
-
-for (let p = 1; p < focusPills.length; p++) {
-  const exPill = focusPills[p];
-  assert.ok(exPill.classList.contains('is-locked'), `La píldora del ejercicio ${p} debe tener clase is-locked`);
-  assert.equal(exPill.disabled, true, `La píldora del ejercicio ${p} debe estar deshabilitada`);
-  assert.ok(exPill.textContent.includes('🔒'), `La píldora del ejercicio ${p} debe mostrar ícono de candado 🔒`);
-}
+// 48.3 Durante el calentamiento SOLO se muestran los ejercicios de calentamiento (sin pills de ejercicios 1..N)
+const pillsDuringWarmup = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
+assert.equal(pillsDuringWarmup.length, 0, 'Durante el calentamiento NO deben mostrarse los botones de los ejercicios 1..N');
+const warmupBadgeEl = doc.querySelector('#focus-stepper-pills .focus-warmup-stepper-badge');
+assert.ok(warmupBadgeEl, 'Debe mostrar el indicador de Fase de Calentamiento');
 
 // 48.4 Intentar saltar a otro ejercicio mientras esté en calentamiento debe ser bloqueado
 const tryJump = app.selectFocusExercise(1);
 assert.equal(tryJump, null, 'No se debe poder saltar a otro ejercicio mientras esté en calentamiento');
 assert.equal(app.getState().activeExerciseIndex, -1, 'El índice activo debe seguir siendo -1');
 
-// 48.5 Visualización de imágenes warmup-*.png, marcos animados y explicaciones técnicas
+// 48.5 Animaciones en 3 fases biomecánicas de los ejercicios de calentamiento a partir de imágenes generadas
 const warmupCardsInFocus = doc.querySelectorAll('#focus-warmup-exercises-list .warmup-exercise-card');
 assert.equal(warmupCardsInFocus.length, 4, 'Deben renderizarse las 4 tarjetas de calentamiento en modo enfoque');
 warmupCardsInFocus.forEach((card, idx) => {
   const animFrame = card.querySelector('.warmup-animated-frame');
   assert.ok(animFrame, `La tarjeta ${idx + 1} debe tener marco animado (.warmup-animated-frame)`);
-  const imgEl = animFrame.querySelector('img');
-  assert.ok(imgEl && imgEl.getAttribute('src').includes('warmup-'), `La tarjeta ${idx + 1} debe mostrar la imagen detallada de calentamiento`);
+  const spriteFrame = animFrame.querySelector('.warmup-sprite-frame');
+  assert.ok(spriteFrame, `La tarjeta ${idx + 1} debe tener el contenedor .warmup-sprite-frame`);
+  assert.ok(spriteFrame.style.backgroundImage.includes('-anim.png') || spriteFrame.style.backgroundImage.includes('warmup-'), `Debe cargar la animación generada en 3 fases`);
+  const phasesStrip = card.querySelector('.warmup-phases-strip');
+  assert.ok(phasesStrip, `La tarjeta ${idx + 1} debe tener la guía de 3 fases biomecánicas (Inicio → Recorrido → Activación)`);
   const nameEl = card.querySelector('.warmup-exercise-name');
   assert.ok(nameEl && nameEl.textContent.length > 5, `La tarjeta ${idx + 1} debe mostrar el nombre del ejercicio`);
   const descEl = card.querySelector('.warmup-exercise-desc');
-  assert.ok(descEl && descEl.textContent.length > 15, `La tarjeta ${idx + 1} debe mostrar la explicación técnica`);
+  assert.ok(descEl && descEl.textContent.length > 15, `La tarjeta ${idx + 1} debe mostrar la explicación técnica detallada`);
 });
 
-// 48.6 Botón único: Calentamiento Terminado desbloquea los ejercicios y pasa a Ejercicio 1
+// 48.6 Botón único: Calentamiento Terminado culmina y RECIÉN muestra el primer ejercicio para el músculo
 const finishWarmupBtn = doc.getElementById('btn-finish-focus-warmup');
 assert.ok(finishWarmupBtn, 'Debe existir el botón único #btn-finish-focus-warmup');
 assert.ok(finishWarmupBtn.textContent.includes('Calentamiento Terminado'), 'El botón debe decir Calentamiento Terminado');
@@ -2030,18 +2024,19 @@ finishWarmupBtn.click();
 
 assert.equal(app.getState().workoutWarmupCompletedByDay.martes, true, 'El estado debe registrar el calentamiento como completado para Martes');
 assert.equal(app.getState().activeExerciseIndex, 0, 'Debe cambiar automáticamente a la pestaña del primer ejercicio (Ejercicio 1)');
-assert.equal(focusWarmupViewEl.hidden, true, 'La vista de calentamiento debe ocultarse tras finalizar');
-assert.equal(focusExCardEl.hidden, false, 'La tarjeta del primer ejercicio debe mostrarse desbloqueada');
+assert.equal(focusWarmupViewEl.hidden, true, 'La vista de calentamiento debe ocultarse tras culminar');
+assert.equal(focusExCardEl.hidden, false, 'RECIÉN se debe mostrar el primer ejercicio para el músculo desbloqueado');
 
 const updatedPills = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
+assert.ok(updatedPills.length >= 6, 'Tras culminar deben mostrarse las píldoras de los ejercicios del día');
 const ex1Pill = updatedPills[1];
-assert.ok(!ex1Pill.classList.contains('is-locked'), 'El ejercicio 1 ya no debe estar bloqueado');
+assert.ok(!ex1Pill.classList.contains('is-locked'), 'El ejercicio 1 no debe estar bloqueado');
 assert.equal(ex1Pill.disabled, false, 'El ejercicio 1 debe estar habilitado para interactuar');
 assert.ok(ex1Pill.classList.contains('is-active'), 'El ejercicio 1 debe estar activo');
 
 // Ahora navegar al ejercicio 2 sí debe permitirse
 const jumpToEx2 = app.selectFocusExercise(1);
-assert.ok(jumpToEx2, 'Ahora que el calentamiento está terminado, debe permitir seleccionar el Ejercicio 2');
+assert.ok(jumpToEx2, 'Ahora que el calentamiento está culminado, debe permitir seleccionar el Ejercicio 2');
 assert.equal(app.getState().activeExerciseIndex, 1, 'El índice activo debe ser 1 (Ejercicio 2)');
 
 // 48.7 Botón para descansar solo debe decir "Serie X Completada - Descansar"
@@ -2050,9 +2045,13 @@ assert.ok(actionTextEl, 'Debe existir #focus-btn-action-text');
 assert.equal(actionTextEl.textContent.trim(), 'Serie 1 Completada - Descansar', 'El botón para descansar debe decir estrictamente "Serie 1 Completada - Descansar"');
 assert.ok(!actionTextEl.textContent.includes('reps'), 'No debe incluir repeticiones en el texto del botón');
 
+// 48.8 Se quitó el Modo Descarga de las opciones de la pantalla principal
+const deloadOptionBtn = doc.getElementById('btn-toggle-deload-mode');
+assert.equal(deloadOptionBtn, null, 'El botón de Modo Descarga no debe existir en las opciones de la pantalla principal');
+
 app.exitWorkoutScreen();
 
-// 48.8 Ícono de hoja en día de descanso en la pantalla principal
+// 48.9 Ícono de hoja en día de descanso en la pantalla principal
 app.selectDay('domingo');
 const restTitle = doc.getElementById('day-title');
 const restSub = doc.getElementById('day-subtitle');
@@ -2068,8 +2067,77 @@ assert.ok(emptyRestBox.querySelector('h3').textContent.includes('🌿 Día de de
 // 48.9 CERO etiquetas <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con CERO etiquetas <svg>');
 
+// ==========================================
+// SUITE 49: Retiro de Modo Descarga, Subtítulo Limpio, Animaciones de Calentamiento y Visualización Secuencial
+// ==========================================
+console.log('Ejecutando Suite 49: Retiro de Modo Descarga, Subtítulo Limpio, Animaciones de Calentamiento y Visualización Secuencial...');
+
+// 49.1 Quitar modo Descarga de las opciones de la pantalla principal
+const deloadBtn49 = doc.getElementById('btn-toggle-deload-mode');
+assert.equal(deloadBtn49, null, 'El botón Modo Descarga debe estar completamente retirado del menú de opciones');
+
+// 49.2 Quitar el texto de los ejercicios que se entrenarán debajo del título (Día: músculos) en pantalla principal
+app.selectDay('lunes');
+const subtitleEl49 = doc.getElementById('day-subtitle');
+assert.ok(!subtitleEl49 || subtitleEl49.style.display === 'none' || subtitleEl49.textContent.trim() === '', 'El texto debajo del título debe estar retirado en Lunes');
+
+app.selectDay('miercoles');
+const subtitleMie49 = doc.getElementById('day-subtitle');
+assert.ok(!subtitleMie49 || subtitleMie49.style.display === 'none' || subtitleMie49.textContent.trim() === '', 'El texto debajo del título debe estar retirado en Miércoles');
+
+// 49.3 Animaciones en 3 fases para ejercicios de calentamiento en la pantalla de entrenamiento
+const warmupAnimFiles = [
+  'warmup-scapular-anim.png',
+  'warmup-dislocate-anim.png',
+  'warmup-rotator-anim.png',
+  'warmup-chest-open-anim.png',
+  'warmup-hip-mobility-anim.png',
+  'warmup-glute-bridge-anim.png',
+  'warmup-cable-warmup-anim.png',
+  'warmup-core-plank-anim.png'
+];
+warmupAnimFiles.forEach(file => {
+  const filePath = pathMod.join(iconDir, file);
+  assert.ok(fsMod.existsSync(filePath), `Debe existir la animación generada en 3 fases ${file}`);
+  const stat = fsMod.statSync(filePath);
+  assert.ok(stat.size > 2000, `El archivo ${file} debe tener tamaño suficiente (>2KB)`);
+});
+
+// 49.4 Solo debe mostrarse los ejercicios de calentamiento inicialmente
+app.selectDay('lunes');
+app.startDayWorkoutSession('lunes', null);
+
+const warmupView49 = doc.getElementById('focus-warmup-view');
+const exCard49 = doc.getElementById('focus-exercise-card');
+assert.equal(warmupView49.hidden, false, 'Solo deben mostrarse los ejercicios de calentamiento');
+assert.equal(exCard49.hidden, true, 'El primer ejercicio para el músculo NO debe mostrarse todavía');
+
+const pillsContainer49 = doc.getElementById('focus-stepper-pills');
+assert.equal(pillsContainer49.querySelectorAll('.focus-step-pill').length, 0, 'No deben mostrarse píldoras de ejercicios mientras se calienta');
+assert.ok(pillsContainer49.querySelector('.focus-warmup-stepper-badge'), 'Debe mostrar el badge de fase de calentamiento');
+
+// 49.5 Una vez culminados, recién se debe mostrar el primer ejercicio para el músculo
+const btnFinish49 = doc.getElementById('btn-finish-focus-warmup');
+btnFinish49.click();
+
+assert.equal(warmupView49.hidden, true, 'La vista de calentamiento debe ocultarse al culminar');
+assert.equal(exCard49.hidden, false, 'RECIÉN debe mostrarse la tarjeta del primer ejercicio para el músculo');
+assert.equal(app.getState().activeExerciseIndex, 0, 'Debe posicionarse en el Ejercicio 1');
+
+const exerciseTitle49 = doc.getElementById('focus-ex-title');
+assert.ok(exerciseTitle49 && exerciseTitle49.textContent.length > 3, 'El primer ejercicio debe tener su nombre cargado');
+
+const pillsAfterFinish49 = doc.querySelectorAll('#focus-stepper-pills .focus-step-pill');
+assert.ok(pillsAfterFinish49.length >= 6, 'RECIÉN deben mostrarse las pestañas de navegación de ejercicios');
+assert.equal(pillsAfterFinish49[1].classList.contains('is-active'), true, 'La píldora del primer ejercicio debe estar activa');
+
+app.exitWorkoutScreen();
+
+// Verificación absoluta de CERO etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir con 0% <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 48 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 49 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

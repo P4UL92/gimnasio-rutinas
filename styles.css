@@ -3808,8 +3808,8 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
 
 .warmup-animated-frame {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 96px;
+  height: 96px;
   flex-shrink: 0;
   background: radial-gradient(circle at center, rgba(255, 107, 53, 0.16) 0%, rgba(15, 23, 42, 0.95) 75%);
   border: 1.5px solid rgba(255, 107, 53, 0.45);
@@ -3820,6 +3820,85 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   animation: warmupPulseGlow 2.4s ease-in-out infinite;
+}
+
+.warmup-sprite-frame {
+  width: 100%;
+  height: 100%;
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  will-change: background-position;
+  animation: playWarmupSprite 2.4s steps(1) infinite;
+}
+
+@keyframes playWarmupSprite {
+  0%, 32.99% {
+    background-position: 0% 0%;
+  }
+  33%, 65.99% {
+    background-position: 50% 0%;
+  }
+  66%, 100% {
+    background-position: 100% 0%;
+  }
+}
+
+body.animations-paused .warmup-sprite-frame {
+  animation-play-state: paused !important;
+}
+
+.warmup-phases-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 6px;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  font-size: 0.72rem;
+}
+
+.warmup-phase-item {
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.warmup-phase-item.is-peak {
+  color: #ffedd5;
+  font-weight: 700;
+}
+
+.warmup-phase-arrow {
+  color: #ff6b35;
+  font-size: 0.68rem;
+}
+
+.phase-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 107, 53, 0.25);
+  color: #ff6b35;
+  font-size: 0.65rem;
+}
+
+.focus-warmup-stepper-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 107, 53, 0.15);
+  border: 1px solid rgba(255, 107, 53, 0.4);
+  color: #ffedd5;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 
 .warmup-animated-frame img {
