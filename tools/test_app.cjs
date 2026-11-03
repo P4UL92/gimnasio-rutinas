@@ -2301,9 +2301,33 @@ const targetRestDaysLimit = 7 - (Number(app.getState().userProfile?.daysPerWeek)
 const restDaysBefore = Object.keys(scheduleBeforeSwitch).filter(k => (!scheduleBeforeSwitch[k].exercises || scheduleBeforeSwitch[k].exercises.length === 0));
 assert.equal(restDaysBefore.length, targetRestDaysLimit, 'Inicialmente debe haber exactamente el número de días de descanso establecido');
 
-// Ejecutar el cambio
-const switchResult = app.switchRestDayToToday();
-assert.equal(switchResult, true, 'switchRestDayToToday debe retornar true al aplicarse');
+// 52.4.1 Verificar ventana de confirmación antes de aplicar el cambio
+const switchRestConfirmDialog = doc.getElementById('switch-rest-confirm-dialog');
+assert.ok(switchRestConfirmDialog, 'Debe existir el diálogo #switch-rest-confirm-dialog en el DOM');
+
+// Al pulsar el botón de cambiar descanso a hoy, debe abrirse la ventana de confirmación
+switchRestBtn.click();
+assert.equal(switchRestConfirmDialog.hasAttribute('open'), true, 'El diálogo de confirmación debe abrirse al pulsar #btn-switch-rest-today');
+
+const currentDayEl = doc.getElementById('switch-rest-current-day-name');
+assert.ok(currentDayEl && currentDayEl.textContent.includes('Martes'), 'El diálogo debe indicar que Martes pasará a descanso');
+const activatedDayEl = doc.getElementById('switch-rest-activated-day-name');
+assert.ok(activatedDayEl && activatedDayEl.textContent.includes('Domingo'), 'El diálogo debe indicar que Domingo se activará como entrenamiento');
+
+// Probar botón cancelar del modal
+const cancelSwitchRestBtn = doc.getElementById('btn-cancel-switch-rest');
+assert.ok(cancelSwitchRestBtn, 'Debe existir el botón #btn-cancel-switch-rest');
+cancelSwitchRestBtn.click();
+assert.equal(switchRestConfirmDialog.hasAttribute('open'), false, 'Al pulsar cancelar, el diálogo de confirmación debe cerrarse');
+assert.ok(app.getState().schedule.martes.exercises.length > 0, 'Al cancelar, el horario debe permanecer intacto');
+
+// Reabrir y confirmar
+switchRestBtn.click();
+assert.equal(switchRestConfirmDialog.hasAttribute('open'), true, 'El diálogo debe volver a abrirse');
+const confirmSwitchRestBtn = doc.getElementById('btn-confirm-switch-rest');
+assert.ok(confirmSwitchRestBtn, 'Debe existir el botón #btn-confirm-switch-rest');
+confirmSwitchRestBtn.click();
+assert.equal(switchRestConfirmDialog.hasAttribute('open'), false, 'Al confirmar, el diálogo debe cerrarse');
 
 // 52.5 Verificar que hoy (Martes) ahora es día de descanso
 const scheduleAfterSwitch = app.getState().schedule;

@@ -1054,6 +1054,51 @@
     }
   }
 
+  function openSwitchRestConfirmDialog() {
+    const dialog = document.getElementById('switch-rest-confirm-dialog');
+    if (!dialog) return;
+
+    const currentRealDay = detectDefaultDay();
+    const day = state.schedule[currentRealDay];
+    if (!day) return;
+
+    if (isRestDay(currentRealDay)) {
+      showCelebrationToast('ℹ️ Hoy ya es tu día de descanso programado.');
+      return;
+    }
+
+    const currentRestDays = DAYS_ORDER.filter(k => isRestDay(k) && k !== currentRealDay);
+    const activatedDayNames = currentRestDays.map(k => state.schedule[k]?.dayName || k).join(', ') || 'Domingo';
+
+    const currentDayEl = document.getElementById('switch-rest-current-day-name');
+    const activatedDayEl = document.getElementById('switch-rest-activated-day-name');
+
+    if (currentDayEl) {
+      currentDayEl.textContent = `${day.dayName} (${day.title})`;
+    }
+    if (activatedDayEl) {
+      activatedDayEl.textContent = activatedDayNames;
+    }
+
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeSwitchRestConfirmDialog() {
+    const dialog = document.getElementById('switch-rest-confirm-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
   function moveMuscleToCurrentDay(sourceDayId = state.selectedDay) {
     const todayId = detectDefaultDay();
     if (sourceDayId === todayId) return false;
@@ -5942,9 +5987,16 @@
     const btnSwitchRestToday = document.getElementById('btn-switch-rest-today');
     if (btnSwitchRestToday) {
       btnSwitchRestToday.addEventListener('click', () => {
-        switchRestDayToToday();
+        openSwitchRestConfirmDialog();
       });
     }
+
+    document.getElementById('btn-confirm-switch-rest')?.addEventListener('click', () => {
+      closeSwitchRestConfirmDialog();
+      switchRestDayToToday();
+    });
+    document.getElementById('btn-cancel-switch-rest')?.addEventListener('click', closeSwitchRestConfirmDialog);
+    document.getElementById('btn-close-switch-rest-dialog')?.addEventListener('click', closeSwitchRestConfirmDialog);
 
     const exceptionRadios = document.querySelectorAll('input[name="exceptionMode"]');
     const swapWrap = document.getElementById('swap-day-selector-wrap');
@@ -6472,7 +6524,7 @@
     document.getElementById('btn-results-prev-3')?.addEventListener('click', () => setResultsTab(1));
 
     // Fallback de Light Dismiss para navegadores sin closedby nativo
-    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog', 'sunday-recovery-dialog', 'sunday-confirm-dialog', 'warmup-preview-dialog'].forEach(dlgId => {
+    ['workout-confirm-start-dialog', 'workout-truncate-dialog', 'workout-results-dialog', 'restore-days-dialog', 'move-muscle-confirm-dialog', 'switch-rest-confirm-dialog', 'sunday-recovery-dialog', 'sunday-confirm-dialog', 'warmup-preview-dialog'].forEach(dlgId => {
       const dlg = document.getElementById(dlgId);
       if (dlg && typeof HTMLDialogElement !== 'undefined' && !('closedBy' in HTMLDialogElement.prototype)) {
         dlg.addEventListener('click', event => {
@@ -6821,6 +6873,8 @@
     formatExerciseRepsSummary,
     // APIs Días de Descanso Estrictos, Recálculo y Animación Fluida
     switchRestDayToToday,
+    openSwitchRestConfirmDialog,
+    closeSwitchRestConfirmDialog,
     recalculateWeeklySchedule,
     enforceRestDaysCount,
     playScheduleRecalcAnimation,

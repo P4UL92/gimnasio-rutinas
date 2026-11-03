@@ -6528,9 +6528,18 @@ body.in-workout-screen .app-main-content {
   margin-top: 14px;
 }
 
-/* Modal de Confirmación de Mover Músculo */
+/* Modal de Confirmación de Mover Músculo y Cambio a Descanso */
 .move-muscle-dialog {
   max-width: 490px;
+}
+
+.switch-rest-dialog {
+  max-width: 500px;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.switch-rest-dialog .move-highlight {
+  color: #34d399;
 }
 
 .move-muscle-lead {

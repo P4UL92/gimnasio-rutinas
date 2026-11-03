@@ -1631,6 +1631,56 @@
     </div>
   </dialog>
 
+  <!-- Modal Nativo: Confirmación de Establecer Hoy como Día de Descanso -->
+  <dialog id="switch-rest-confirm-dialog" class="gym-dialog move-muscle-dialog switch-rest-dialog" closedby="any" aria-labelledby="switch-rest-dialog-title">
+    <div class="dialog-body move-muscle-dialog-body">
+      <header class="dialog-header">
+        <div>
+          <span class="eyebrow">REORGANIZACIÓN SEMANAL Y DESCANSO</span>
+          <h2 id="switch-rest-dialog-title">🌿 Establecer Hoy como Día de Descanso</h2>
+        </div>
+        <button type="button" id="btn-close-switch-rest-dialog" class="btn-icon-close btn-close-danger" aria-label="Cerrar modal">✕</button>
+      </header>
+
+      <div class="move-muscle-content">
+        <p class="move-muscle-lead" id="switch-rest-desc">
+          ¿Deseas tomar el día de hoy como tu día de descanso semanal?
+        </p>
+
+        <div class="move-muscle-preview-box" id="switch-rest-preview-box">
+          <div class="move-preview-row">
+            <span class="move-label">Día que pasará a descanso:</span>
+            <strong id="switch-rest-current-day-name" class="move-highlight">Hoy</strong>
+          </div>
+          <div class="move-preview-row">
+            <span class="move-label">Nuevo día de entrenamiento activado:</span>
+            <strong id="switch-rest-activated-day-name" style="color: #38bdf8;">Domingo</strong>
+          </div>
+          <div class="move-preview-row">
+            <span class="move-label">Volumen semanal preservado:</span>
+            <span style="color: #6ee7b7; font-weight: 700;">100% (Desplazamiento continuo sin perder sesiones)</span>
+          </div>
+        </div>
+
+        <div class="move-muscle-warning-card">
+          <span class="warning-icon">🔄</span>
+          <p class="warning-text">
+            <strong>Recálculo automático de la semana:</strong> La rutina planificada para hoy se trasladará ordenadamente a los siguientes días y el día de descanso previo se activará como entrenamiento. Mantendrás exactamente los días de descanso establecidos por tu plan, sin sobrepasar el límite.
+          </p>
+        </div>
+
+        <div class="move-muscle-actions">
+          <button type="button" id="btn-confirm-switch-rest" class="btn-primary">
+            🌿 Sí, Establecer Hoy como Descanso
+          </button>
+          <button type="button" id="btn-cancel-switch-rest" class="btn-secondary btn-close-danger">
+            ✕ Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Modal Nativo: Demostración y Completado de Calentamiento Previo -->
   <dialog id="warmup-preview-dialog" class="gym-dialog warmup-preview-dialog" closedby="any" aria-labelledby="warmup-preview-title">
     <div class="dialog-body warmup-preview-body">
