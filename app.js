@@ -856,8 +856,8 @@
       sunday.muscleGroup = `${sunday.muscleGroup} · ${sourceDay.muscleGroup}`;
       sunday.estimatedMinutes = (sunday.estimatedMinutes || 45) + (sourceDay.estimatedMinutes || 45);
     } else {
-      sunday.title = `${sourceDay.title} (De ${sourceDay.dayName})`;
-      sunday.subtitle = `Reprogramado por excepción del ${sourceDay.dayName} — ${sourceDay.subtitle}`;
+      sunday.title = sourceDay.title;
+      sunday.subtitle = sourceDay.subtitle;
       sunday.muscleGroup = sourceDay.muscleGroup;
       sunday.accentHue = sourceDay.accentHue;
       sunday.estimatedMinutes = sourceDay.estimatedMinutes || 55;
@@ -865,6 +865,7 @@
       sunday.status = 'reprogrammed';
       sunday.originalSourceDay = sourceDayId;
     }
+    sunday.isRestDay = false;
 
     sourceDay.backupSnapshot = {
       title: sourceDay.title,
@@ -874,8 +875,12 @@
       exercises: deepClone(sourceDay.exercises)
     };
     sourceDay.status = 'skipped_to_sunday';
+    sourceDay.title = '🌿 Día de descanso';
+    sourceDay.subtitle = '🌿 Día de descanso';
+    sourceDay.muscleGroup = '🌿 Día de descanso';
     sourceDay.exercises = [];
     sourceDay.estimatedMinutes = 0;
+    sourceDay.isRestDay = true;
 
     saveState();
     renderAll();
@@ -892,7 +897,7 @@
       const prevDay = state.schedule[prevKey];
       const targetDay = state.schedule[targetKey];
 
-      targetDay.title = `${prevDay.title} (Recorrido de ${prevDay.dayName})`;
+      targetDay.title = prevDay.title;
       targetDay.subtitle = prevDay.subtitle;
       targetDay.muscleGroup = prevDay.muscleGroup;
       targetDay.accentHue = prevDay.accentHue;
@@ -900,15 +905,17 @@
       targetDay.exercises = deepClone(prevDay.exercises);
       targetDay.status = targetKey === 'domingo' ? 'reprogrammed' : 'shifted';
       targetDay.originalSourceDay = prevKey;
+      targetDay.isRestDay = false;
     }
 
     const skippedDay = state.schedule[startDayId];
     skippedDay.status = 'skipped_to_sunday';
-    skippedDay.title = 'Descanso por Excepción';
-    skippedDay.subtitle = 'Los entrenamientos siguientes se recorrieron hasta el Domingo';
-    skippedDay.muscleGroup = 'Descanso';
+    skippedDay.title = '🌿 Día de descanso';
+    skippedDay.subtitle = '🌿 Día de descanso';
+    skippedDay.muscleGroup = '🌿 Día de descanso';
     skippedDay.estimatedMinutes = 0;
     skippedDay.exercises = [];
+    skippedDay.isRestDay = true;
 
     saveState();
     renderAll();
@@ -1626,13 +1633,14 @@
       ...ex,
       completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
     }));
-    sunday.title = `${sourceDay.title} (Recuperado)`;
-    sunday.subtitle = `Sesión dominical recuperada de ${sourceDay.dayName}`;
+    sunday.title = sourceDay.title;
+    sunday.subtitle = sourceDay.subtitle;
     sunday.muscleGroup = sourceDay.muscleGroup;
     sunday.accentHue = sourceDay.accentHue;
     sunday.estimatedMinutes = sourceDay.estimatedMinutes || 55;
     sunday.status = 'reprogrammed';
     sunday.originalSourceDay = selectedDayKey;
+    sunday.isRestDay = false;
 
     // Actualización de los demás días:
     // Al reemplazar un día de entrenamiento al domingo (día actual),
@@ -1956,7 +1964,11 @@
   function isRestDay(dayKey) {
     const d = state.schedule[dayKey];
     if (!d) return false;
-    return (!d.exercises || d.exercises.length === 0 || d.status === 'rest' || d.status === 'rest_backup' || d.status === 'rest_day' || d.isRestDay === true);
+    // Si el día tiene ejercicios, NUNCA es día de descanso
+    if (Array.isArray(d.exercises) && d.exercises.length > 0) {
+      return false;
+    }
+    return true;
   }
 
   function renderDayTabs() {
@@ -2101,7 +2113,18 @@
       return;
     }
 
-    // 2. Día de entrenamiento
+    // 2. Día de entrenamiento (incluyendo si fue trasladado a domingo u otro día)
+    if (day.muscleGroup && day.muscleGroup.includes('Día de descanso')) {
+      const firstEx = day.exercises && day.exercises[0];
+      day.muscleGroup = firstEx ? (firstEx.muscle || 'Entrenamiento') : 'Entrenamiento';
+    }
+    if (day.title && day.title.includes('Día de descanso')) {
+      day.title = day.muscleGroup;
+    }
+    if (day.subtitle && day.subtitle.includes('Día de descanso')) {
+      day.subtitle = 'Sesión de entrenamiento programada';
+    }
+
     if (badgesEl) {
       badgesEl.innerHTML = '';
       const muscleBadge = document.createElement('span');
@@ -2123,7 +2146,8 @@
     }
 
     if (titleEl) {
-      titleEl.textContent = `${day.dayName}: ${day.title}`;
+      const cleanTitle = day.title.replace(/^[^:]+:\s*/, '').replace(/🌿\s*/g, '');
+      titleEl.textContent = `${day.dayName}: ${cleanTitle}`;
     }
     if (subtitleEl) {
       // Se retira el texto redundante de ejercicios que se entrenarán debajo del título

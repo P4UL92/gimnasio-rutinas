@@ -2325,6 +2325,18 @@ assert.ok(restBasicCards.length >= 3, 'Debe incluir tarjetas básicas de recuper
 assert.ok(scheduleAfterSwitch.domingo.exercises.length > 0, 'Domingo debe convertirse en día de entrenamiento');
 assert.ok(!scheduleAfterSwitch.domingo.title.includes('Día de descanso'), 'Domingo ya NO debe tener título de día de descanso');
 
+// Al seleccionar Domingo con entrenamiento, debe mostrar la información del ejercicio y NO texto de descanso
+app.selectDay('domingo');
+const domTitleAfter = doc.getElementById('day-title');
+assert.ok(!domTitleAfter.textContent.includes('Día de descanso'), 'Al pasar entrenamiento al día de descanso, el título NO debe tener texto de día de descanso');
+assert.ok(!domTitleAfter.textContent.includes('🌿'), 'El título de domingo con entrenamiento NO debe tener icono de descanso 🌿');
+const domTabAfter = doc.querySelector('.day-tab-btn[data-day="domingo"] .tab-group');
+assert.ok(!domTabAfter.textContent.includes('Descanso'), 'La pestaña de domingo con entrenamiento NO debe decir Descanso');
+const domExercisesList = doc.querySelectorAll('#exercises-list .exercise-card');
+assert.ok(domExercisesList.length >= 4, 'Al pasar el entrenamiento a domingo, debe renderizar las tarjetas de los ejercicios a trabajar');
+const domEmptyBox = doc.querySelector('#exercises-list .empty-day-box');
+assert.equal(domEmptyBox, null, 'NO debe haber panel de día de descanso en un día con ejercicios asignados');
+
 // 52.7 Verificar regla crítica: NUNCA más días de descanso que lo establecido
 const restDaysAfter = Object.keys(scheduleAfterSwitch).filter(k => (!scheduleAfterSwitch[k].exercises || scheduleAfterSwitch[k].exercises.length === 0));
 assert.equal(restDaysAfter.length, targetRestDaysLimit, 'NUNCA debe haber más días de descanso que lo establecido por el cálculo del entrenamiento');
