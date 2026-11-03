@@ -94,6 +94,10 @@
               <button type="button" id="btn-start-day-workout" class="btn-start-workout-cta">
                 Iniciar día de ejercicio
               </button>
+              <button type="button" id="btn-switch-rest-today" class="btn-switch-rest-today" title="Cambiar el día de descanso semanal a hoy y recalcular la semana">
+                <span aria-hidden="true">🌿</span>
+                <span>Cambiar día de descanso a hoy</span>
+              </button>
 
               <details id="day-secondary-menu" class="day-secondary-menu">
                 <summary class="btn-secondary day-secondary-trigger">
@@ -834,6 +838,9 @@
 
   <!-- Toast de Celebración -->
   <div id="celebration-toast" class="celebration-toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Contenedor de Animación de Horarios (Explosión de Burbujas y Fuegos Artificiales, 0% SVG) -->
+  <div id="schedule-fx-container" class="schedule-fx-container" aria-hidden="true"></div>
 
   <!-- Modal Nativo: Perfil de Entrenamiento Personalizado y Calibración Biomecánica -->
   <dialog id="profile-onboarding-dialog" class="gym-dialog profile-dialog" closedby="any" aria-labelledby="profile-dialog-title">

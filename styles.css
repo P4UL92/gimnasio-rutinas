@@ -3453,6 +3453,40 @@ html:active-view-transition-type(backward)::view-transition-new(root) {
   transform: scale(0.98);
 }
 
+.btn-switch-rest-today {
+  flex: 0 1 auto;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-switch-rest-today:hover,
+.btn-switch-rest-today:focus-visible {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #34d399;
+  color: #6ee7b7;
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-switch-rest-today:active {
+  transform: translateY(0);
+}
+
 .day-secondary-menu {
   position: relative;
 }
@@ -4927,7 +4961,8 @@ body.animations-paused .focus-sprite-frame {
     flex-direction: column;
     align-items: stretch;
   }
-  .btn-start-workout-cta {
+  .btn-start-workout-cta,
+  .btn-switch-rest-today {
     flex: 1 1 auto;
     width: 100%;
   }
@@ -7161,6 +7196,123 @@ details.anatomy-collapsible[open] > summary::after {
   background: rgba(249, 115, 22, 0.28);
   color: #fff;
   border-color: #f97316;
+}
+
+/* =========================================================================
+   ANIMACIÓN FLUIDA DE CAMBIO DE HORARIOS (FUEGOS ARTIFICIALES Y BURBUJAS)
+   0% SVG - 100% CSS PURO CON RENDIMIENTO FLUIDO Y ACELERACIÓN DE HARDWARE
+   ========================================================================= */
+
+.schedule-fx-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+.fx-origin-anchor {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+
+.fx-firework-spark {
+  position: absolute;
+  width: var(--spark-size, 8px);
+  height: var(--spark-size, 8px);
+  border-radius: 50%;
+  background: var(--spark-color, #34d399);
+  box-shadow: 0 0 10px var(--spark-color, #34d399), 0 0 20px var(--spark-color, #34d399);
+  animation: fireworkSparkAnim var(--spark-dur, 1s) cubic-bezier(0.12, 0.8, 0.32, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes fireworkSparkAnim {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.1);
+    opacity: 1;
+  }
+  65% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(var(--dest-x, 100px), var(--dest-y, -100px), 0) scale(0.15);
+    opacity: 0;
+  }
+}
+
+.fx-bubble {
+  position: absolute;
+  width: var(--bubble-size, 22px);
+  height: var(--bubble-size, 22px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9), var(--bubble-tint, rgba(56, 189, 248, 0.45)) 45%, rgba(255, 255, 255, 0.15) 75%);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 0 14px var(--bubble-glow, rgba(56, 189, 248, 0.55)), inset 0 0 6px rgba(255, 255, 255, 0.7);
+  animation: bubblePopAnim var(--bubble-dur, 1.25s) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes bubblePopAnim {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.25);
+    opacity: 0.3;
+  }
+  25% {
+    opacity: 1;
+    transform: translate3d(calc(var(--dest-x, 0px) * 0.4), calc(var(--dest-y, -60px) * 0.4), 0) scale(1);
+  }
+  75% {
+    opacity: 0.85;
+    transform: translate3d(var(--dest-x, 0px), var(--dest-y, -120px), 0) scale(1.2);
+  }
+  100% {
+    transform: translate3d(var(--dest-x, 0px), calc(var(--dest-y, -120px) - 30px), 0) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.fx-energy-ring {
+  position: absolute;
+  top: -45px;
+  left: -45px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid var(--ring-color, #38bdf8);
+  box-shadow: 0 0 24px var(--ring-color, #38bdf8);
+  animation: energyRingExpand 0.9s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes energyRingExpand {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.day-tabs-list.is-schedule-animating {
+  animation: scheduleTabsWaveGlow 1.2s ease-in-out;
+}
+
+@keyframes scheduleTabsWaveGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(52, 211, 153, 0.6), inset 0 0 14px rgba(56, 189, 248, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(52, 211, 153, 0);
+  }
 }
 
 

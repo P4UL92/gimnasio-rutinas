@@ -2267,8 +2267,94 @@ app.exitWorkoutScreen();
 // Verificación absoluta de CERO etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir con 0% <svg>');
 
+// ==========================================
+// SUITE 52: Días de Descanso Estrictos, Botón en Día Actual de Entrenamiento y Animación Fluida de Horarios
+// ==========================================
+console.log('Ejecutando Suite 52: Días de Descanso Estrictos, Botón en Día Actual de Entrenamiento y Animación Fluida de Horarios...');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 51 Suites de pruebas pasaron con éxito.');
+
+// 52.1 Botón #btn-switch-rest-today presente en el DOM y visible en día actual de entrenamiento
+const switchRestBtn = doc.getElementById('btn-switch-rest-today');
+assert.ok(switchRestBtn, 'Debe existir el botón #btn-switch-rest-today en el DOM');
+assert.ok(switchRestBtn.textContent.includes('Cambiar día de descanso a hoy'), 'El botón debe indicar "Cambiar día de descanso a hoy"');
+
+// Simular un día normal de entrenamiento (por ejemplo Lunes)
+app.setSimulatedDay('lunes');
+app.selectDay('lunes');
+assert.equal(switchRestBtn.hidden, false, 'El botón debe estar visible cuando se visualiza el día actual de entrenamiento');
+assert.equal(switchRestBtn.style.display, '', 'El botón debe tener display normal cuando se visualiza el día actual de entrenamiento');
+
+// 52.2 Botón oculto cuando se visualiza otro día (no es hoy)
+app.selectDay('martes');
+assert.equal(switchRestBtn.hidden, true, 'El botón debe estar oculto cuando se visualiza otro día que no es hoy');
+assert.equal(switchRestBtn.style.display, 'none', 'El botón debe tener display:none al ver otro día');
+
+// 52.3 Botón oculto cuando el día es de descanso
+app.selectDay('domingo');
+assert.equal(switchRestBtn.hidden, true, 'El botón debe estar oculto en un día de descanso');
+assert.equal(switchRestBtn.style.display, 'none', 'El botón debe tener display:none en un día de descanso');
+
+// 52.4 Cambiar día de descanso a hoy (simulando Martes como día actual)
+app.setSimulatedDay('martes');
+app.selectDay('martes');
+
+const scheduleBeforeSwitch = app.getState().schedule;
+const routinesCountBefore = Object.values(scheduleBeforeSwitch).filter(d => d.exercises && d.exercises.length > 0).length;
+assert.equal(routinesCountBefore, 6, 'Inicialmente deben haber 6 días de entrenamiento');
+
+const targetRestDaysLimit = 7 - (Number(app.getState().userProfile?.daysPerWeek) || 6); // 1 día de descanso para 6 días/semana
+const restDaysBefore = Object.keys(scheduleBeforeSwitch).filter(k => (!scheduleBeforeSwitch[k].exercises || scheduleBeforeSwitch[k].exercises.length === 0));
+assert.equal(restDaysBefore.length, targetRestDaysLimit, 'Inicialmente debe haber exactamente el número de días de descanso establecido');
+
+// Ejecutar el cambio
+const switchResult = app.switchRestDayToToday();
+assert.equal(switchResult, true, 'switchRestDayToToday debe retornar true al aplicarse');
+
+// 52.5 Verificar que hoy (Martes) ahora es día de descanso
+const scheduleAfterSwitch = app.getState().schedule;
+assert.equal(scheduleAfterSwitch.martes.exercises.length, 0, 'Martes debe quedar sin ejercicios (día de descanso)');
+assert.ok(scheduleAfterSwitch.martes.title.includes('Día de descanso'), 'El título de Martes debe decir Día de descanso');
+assert.ok(scheduleAfterSwitch.martes.muscleGroup.includes('Día de descanso'), 'El grupo muscular de Martes debe ser Día de descanso');
+
+// 52.6 Verificar que Domingo ahora es día de entrenamiento (no queda como descanso extra)
+assert.ok(scheduleAfterSwitch.domingo.exercises.length > 0, 'Domingo debe convertirse en día de entrenamiento');
+assert.ok(!scheduleAfterSwitch.domingo.title.includes('Día de descanso'), 'Domingo ya NO debe tener título de día de descanso');
+
+// 52.7 Verificar regla crítica: NUNCA más días de descanso que lo establecido
+const restDaysAfter = Object.keys(scheduleAfterSwitch).filter(k => (!scheduleAfterSwitch[k].exercises || scheduleAfterSwitch[k].exercises.length === 0));
+assert.equal(restDaysAfter.length, targetRestDaysLimit, 'NUNCA debe haber más días de descanso que lo establecido por el cálculo del entrenamiento');
+assert.deepEqual(restDaysAfter, ['martes'], 'El único día de descanso de la semana debe ser estrictamente Martes');
+
+// 52.8 Verificar conservación del 100% de rutinas y ejercicios (desplazamiento continuo)
+const routinesCountAfter = Object.values(scheduleAfterSwitch).filter(d => d.exercises && d.exercises.length > 0).length;
+assert.equal(routinesCountAfter, 6, 'Se debe mantener el 100% de los 6 entrenamientos semanales');
+
+// Miércoles debe haber tomado la rutina que tocaba el Martes (Pecho y Tríceps)
+assert.ok(scheduleAfterSwitch.miercoles.muscleGroup.includes('Pecho') || scheduleAfterSwitch.miercoles.title.includes('Pecho'), 'Miércoles debe recibir la rutina de Pecho desplazada de Martes');
+// Domingo debe haber tomado la última rutina para completar el 100% del volumen
+assert.ok(scheduleAfterSwitch.domingo.muscleGroup.includes('Piernas') || scheduleAfterSwitch.domingo.muscleGroup.includes('Espalda') || scheduleAfterSwitch.domingo.exercises.length >= 6, 'Domingo debe recibir la rutina para completar el 100% del volumen');
+
+// 52.9 Contenedor de animación fluida de horarios (#schedule-fx-container)
+const fxContainer = doc.getElementById('schedule-fx-container');
+assert.ok(fxContainer, 'Debe existir el contenedor #schedule-fx-container para los efectos');
+
+// Disparar la animación de fuegos artificiales y burbujas
+app.playScheduleRecalcAnimation();
+const fxAnchor = fxContainer.querySelector('.fx-origin-anchor');
+assert.ok(fxAnchor, 'La animación debe generar el ancla .fx-origin-anchor');
+const sparks = fxAnchor.querySelectorAll('.fx-firework-spark');
+assert.ok(sparks.length >= 12, 'Debe generar chispas de fuegos artificiales');
+const bubbles = fxAnchor.querySelectorAll('.fx-bubble');
+assert.ok(bubbles.length >= 8, 'Debe generar burbujas iridiscentes flotantes');
+const rings = fxAnchor.querySelectorAll('.fx-energy-ring');
+assert.ok(rings.length >= 1, 'Debe generar anillos de choque de energía');
+
+// 52.10 Verificación absoluta de CERO etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con 0% <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 52 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

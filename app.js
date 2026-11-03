@@ -70,7 +70,12 @@
     };
   }
 
+  let simulatedDay = null;
+
   function detectDefaultDay() {
+    if (simulatedDay && DAYS_ORDER.includes(simulatedDay)) {
+      return simulatedDay;
+    }
     const jsDay = new Date().getDay();
     const map = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
     return map[jsDay] || 'lunes';
@@ -1092,10 +1097,293 @@
     }
 
     state.selectedDay = todayId;
+    enforceRestDaysCount();
     saveState();
     renderAll();
+    playScheduleRecalcAnimation();
     showCelebrationToast(`🔄 Músculo ${state.schedule[todayId].muscleGroup} asignado a hoy (${state.schedule[todayId].dayName}). Calendario semanal actualizado.`);
     return true;
+  }
+
+  // =========================================================================
+  // GESTIÓN ESTRICTA DE DÍAS DE DESCANSO, RECÁLCULO Y ANIMACIÓN DE HORARIOS
+  // =========================================================================
+
+  function enforceRestDaysCount() {
+    const targetTrainingDays = Number(state.userProfile?.daysPerWeek) || 6;
+    const targetRestDays = Math.max(1, 7 - targetTrainingDays);
+
+    const currentRestDayKeys = DAYS_ORDER.filter(isRestDay);
+    if (currentRestDayKeys.length > targetRestDays) {
+      const surplusCount = currentRestDayKeys.length - targetRestDays;
+      const baseSchedule = (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function')
+        ? GYM_VISUALS.generatePersonalizedSchedule(state.userProfile || {}, GYM_DATA.INITIAL_SCHEDULE)
+        : GYM_DATA.INITIAL_SCHEDULE;
+
+      for (let i = 0; i < surplusCount; i++) {
+        const dayToRestore = currentRestDayKeys[i];
+        const baseDay = baseSchedule[dayToRestore] || GYM_DATA.INITIAL_SCHEDULE[dayToRestore];
+        if (baseDay && baseDay.exercises && baseDay.exercises.length > 0) {
+          assignRoutineToDay(state.schedule[dayToRestore], baseDay, false);
+        }
+      }
+    }
+  }
+
+  function assignRoutineToDay(dayObj, routine, isShifted) {
+    if (!dayObj || !routine) return;
+    dayObj.title = routine.title;
+    dayObj.subtitle = routine.subtitle || '';
+    dayObj.muscleGroup = routine.muscleGroup;
+    dayObj.accentHue = routine.accentHue || 160;
+    dayObj.estimatedMinutes = routine.estimatedMinutes || 55;
+    dayObj.exercises = deepClone(routine.exercises).map(ex => ({
+      ...ex,
+      completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
+    }));
+    dayObj.status = isShifted ? 'shifted' : 'normal';
+    dayObj.isRestDay = false;
+  }
+
+  function playScheduleRecalcAnimation() {
+    const container = document.getElementById('schedule-fx-container');
+    if (!container) return;
+
+    triggerHaptic([35, 45, 55, 35, 60]);
+
+    const tabsList = document.getElementById('day-tabs-list');
+    if (tabsList) {
+      tabsList.classList.remove('is-schedule-animating');
+      void tabsList.offsetWidth;
+      tabsList.classList.add('is-schedule-animating');
+      setTimeout(() => {
+        tabsList.classList.remove('is-schedule-animating');
+      }, 1250);
+    }
+
+    const anchor = document.createElement('div');
+    anchor.className = 'fx-origin-anchor';
+
+    const ringColors = ['#34d399', '#38bdf8'];
+    ringColors.forEach(color => {
+      const ring = document.createElement('div');
+      ring.className = 'fx-energy-ring';
+      ring.style.setProperty('--ring-color', color);
+      anchor.appendChild(ring);
+    });
+
+    const neonColors = ['#34d399', '#38bdf8', '#fbbf24', '#f43f5e', '#a855f7', '#06b6d4', '#f97316', '#4ade80'];
+    const sparkCount = 18;
+    for (let i = 0; i < sparkCount; i++) {
+      const spark = document.createElement('div');
+      spark.className = 'fx-firework-spark';
+      const angle = (i / sparkCount) * 2 * Math.PI + (Math.random() * 0.2 - 0.1);
+      const dist = 90 + Math.random() * 160;
+      const destX = Math.round(Math.cos(angle) * dist);
+      const destY = Math.round(Math.sin(angle) * dist);
+      const color = neonColors[i % neonColors.length];
+      const size = 6 + Math.floor(Math.random() * 6);
+      const dur = (0.75 + Math.random() * 0.45).toFixed(2);
+
+      spark.style.setProperty('--dest-x', `${destX}px`);
+      spark.style.setProperty('--dest-y', `${destY}px`);
+      spark.style.setProperty('--spark-color', color);
+      spark.style.setProperty('--spark-size', `${size}px`);
+      spark.style.setProperty('--spark-dur', `${dur}s`);
+      anchor.appendChild(spark);
+    }
+
+    const bubbleTints = [
+      'rgba(56, 189, 248, 0.5)',
+      'rgba(52, 211, 153, 0.5)',
+      'rgba(251, 191, 36, 0.45)',
+      'rgba(168, 85, 247, 0.45)',
+      'rgba(244, 63, 94, 0.45)'
+    ];
+    const bubbleCount = 14;
+    for (let i = 0; i < bubbleCount; i++) {
+      const bubble = document.createElement('div');
+      bubble.className = 'fx-bubble';
+      const destX = Math.round((Math.random() - 0.5) * 260);
+      const destY = -Math.round(70 + Math.random() * 180);
+      const size = 18 + Math.floor(Math.random() * 18);
+      const tint = bubbleTints[i % bubbleTints.length];
+      const dur = (0.85 + Math.random() * 0.45).toFixed(2);
+
+      bubble.style.setProperty('--dest-x', `${destX}px`);
+      bubble.style.setProperty('--dest-y', `${destY}px`);
+      bubble.style.setProperty('--bubble-tint', tint);
+      bubble.style.setProperty('--bubble-glow', tint);
+      bubble.style.setProperty('--bubble-size', `${size}px`);
+      bubble.style.setProperty('--bubble-dur', `${dur}s`);
+      anchor.appendChild(bubble);
+    }
+
+    container.appendChild(anchor);
+
+    setTimeout(() => {
+      if (anchor.parentNode === container) {
+        container.removeChild(anchor);
+      }
+    }, 1300);
+  }
+
+  function recalculateWeeklySchedule(options = {}) {
+    const targetTrainingDays = Number(state.userProfile?.daysPerWeek) || 6;
+    const targetRestDays = Math.max(1, 7 - targetTrainingDays);
+    const restDayToSet = options.restDayToSet || null;
+
+    const currentSchedule = deepClone(state.schedule);
+
+    // 1. Extraer las rutinas de entrenamiento existentes para preservarlas
+    const preservedRoutines = [];
+    for (const k of DAYS_ORDER) {
+      const d = currentSchedule[k];
+      if (d && d.exercises && d.exercises.length > 0 && d.muscleGroup && !d.muscleGroup.includes('Día de descanso')) {
+        preservedRoutines.push({
+          title: d.title.replace(/\s*\(Recorrido.*?\)/g, '').replace(/\s*\(Reprogramado.*?\)/g, '').replace(/\s*\(Recuperado.*?\)/g, '').trim(),
+          subtitle: d.subtitle || '',
+          muscleGroup: d.muscleGroup,
+          accentHue: d.accentHue || 160,
+          estimatedMinutes: d.estimatedMinutes || 55,
+          exercises: deepClone(d.exercises)
+        });
+      }
+    }
+
+    if (preservedRoutines.length < targetTrainingDays) {
+      const baseSchedule = (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function')
+        ? GYM_VISUALS.generatePersonalizedSchedule(state.userProfile || {}, GYM_DATA.INITIAL_SCHEDULE)
+        : GYM_DATA.INITIAL_SCHEDULE;
+
+      for (const k of DAYS_ORDER) {
+        if (preservedRoutines.length >= targetTrainingDays) break;
+        const baseDay = baseSchedule[k];
+        if (baseDay && baseDay.exercises && baseDay.exercises.length > 0 && !baseDay.muscleGroup.includes('Día de descanso')) {
+          const alreadyIn = preservedRoutines.some(r => r.muscleGroup === baseDay.muscleGroup || r.title === baseDay.title);
+          if (!alreadyIn) {
+            preservedRoutines.push({
+              title: baseDay.title,
+              subtitle: baseDay.subtitle || '',
+              muscleGroup: baseDay.muscleGroup,
+              accentHue: baseDay.accentHue || 160,
+              estimatedMinutes: baseDay.estimatedMinutes || 55,
+              exercises: deepClone(baseDay.exercises)
+            });
+          }
+        }
+      }
+    }
+
+    const trainingRoutinesToAssign = preservedRoutines.slice(0, targetTrainingDays);
+
+    // 2. Determinar días de descanso estrictos (NUNCA más de targetRestDays)
+    let newRestDayKeys = [];
+    if (restDayToSet && DAYS_ORDER.includes(restDayToSet)) {
+      newRestDayKeys.push(restDayToSet);
+    }
+
+    const previousRestKeys = DAYS_ORDER.filter(k => isRestDay(k) && k !== restDayToSet);
+    for (const k of previousRestKeys) {
+      if (newRestDayKeys.length < targetRestDays) {
+        newRestDayKeys.push(k);
+      }
+    }
+
+    if (newRestDayKeys.length < targetRestDays) {
+      for (let i = DAYS_ORDER.length - 1; i >= 0; i--) {
+        const k = DAYS_ORDER[i];
+        if (!newRestDayKeys.includes(k)) {
+          newRestDayKeys.push(k);
+          if (newRestDayKeys.length >= targetRestDays) break;
+        }
+      }
+    }
+
+    if (newRestDayKeys.length > targetRestDays) {
+      newRestDayKeys = newRestDayKeys.slice(0, targetRestDays);
+    }
+
+    // 3. Días de entrenamiento activos
+    const newTrainingDayKeys = DAYS_ORDER.filter(k => !newRestDayKeys.includes(k));
+
+    // 4. Distribuir las rutinas ordenadamente entre los días de entrenamiento
+    if (restDayToSet) {
+      const restDayIndex = DAYS_ORDER.indexOf(restDayToSet);
+      const daysBefore = newTrainingDayKeys.filter(k => DAYS_ORDER.indexOf(k) < restDayIndex);
+      const daysAfter = newTrainingDayKeys.filter(k => DAYS_ORDER.indexOf(k) > restDayIndex);
+
+      daysBefore.forEach((dKey, idx) => {
+        const routine = trainingRoutinesToAssign[idx];
+        if (routine) {
+          assignRoutineToDay(state.schedule[dKey], routine, false);
+        }
+      });
+
+      const remainingRoutines = trainingRoutinesToAssign.slice(daysBefore.length);
+      daysAfter.forEach((dKey, idx) => {
+        const routine = remainingRoutines[idx];
+        if (routine) {
+          assignRoutineToDay(state.schedule[dKey], routine, true);
+        }
+      });
+    } else {
+      newTrainingDayKeys.forEach((dKey, idx) => {
+        const routine = trainingRoutinesToAssign[idx];
+        if (routine) {
+          assignRoutineToDay(state.schedule[dKey], routine, false);
+        }
+      });
+    }
+
+    // 5. Configurar los días de descanso estrictos
+    newRestDayKeys.forEach(restKey => {
+      const d = state.schedule[restKey];
+      if (d) {
+        d.title = '🌿 Día de descanso';
+        d.subtitle = '🌿 Día de descanso';
+        d.muscleGroup = '🌿 Día de descanso';
+        d.accentHue = 45;
+        d.estimatedMinutes = 0;
+        d.exercises = [];
+        d.status = 'rest_backup';
+        d.isRestDay = true;
+      }
+    });
+
+    enforceRestDaysCount();
+
+    if (restDayToSet) {
+      state.selectedDay = restDayToSet;
+    }
+
+    saveState();
+    renderAll();
+    playScheduleRecalcAnimation();
+
+    if (options.reason === 'user_switch_rest_today') {
+      showCelebrationToast('🌿 Día de descanso asignado a hoy. Horarios y días de entrenamiento recalculados.');
+    } else {
+      showCelebrationToast('⚡ Días de entrenamiento recalculados con descanso óptimo.');
+    }
+
+    return true;
+  }
+
+  function switchRestDayToToday() {
+    const currentRealDay = detectDefaultDay();
+    const day = state.schedule[currentRealDay];
+    if (!day) return false;
+
+    if (isRestDay(currentRealDay)) {
+      showCelebrationToast('ℹ️ Hoy ya es tu día de descanso programado.');
+      return false;
+    }
+
+    return recalculateWeeklySchedule({
+      restDayToSet: currentRealDay,
+      reason: 'user_switch_rest_today'
+    });
   }
 
   // =========================================================================
@@ -1377,8 +1665,10 @@
     // El día de entrenamiento que fue el reemplazante NO debe quedar seleccionado.
     // Queda seleccionado DOMINGO (día actual):
     state.selectedDay = 'domingo';
+    enforceRestDaysCount();
     saveState();
     renderAll();
+    playScheduleRecalcAnimation();
     showCelebrationToast(`⚡ Rutina de ${sourceDay.dayName} aplicada a Domingo. Calendario semanal actualizado.`);
     return true;
   }
@@ -1666,7 +1956,7 @@
   function isRestDay(dayKey) {
     const d = state.schedule[dayKey];
     if (!d) return false;
-    return (!d.exercises || d.exercises.length === 0 || d.status === 'rest' || d.status === 'rest_backup');
+    return (!d.exercises || d.exercises.length === 0 || d.status === 'rest' || d.status === 'rest_backup' || d.status === 'rest_day' || d.isRestDay === true);
   }
 
   function renderDayTabs() {
@@ -1749,6 +2039,7 @@
     const warmupChecklistCard = document.getElementById('warmup-checklist-card');
     const daySecondaryMenu = document.getElementById('day-secondary-menu');
     const startBtn = document.getElementById('btn-start-day-workout');
+    const switchRestBtn = document.getElementById('btn-switch-rest-today');
 
     if (heroCard) {
       heroCard.style.setProperty('--day-hue', String(day.accentHue || 160));
@@ -1795,6 +2086,10 @@
       }
       if (daySecondaryMenu) {
         daySecondaryMenu.hidden = true;
+      }
+      if (switchRestBtn) {
+        switchRestBtn.style.display = 'none';
+        switchRestBtn.hidden = true;
       }
 
       if (startBtn) {
@@ -1925,6 +2220,16 @@
         const targetDay = state.schedule[currentRealDay];
         const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
         startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
+      }
+    }
+
+    if (switchRestBtn) {
+      if (isViewingToday) {
+        switchRestBtn.style.display = '';
+        switchRestBtn.hidden = false;
+      } else {
+        switchRestBtn.style.display = 'none';
+        switchRestBtn.hidden = true;
       }
     }
 
@@ -3588,8 +3893,10 @@
       state.schedule = GYM_VISUALS.generatePersonalizedSchedule(state.userProfile, GYM_DATA.INITIAL_SCHEDULE);
     }
 
+    enforceRestDaysCount();
     saveState();
     renderAll();
+    playScheduleRecalcAnimation();
     triggerHaptic([60, 40, 80]);
     showCelebrationToast(`🎯 Rutina personalizada generada para ${state.userProfile.name}`);
     return state.userProfile;
@@ -5594,6 +5901,13 @@
       btnException.addEventListener('click', openExceptionDialog);
     }
 
+    const btnSwitchRestToday = document.getElementById('btn-switch-rest-today');
+    if (btnSwitchRestToday) {
+      btnSwitchRestToday.addEventListener('click', () => {
+        switchRestDayToToday();
+      });
+    }
+
     const exceptionRadios = document.querySelectorAll('input[name="exceptionMode"]');
     const swapWrap = document.getElementById('swap-day-selector-wrap');
     exceptionRadios.forEach(radio => {
@@ -6466,7 +6780,13 @@
     cycleExerciseReps,
     adjustExerciseSeriesCount,
     getExerciseSetReps,
-    formatExerciseRepsSummary
+    formatExerciseRepsSummary,
+    // APIs Días de Descanso Estrictos, Recálculo y Animación Fluida
+    switchRestDayToToday,
+    recalculateWeeklySchedule,
+    enforceRestDaysCount,
+    playScheduleRecalcAnimation,
+    setSimulatedDay: (dayId) => { simulatedDay = dayId; }
   };
 
   bindEvents();
