@@ -1663,9 +1663,15 @@ app.applySundayRoutine('lunes');
 const sundayExercises = doc.querySelectorAll('#exercises-list .exercise-card');
 assert.equal(sundayExercises.length, 6, 'Domingo debe tener cargados los 6 ejercicios de la rutina elegida');
 
-// Botón de inicio de domingo ahora debe permitir iniciar el entrenamiento activo
+// Cuando Domingo NO es el día actual, no debe decir Iniciar sino ofrecer mover el entrenamiento a hoy
 const updatedSundayBtn = doc.getElementById('btn-start-day-workout');
-assert.ok(updatedSundayBtn.textContent.includes('Pantalla Enfoque') || updatedSundayBtn.textContent.includes('Iniciar'), 'El botón debe reflejar la rutina lista');
+assert.ok(updatedSundayBtn.textContent.includes('Mover entrenamiento a Hoy'), 'Cuando no es hoy, el botón debe indicar Mover entrenamiento a Hoy');
+
+// Cuando Domingo se simula como el día actual, recién debe permitir Iniciar
+app.setSimulatedDay('domingo');
+app.selectDay('domingo');
+assert.ok(updatedSundayBtn.textContent.includes('Iniciar'), 'Cuando Domingo es el día actual debe decir Iniciar día de ejercicio');
+app.setSimulatedDay(null);
 
 // Los diálogos deben estar cerrados
 assert.ok(!recoverDialog.hasAttribute('open') || recoverDialog.hidden, 'El diálogo de recuperación debe estar cerrado');
@@ -2360,6 +2366,12 @@ const domExercisesList = doc.querySelectorAll('#exercises-list .exercise-card');
 assert.ok(domExercisesList.length >= 4, 'Al pasar el entrenamiento a domingo, debe renderizar las tarjetas de los ejercicios a trabajar');
 const domEmptyBox = doc.querySelector('#exercises-list .empty-day-box');
 assert.equal(domEmptyBox, null, 'NO debe haber panel de día de descanso en un día con ejercicios asignados');
+
+// Cuando Domingo NO es el día actual, no debe decir Iniciar
+const domStartBtn = doc.getElementById('btn-start-day-workout');
+assert.ok(domStartBtn.textContent.includes('Mover entrenamiento a Hoy'), 'Domingo cuando no es hoy debe decir Mover entrenamiento a Hoy y NO Iniciar');
+assert.ok(!domStartBtn.textContent.includes('Iniciar día de ejercicio'), 'Domingo no debe decir Iniciar cuando no es el día actual');
+assert.ok(domStartBtn.classList.contains('btn-move-muscle-cta'), 'Debe tener la clase .btn-move-muscle-cta');
 
 // 52.7 Verificar regla crítica: NUNCA más días de descanso que lo establecido
 const restDaysAfter = Object.keys(scheduleAfterSwitch).filter(k => (!scheduleAfterSwitch[k].exercises || scheduleAfterSwitch[k].exercises.length === 0));
