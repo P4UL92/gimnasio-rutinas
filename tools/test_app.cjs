@@ -1487,8 +1487,8 @@ assert.ok(cssContent.includes('.gym-strength-icon'), 'styles.css debe definir lo
 const todayId = app.detectDefaultDay();
 assert.ok(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].includes(todayId));
 
-// Simular selección de otro día
-const otherDay = todayId === 'lunes' ? 'miercoles' : 'lunes';
+// Simular selección de otro día (músculo descansado para reorganización)
+const otherDay = todayId === 'miercoles' ? 'jueves' : 'miercoles';
 app.selectDay(otherDay);
 const dayCta = doc.getElementById('btn-start-day-workout');
 assert.ok(dayCta.classList.contains('btn-move-muscle-cta'), 'Al ver otro día, el CTA debe transformarse en botón de mover entrenamiento');
@@ -2402,11 +2402,102 @@ assert.ok(bubbles.length >= 8, 'Debe generar burbujas iridiscentes flotantes');
 const rings = fxAnchor.querySelectorAll('.fx-energy-ring');
 assert.ok(rings.length >= 1, 'Debe generar anillos de choque de energía');
 
-// 52.10 Verificación absoluta de CERO etiquetas SVG
+// ==========================================
+// SUITE 53: Registros Completos con Fecha y Estadísticas, Resaltado Rojo de Días Culminados y Bloqueo Biomecánico por Falta de Descanso
+// ==========================================
+console.log('Ejecutando Suite 53: Registros Completos, Resaltado Rojo y Bloqueo Biomecánico por Falta de Descanso...');
+
+app.restoreOriginalSchedule();
+
+// 53.1 Registro y guardado de sesión con fecha exacta, ejercicios y estadísticas
+app.setSimulatedDay('lunes');
+app.selectDay('lunes');
+
+// Completar todas las series del lunes
+const lunesDay = app.getState().schedule.lunes;
+for (const ex of lunesDay.exercises) {
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => true);
+}
+
+const logSuccess = app.logCurrentWorkoutSession({ customNote: 'Sesión biomecánica de prueba' });
+assert.equal(logSuccess, true, 'logCurrentWorkoutSession debe retornar true');
+
+const latestRecord = app.getState().history[0];
+assert.ok(latestRecord, 'Debe existir un registro en el historial');
+assert.equal(latestRecord.dayId, 'lunes', 'El historial debe registrar dayId lunes');
+assert.equal(latestRecord.dayName, 'Lunes', 'El historial debe registrar dayName Lunes');
+assert.ok(latestRecord.dateISO, 'El historial debe registrar la fecha en formato dateISO');
+assert.ok(latestRecord.formattedDate && latestRecord.formattedDate.length > 5, 'El historial debe incluir formattedDate legible');
+assert.ok(latestRecord.volumeKg > 0, 'El historial debe registrar el tonelaje volumeKg');
+assert.equal(latestRecord.setsDone, 24, 'El historial debe registrar las 24 series completadas');
+assert.equal(latestRecord.setsPlanned, 24, 'El historial debe registrar las 24 series planificadas');
+assert.equal(latestRecord.completionRate, '100%', 'El historial debe registrar completionRate 100%');
+assert.equal(latestRecord.sessionNote, 'Sesión biomecánica de prueba', 'Debe registrar la nota de la sesión');
+assert.ok(Array.isArray(latestRecord.exercisesDetails) && latestRecord.exercisesDetails.length >= 6, 'Debe guardar el desglose de ejercicios con sus músculos y series');
+
+// 53.2 Resaltado en color rojo de los días de entrenamiento culminados en la semana
+const lunesTab = doc.querySelector('.day-tab-btn[data-day="lunes"]');
+assert.ok(lunesTab, 'Debe existir la pestaña de lunes');
+assert.ok(lunesTab.classList.contains('is-completed'), 'La pestaña de lunes debe tener la clase .is-completed');
+assert.ok(lunesTab.classList.contains('is-culminated-red'), 'La pestaña de lunes culminada debe tener la clase .is-culminated-red');
+
+// Verificar estilos CSS dedicados al color rojo deportivo
+assert.ok(cssContent.includes('.day-tab-btn.is-completed') || cssContent.includes('.is-culminated-red'), 'styles.css debe definir el selector para días culminados');
+assert.ok(cssContent.includes('#ef4444'), 'styles.css debe usar el color rojo #ef4444 para resaltar los días culminados');
+
+// 53.3 Bloqueo de Mover Entrenamiento si falta descanso muscular (<48h)
+// Simular Martes como día actual (Lunes con Espalda y Bíceps fue terminado hace < 24h)
+app.setSimulatedDay('martes');
+app.selectDay('martes');
+
+// Intentar mover un entrenamiento que comparte grupo muscular entrenado recientemente
+// Crear un entrenamiento que involucre Espalda en jueves para la prueba
+app.getState().schedule.jueves.muscleGroup = 'Espalda y Dorsales';
+
+const blockedEval = app.evaluateMuscleRecoveryForMove('jueves');
+assert.equal(blockedEval.canMove, false, 'evaluateMuscleRecoveryForMove debe bloquear si el músculo fue entrenado hace < 48h');
+assert.ok(blockedEval.reason.includes('descanso') || blockedEval.reason.includes('recuperación'), 'El motivo debe explicar la falta de descanso');
+assert.ok(blockedEval.hoursRemaining > 0, 'Debe especificar las horas de descanso faltantes');
+
+// Abrir el diálogo de mover músculo y verificar el bloqueo en la interfaz
+app.openMoveMuscleDialog('jueves');
+const moveDialogEl = doc.getElementById('move-muscle-confirm-dialog');
+assert.ok(moveDialogEl.hasAttribute('open') || !moveDialogEl.hidden, 'El diálogo de mover músculo debe estar abierto');
+
+const recoveryAlertEl = doc.getElementById('move-muscle-recovery-alert');
+assert.ok(recoveryAlertEl, 'Debe existir el contenedor #move-muscle-recovery-alert');
+assert.ok(recoveryAlertEl.querySelector('.is-blocked'), 'Debe mostrar la alerta con clase .is-blocked');
+assert.ok(recoveryAlertEl.textContent.includes('Faltan'), 'Debe detallar cuánto descanso falta');
+
+const btnConfirmMove = doc.getElementById('btn-confirm-move-muscle');
+assert.equal(btnConfirmMove.disabled, true, 'El botón de confirmación debe estar deshabilitado al estar bloqueado por descanso');
+assert.ok(btnConfirmMove.textContent.includes('Bloqueado'), 'El texto del botón debe indicar que está bloqueado');
+
+// Intentar ejecutar el movimiento directamente debe fallar por falta de descanso
+const attemptMoveResult = app.moveMuscleToCurrentDay('jueves');
+assert.equal(attemptMoveResult, false, 'moveMuscleToCurrentDay debe retornar false y no modificar el día si falta descanso');
+app.closeMoveMuscleDialog();
+
+// 53.4 Permitir Mover Entrenamiento cuando el músculo sí ha descansado (>=48h)
+// Miércoles tiene Piernas y Glúteos (no fue entrenado recientemente)
+const allowedEval = app.evaluateMuscleRecoveryForMove('miercoles');
+assert.equal(allowedEval.canMove, true, 'evaluateMuscleRecoveryForMove debe permitir el cambio si el músculo está recuperado');
+assert.ok(allowedEval.reason.includes('óptimo') || allowedEval.reason.includes('recuperadas') || allowedEval.reason.includes('≥ 48h'), 'Debe indicar descanso adecuado');
+
+app.openMoveMuscleDialog('miercoles');
+assert.ok(recoveryAlertEl.querySelector('.is-ready'), 'Debe mostrar la alerta con clase .is-ready');
+assert.equal(btnConfirmMove.disabled, false, 'El botón de confirmación debe estar habilitado para un músculo descansado');
+
+const successfulMove = app.moveMuscleToCurrentDay('miercoles');
+assert.equal(successfulMove, true, 'moveMuscleToCurrentDay debe permitir mover un músculo descansado');
+assert.ok(app.getState().schedule.martes.muscleGroup.includes('Pierna'), 'Martes ahora debe tener la rutina de Pierna trasladada de Miércoles');
+app.closeMoveMuscleDialog();
+
+// 53.5 Verificación absoluta de CERO etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con 0% <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 52 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 53 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

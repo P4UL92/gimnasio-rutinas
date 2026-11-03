@@ -272,8 +272,52 @@ body.animations-paused * {
   color: #fde68a;
 }
 
-.day-tab-btn.is-completed .tab-dot {
-  background: var(--accent-emerald);
+/* Días de Entrenamiento Culminados - Resaltado Rojo Deportivo */
+.day-tab-btn.is-completed,
+.day-tab-btn.is-culminated-red {
+  border-color: #ef4444 !important;
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.22) 0%, rgba(185, 28, 28, 0.12) 100%) !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.25), inset 0 0 8px rgba(239, 68, 68, 0.12) !important;
+}
+
+.day-tab-btn.is-completed .tab-dot,
+.day-tab-btn.is-culminated-red .tab-dot {
+  background: #ef4444 !important;
+  box-shadow: 0 0 10px #ef4444 !important;
+}
+
+.day-tab-btn.is-completed .tab-short,
+.day-tab-btn.is-culminated-red .tab-short {
+  color: #fee2e2 !important;
+  font-weight: 800 !important;
+}
+
+.day-tab-btn.is-completed .tab-group,
+.day-tab-btn.is-culminated-red .tab-group {
+  color: #fca5a5 !important;
+  font-weight: 700 !important;
+}
+
+.day-tab-btn.is-completed[aria-current="page"],
+.day-tab-btn.is-culminated-red[aria-current="page"] {
+  border-color: #f87171 !important;
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.35) 0%, rgba(185, 28, 28, 0.22) 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5) !important;
+}
+
+.matrix-day-card.is-completed,
+.matrix-day-card.is-culminated-red {
+  border-color: rgba(239, 68, 68, 0.65) !important;
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 17, 23, 0.95) 100%) !important;
+}
+
+.matrix-day-status.is-culminated-red-badge {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  background: rgba(239, 68, 68, 0.18) !important;
+  font-weight: 700;
 }
 
 /* Main Content */
@@ -6604,6 +6648,115 @@ body.in-workout-screen .app-main-content {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Alerta de Recuperación Biomecánica en Modal de Mover Músculo */
+.move-muscle-recovery-card {
+  margin: 10px 0 14px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.recovery-status-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.recovery-status-badge.is-blocked {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.18);
+}
+
+.recovery-status-badge.is-ready {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
+}
+
+.recovery-status-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.recovery-status-title {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 4px;
+}
+
+.recovery-status-badge.is-blocked .recovery-status-title {
+  color: #f87171;
+}
+
+.recovery-status-badge.is-ready .recovery-status-title {
+  color: #34d399;
+}
+
+.recovery-status-desc {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #e2e8f0;
+  margin: 0 0 8px 0;
+}
+
+.recovery-metrics-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.recovery-metrics-row span strong {
+  color: #ffffff;
+}
+
+.recovery-metrics-row .recovery-lacking strong {
+  color: #f87171;
+}
+
+.btn-primary.btn-blocked,
+#btn-confirm-move-muscle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+  pointer-events: none;
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+/* Badges en Historial */
+.history-badge-completed {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #34d399;
+}
+
+.history-badge-truncated {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
 }
 
 /* Botones de Cierre Rojo con Tonalidad de la Aplicación */

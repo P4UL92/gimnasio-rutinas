@@ -802,22 +802,57 @@
       ? (isTruncated ? (dayStat.doneKg || 0) : (dayStat.doneKg || dayStat.plannedKg))
       : 0;
 
+    const nowISO = new Date().toISOString();
+    const formattedDate = new Date().toLocaleDateString('es-PE', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const exercisesDetails = (day.exercises || []).map(ex => ({
+      id: ex.id,
+      name: ex.name,
+      muscle: ex.muscle,
+      equipment: ex.equipment,
+      sets: Number(ex.sets) || 4,
+      completedSetsCount: (ex.completedSets || []).filter(Boolean).length,
+      loadText: ex.loadText || '20 kg',
+      setMode: ex.setMode || 'normal',
+      targetRir: ex.targetRir || 'RIR 2'
+    }));
+
+    const finalSetsDone = isTruncated ? doneSets : (doneSets || totalSets);
+    const completionRate = `${Math.round((finalSetsDone / (totalSets || 1)) * 100)}%`;
+
     const record = {
       id: `session-${Date.now()}`,
-      dateISO: new Date().toISOString(),
+      dateISO: nowISO,
+      completedAt: nowISO,
+      formattedDate,
       dayId: state.selectedDay,
       dayName: day.dayName,
       title: day.title,
       muscleGroup: day.muscleGroup,
       status: isTruncated ? 'truncated' : 'completed',
-      setsDone: isTruncated ? doneSets : (doneSets || totalSets),
+      setsDone: finalSetsDone,
       setsPlanned: totalSets,
+      completionRate,
       totalRepsDone,
       volumeKg,
       durationMs: durationMs,
       durationText: durationText,
-      sessionNote
+      sessionNote,
+      exercisesDetails
     };
+
+    day.completedAt = nowISO;
+    if (!isTruncated) {
+      day.status = 'completed';
+    }
+    day.lastSessionRecord = deepClone(record);
 
     state.history.unshift(record);
     if (state.history.length > 30) {
@@ -1019,6 +1054,128 @@
     return count;
   }
 
+  function extractMuscleKeywords(text = '', exercises = []) {
+    let raw = (String(text || '') + ' ' + (exercises || []).map(e => e.muscle || '').join(' ')).toLowerCase();
+    // Reemplazar bíceps femoral para evitar falsos positivos con bíceps braquial (brazos)
+    raw = raw.replace(/b[ií]ceps\s+femoral/gi, 'isquiotibial');
+
+    const categories = new Set();
+    if (/pecho|pectoral/.test(raw)) categories.add('pecho');
+    if (/espalda|dorsal|trapecio/.test(raw)) categories.add('espalda');
+    if (/pierna|glúteo|gluteo|cuádriceps|cuadriceps|femoral|isquio|gemelo|pantorrilla|isquiotibial/.test(raw)) categories.add('piernas');
+    if (/hombro|deltoide/.test(raw)) categories.add('hombros');
+    if (/b[ií]ceps/.test(raw)) categories.add('biceps');
+    if (/tr[ií]ceps/.test(raw)) categories.add('triceps');
+    if (/\bbrazo|\bbrazos/.test(raw)) categories.add('brazos');
+    if (/core|abdomen|abdominal/.test(raw)) categories.add('core');
+    return categories;
+  }
+
+  function evaluateMuscleRecoveryForMove(sourceDayId = state.selectedDay) {
+    const currentRealDay = detectDefaultDay();
+    const targetDay = state.schedule ? state.schedule[currentRealDay] : null;
+    const sourceDay = state.schedule ? state.schedule[sourceDayId] : null;
+
+    if (!sourceDay) {
+      return { canMove: false, reason: 'Día de entrenamiento no encontrado.', hoursSince: 0, hoursRequired: 48, hoursRemaining: 48 };
+    }
+
+    // 1. Si el día de origen ya fue culminado en este ciclo
+    if (isDayCompleted(sourceDayId)) {
+      return {
+        canMove: false,
+        reason: `El entrenamiento de ${sourceDay.dayName} (${sourceDay.title}) ya fue completado y registrado. No puedes repetir una sesión que ya ha sido finalizada.`,
+        hoursSince: 0,
+        hoursRequired: 48,
+        hoursRemaining: 48,
+        conflictMuscle: sourceDay.muscleGroup
+      };
+    }
+
+    const sourceKeywords = extractMuscleKeywords(sourceDay.muscleGroup, sourceDay.exercises);
+
+    // 2. Si hoy ya culminó el entrenamiento y comparte el mismo músculo o sin descanso
+    if (isDayCompleted(currentRealDay)) {
+      const targetKeywords = extractMuscleKeywords(targetDay?.muscleGroup, targetDay?.exercises);
+      const hasOverlapWithToday = [...sourceKeywords].some(k => targetKeywords.has(k));
+      if (hasOverlapWithToday) {
+        return {
+          canMove: false,
+          reason: `Ya has estimulado este grupo muscular en el entrenamiento culminado de hoy (${targetDay?.title}). Requiere al menos 48h de recuperación biológica.`,
+          hoursSince: 0,
+          hoursRequired: 48,
+          hoursRemaining: 48,
+          conflictMuscle: targetDay?.muscleGroup
+        };
+      }
+    }
+
+    // 3. Evaluar historial de entrenamientos terminados
+    const history = state.history || [];
+    const now = Date.now();
+
+    for (const record of history) {
+      if (record.status !== 'completed' && record.status !== 'truncated') continue;
+      const recordDate = new Date(record.dateISO).getTime();
+      const hoursSince = Math.max(0, Math.round((now - recordDate) / (3600 * 1000)));
+
+      if (hoursSince < 48) {
+        const recordKeywords = extractMuscleKeywords(record.muscleGroup, record.exercisesDetails || []);
+        const hasOverlap = [...sourceKeywords].some(k => recordKeywords.has(k));
+        if (hasOverlap) {
+          const hoursRemaining = Math.max(1, 48 - hoursSince);
+          return {
+            canMove: false,
+            reason: `El grupo muscular (${sourceDay.muscleGroup}) fue entrenado hace ${hoursSince}h (${record.dayName || 'Sesión reciente'}, ${record.title}). Se requieren al menos 48h de descanso continuo para regenerar miofibrillas, reponer glucógeno y evitar tendinopatías o sobreentrenamiento.`,
+            hoursSince,
+            hoursRequired: 48,
+            hoursRemaining,
+            conflictMuscle: record.muscleGroup,
+            lastTrainedDate: record.dateISO
+          };
+        }
+      }
+    }
+
+    // 4. Evaluar días completados en el schedule actual si no estuvieran en history (ej. ayer)
+    for (const dKey of DAYS_ORDER) {
+      if (dKey === sourceDayId || dKey === currentRealDay) continue;
+      if (isDayCompleted(dKey)) {
+        const d = state.schedule[dKey];
+        const dKeywords = extractMuscleKeywords(d.muscleGroup, d.exercises);
+        const hasOverlap = [...sourceKeywords].some(k => dKeywords.has(k));
+        if (hasOverlap) {
+          const todayIdx = DAYS_ORDER.indexOf(currentRealDay);
+          const dIdx = DAYS_ORDER.indexOf(dKey);
+          let diffDays = (todayIdx - dIdx + 7) % 7;
+          if (diffDays === 0) diffDays = 7;
+          const estHours = diffDays * 24;
+
+          if (estHours < 48) {
+            const hoursRemaining = Math.max(1, 48 - estHours);
+            return {
+              canMove: false,
+              reason: `El grupo muscular (${sourceDay.muscleGroup}) coincide con el entrenado en ${d.dayName} (${d.title}), el cual ya fue culminado hace ~${estHours}h. Faltan ${hoursRemaining}h para alcanzar las 48h de recuperación biológica.`,
+              hoursSince: estHours,
+              hoursRequired: 48,
+              hoursRemaining,
+              conflictMuscle: d.muscleGroup
+            };
+          }
+        }
+      }
+    }
+
+    return {
+      canMove: true,
+      reason: `El grupo muscular cuenta con descanso óptimo (≥ 48h). Las fibras musculares y reservas energéticas están 100% recuperadas para un estímulo de hipertrofia.`,
+      hoursSince: 48,
+      hoursRequired: 48,
+      hoursRemaining: 0,
+      conflictMuscle: null
+    };
+  }
+
   function openMoveMuscleDialog(sourceDayId) {
     const dialog = document.getElementById('move-muscle-confirm-dialog');
     if (!dialog) return;
@@ -1030,10 +1187,64 @@
     const muscleEl = document.getElementById('move-target-muscle');
     const sourceEl = document.getElementById('move-source-day');
     const currentEl = document.getElementById('move-current-day');
+    const recoveryAlert = document.getElementById('move-muscle-recovery-alert');
+    const btnConfirm = document.getElementById('btn-confirm-move-muscle');
+    const moveDesc = document.getElementById('move-muscle-desc');
 
     if (muscleEl && sourceDay) muscleEl.textContent = sourceDay.muscleGroup;
     if (sourceEl && sourceDay) sourceEl.textContent = `${sourceDay.dayName} (${sourceDay.title})`;
     if (currentEl && targetDay) currentEl.textContent = `${targetDay.dayName} (Hoy)`;
+
+    const recovery = evaluateMuscleRecoveryForMove(sourceDayId);
+
+    if (recoveryAlert) {
+      if (!recovery.canMove) {
+        recoveryAlert.innerHTML = `
+          <div class="recovery-status-badge is-blocked">
+            <span class="recovery-status-icon">⛔</span>
+            <div>
+              <strong class="recovery-status-title">MOVIMIENTO BLOQUEADO POR FALTA DE DESCANSO</strong>
+              <p class="recovery-status-desc">${recovery.reason}</p>
+              <div class="recovery-metrics-row">
+                <span>⏱️ Descanso transcurrido: <strong>${recovery.hoursSince}h</strong></span>
+                <span>🛑 Mínimo requerido: <strong>${recovery.hoursRequired}h</strong></span>
+                <span class="recovery-lacking">Faltan descansar: <strong>${recovery.hoursRemaining}h</strong></span>
+              </div>
+            </div>
+          </div>
+        `;
+        if (btnConfirm) {
+          btnConfirm.disabled = true;
+          btnConfirm.classList.add('btn-blocked');
+          btnConfirm.textContent = '⛔ Movimiento Bloqueado (Falta Descanso)';
+        }
+        if (moveDesc) {
+          moveDesc.textContent = 'Este grupo muscular no puede moverse hoy porque aún no ha completado el descanso biomecánico necesario.';
+        }
+      } else {
+        recoveryAlert.innerHTML = `
+          <div class="recovery-status-badge is-ready">
+            <span class="recovery-status-icon">✓</span>
+            <div>
+              <strong class="recovery-status-title">RECUPERACIÓN BIOMECÁNICA COMPLETA</strong>
+              <p class="recovery-status-desc">${recovery.reason}</p>
+              <div class="recovery-metrics-row">
+                <span>⏱️ Descanso completado: <strong>≥ 48h</strong></span>
+                <span>💪 Músculo apto para hipertrofia</span>
+              </div>
+            </div>
+          </div>
+        `;
+        if (btnConfirm) {
+          btnConfirm.disabled = false;
+          btnConfirm.classList.remove('btn-blocked');
+          btnConfirm.textContent = '✓ Sí, Modificar y Actualizar Calendario';
+        }
+        if (moveDesc) {
+          moveDesc.textContent = '¿Deseas entrenar este grupo muscular el día de hoy?';
+        }
+      }
+    }
 
     if (typeof dialog.showModal === 'function') {
       try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
@@ -1102,6 +1313,12 @@
   function moveMuscleToCurrentDay(sourceDayId = state.selectedDay) {
     const todayId = detectDefaultDay();
     if (sourceDayId === todayId) return false;
+
+    const recovery = evaluateMuscleRecoveryForMove(sourceDayId);
+    if (!recovery.canMove) {
+      showCelebrationToast(`⛔ Bloqueado: ${recovery.reason}`);
+      return false;
+    }
 
     const activeTrainingDays = DAYS_ORDER.filter(k => !isRestDay(k));
     const freshSchedule = deepClone(state.schedule);
@@ -2044,8 +2261,11 @@
         (acc, ex) => acc + (ex.completedSets || []).filter(Boolean).length,
         0
       );
-      if (dayTotalSets > 0 && dayDoneSets === dayTotalSets) {
-        btn.classList.add('is-completed');
+      const isCompleted = isDayCompleted(dayKey) || (dayTotalSets > 0 && dayDoneSets === dayTotalSets);
+      if (isCompleted) {
+        btn.classList.add('is-completed', 'is-culminated-red');
+      } else {
+        btn.classList.remove('is-completed', 'is-culminated-red');
       }
 
       const shortSpan = document.createElement('span');
@@ -3627,8 +3847,8 @@
       } else {
         for (const item of state.history) {
           const li = document.createElement('li');
-          li.className = 'history-item';
-          const dateStr = new Date(item.dateISO).toLocaleDateString('es-PE', {
+          li.className = `history-item ${item.status === 'completed' ? 'is-completed-session' : 'is-truncated-session'}`;
+          const dateStr = item.formattedDate || new Date(item.dateISO).toLocaleDateString('es-PE', {
             day: '2-digit',
             month: 'short',
             hour: '2-digit',
@@ -3636,14 +3856,22 @@
           });
           const durBadge = item.durationText ? ` · ⏱️ ${item.durationText}` : '';
           const noteLine = item.sessionNote ? `<div><small>📝 ${item.sessionNote}</small></div>` : '';
+          const statusBadge = item.status === 'completed'
+            ? '<span class="history-badge-completed">✓ Culminado</span>'
+            : '<span class="history-badge-truncated">⚠️ Truncado</span>';
+
           li.innerHTML = `
             <div>
-              <strong>${item.dayName}: ${item.title}</strong>
-              <div><small>${dateStr}${durBadge}</small></div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong>${item.dayName}: ${item.title}</strong>
+                ${statusBadge}
+              </div>
+              <div><small>📅 ${dateStr}${durBadge}</small></div>
               ${noteLine}
             </div>
-            <div>
-              <strong>${item.setsDone}/${item.setsPlanned} series</strong> · <span>${item.volumeKg} kg</span>
+            <div style="text-align: right;">
+              <strong style="color: #ef4444;">${item.setsDone}/${item.setsPlanned} series (${item.completionRate || '100%'})</strong>
+              <div><span>🏋️ ${item.volumeKg} kg</span> · <small>${item.totalRepsDone || 0} reps</small></div>
             </div>
           `;
           historyList.appendChild(li);
@@ -3668,14 +3896,25 @@
       const strong = document.createElement('strong');
       strong.textContent = day.dayName;
 
+      const completed = isDayCompleted(dayKey);
+      if (completed) {
+        card.classList.add('is-completed', 'is-culminated-red');
+      }
+
       const statusSpan = document.createElement('span');
       statusSpan.className = 'matrix-day-status';
+      if (completed) {
+        statusSpan.classList.add('is-culminated-red-badge');
+      }
+
       statusSpan.textContent =
         day.status === 'skipped_to_sunday'
           ? 'Movido a Dom'
-          : day.exercises.length === 0
-            ? 'Descanso'
-            : `${day.exercises.length} ejercicios`;
+          : completed
+            ? '✓ Culminado'
+            : day.exercises.length === 0
+              ? 'Descanso'
+              : `${day.exercises.length} ejercicios`;
 
       header.append(strong, statusSpan);
 
@@ -6147,6 +6386,11 @@
 
     // Modal de Confirmación de Mover Músculo al Día de Hoy
     document.getElementById('btn-confirm-move-muscle')?.addEventListener('click', () => {
+      const recovery = evaluateMuscleRecoveryForMove(state.selectedDay);
+      if (!recovery.canMove) {
+        showCelebrationToast(`⛔ ${recovery.reason}`);
+        return;
+      }
       moveMuscleToCurrentDay(state.selectedDay);
       closeMoveMuscleDialog();
     });
@@ -6853,6 +7097,7 @@
     openMoveMuscleDialog,
     closeMoveMuscleDialog,
     moveMuscleToCurrentDay,
+    evaluateMuscleRecoveryForMove,
     // APIs Gestión y Recálculo Dominical con Control Biomecánico
     calculateSundayRecoveryOptions,
     openSundayRecoveryDialog,
