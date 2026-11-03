@@ -2496,8 +2496,120 @@ app.closeMoveMuscleDialog();
 // 53.5 Verificación absoluta de CERO etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con 0% <svg>');
 
+// ==========================================
+// SUITE 54: Motor de Distribución Semanal Armónica y Explosión de Pesas
+// ==========================================
+console.log('Ejecutando Suite 54: Motor de Distribución Semanal Armónica y Explosión de Pesas...');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 53 Suites de pruebas pasaron con éxito.');
+
+// 54.1 Obtención del catálogo canónico de rutinas
+assert.equal(typeof app.getCanonicalWeeklyRoutines, 'function', 'app debe exponer getCanonicalWeeklyRoutines');
+assert.equal(typeof app.rebalanceWeeklyScheduleEngine, 'function', 'app debe exponer rebalanceWeeklyScheduleEngine');
+
+const canonicalRoutines = app.getCanonicalWeeklyRoutines();
+assert.ok(Array.isArray(canonicalRoutines), 'getCanonicalWeeklyRoutines debe retornar un arreglo');
+assert.equal(canonicalRoutines.length, 6, 'Para plan de 6 días, debe contener 6 rutinas canónicas maestras');
+
+// 54.2 Múltiples cambios sucesivos: 0% duplicación descontrolada (nunca 3x) y 0% grupos musculares omitidos
+// Cambio 1: Cambiar día de descanso a Miércoles
+app.recalculateWeeklySchedule({ restDayToSet: 'miercoles' });
+let sched = app.getState().schedule;
+let restDays = Object.keys(sched).filter(k => sched[k].isRestDay || (sched[k].muscleGroup && sched[k].muscleGroup.includes('descanso')));
+assert.equal(restDays.length, 1, 'Debe existir exactamente 1 día de descanso tras cambiarlo a miércoles');
+assert.equal(restDays[0], 'miercoles', 'Miércoles debe ser el nuevo día de descanso');
+assert.equal(sched.domingo.isRestDay, false, 'Domingo debe haber sido activado como día de entrenamiento');
+assert.ok(sched.domingo.exercises.length > 0, 'Domingo debe tener ejercicios asignados');
+
+// Cambio 2: Mover músculo descansado a día actual (simulado en jueves)
+app.setSimulatedDay('jueves');
+app.selectDay('jueves');
+const moveRes54 = app.moveMuscleToCurrentDay('martes');
+assert.equal(moveRes54, true, 'Debe permitir mover el músculo de martes a jueves');
+sched = app.getState().schedule;
+assert.ok(sched.jueves.muscleGroup.includes('Pecho') || sched.jueves.muscleGroup.includes('Tríceps'), 'Jueves ahora debe tener la rutina trasladada de Martes');
+
+// Cambio 3: Proteger día culminado y cambiar día de descanso a Viernes
+// Culminar la sesión del Jueves
+for (const ex of sched.jueves.exercises) {
+  ex.completedSets = Array.from({ length: Number(ex.sets) || 4 }, () => true);
+}
+app.logCurrentWorkoutSession({ customNote: 'Sesión jueves culminada' });
+const juevesMuscleProtected = sched.jueves.muscleGroup;
+
+// Cambiar día de descanso a Viernes
+app.recalculateWeeklySchedule({ restDayToSet: 'viernes' });
+sched = app.getState().schedule;
+
+// Verificar que Jueves (culminado) se mantuvo 100% protegido
+assert.equal(sched.jueves.muscleGroup, juevesMuscleProtected, 'El día culminado (jueves) no debe ser alterado por el recálculo');
+
+// Contar apariciones de grupos musculares en toda la semana
+const muscleCounts = {};
+for (const dKey of ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']) {
+  const d = sched[dKey];
+  if (!d.isRestDay && !d.muscleGroup.includes('descanso')) {
+    const group = d.muscleGroup.trim();
+    muscleCounts[group] = (muscleCounts[group] || 0) + 1;
+    // Ningún grupo muscular debe repetirse 3 veces en la semana
+    assert.ok(muscleCounts[group] <= 2, `El grupo muscular "${group}" no debe repetirse 3 veces (actual: ${muscleCounts[group]})`);
+  }
+}
+
+// Verificar que no se perdió ningún grupo muscular esencial del catálogo canónico
+canonicalRoutines.forEach(cr => {
+  const isCovered = Object.keys(sched).some(k => {
+    const d = sched[k];
+    return !d.isRestDay && (d.muscleGroup === cr.muscleGroup || d.title.includes(cr.title.split(' ')[0]));
+  });
+  assert.ok(isCovered, `La rutina canónica "${cr.title}" debe estar cubierta en la semana tras los cambios`);
+});
+
+// Cambio 4: Ajuste de días con 5 días por semana (debe fijar estrictamente 2 días de descanso)
+app.getState().userProfile.daysPerWeek = 5;
+app.recalculateWeeklySchedule();
+sched = app.getState().schedule;
+restDays = Object.keys(sched).filter(k => sched[k].isRestDay || (sched[k].muscleGroup && sched[k].muscleGroup.includes('descanso')));
+assert.equal(restDays.length, 2, 'Para 5 días de entrenamiento por semana, debe haber estrictamente 2 días de descanso (7 - 5 = 2)');
+
+// 54.3 Verificación de la Explosión de Pesas de Gimnasio
+app.playScheduleRecalcAnimation();
+
+const fxWeightsOrigin = doc.querySelector('.fx-weights-explosion-origin');
+assert.ok(fxWeightsOrigin, 'Debe generarse el ancla .fx-weights-explosion-origin para la animación de pesas');
+
+const weightItems = fxWeightsOrigin.querySelectorAll('.fx-weight-item');
+assert.ok(weightItems.length >= 12, 'Debe generar al menos 12 elementos de pesas');
+
+const plates = fxWeightsOrigin.querySelectorAll('.fx-weight-item.fx-plate');
+assert.ok(plates.length >= 4, 'Debe generar discos olímpicos con clase .fx-plate');
+const plateSample = plates[0];
+assert.ok(plateSample.textContent.includes('KG'), 'Los discos olímpicos deben mostrar texto de peso en KG');
+
+const dumbbells = fxWeightsOrigin.querySelectorAll('.fx-weight-item.fx-dumbbell');
+assert.ok(dumbbells.length >= 4, 'Debe generar mancuernas con clase .fx-dumbbell');
+
+const kettlebells = fxWeightsOrigin.querySelectorAll('.fx-weight-item.fx-kettlebell');
+assert.ok(kettlebells.length >= 2, 'Debe generar pesas rusas con clase .fx-kettlebell');
+
+// Verificar propiedades dinámicas de física balística y giro 360°
+const firstWeight = weightItems[0];
+assert.ok(firstWeight.style.getPropertyValue('--dest-x'), 'El ítem de pesa debe definir --dest-x');
+assert.ok(firstWeight.style.getPropertyValue('--dest-y'), 'El ítem de pesa debe definir --dest-y');
+assert.ok(firstWeight.style.getPropertyValue('--spin-deg'), 'El ítem de pesa debe definir rotación --spin-deg');
+assert.ok(firstWeight.style.getPropertyValue('--weight-dur'), 'El ítem de pesa debe definir duración --weight-dur');
+
+// Verificar reglas en styles.css para la explosión de pesas
+assert.ok(cssContent.includes('.fx-weight-item'), 'styles.css debe definir .fx-weight-item');
+assert.ok(cssContent.includes('weightExplosionFly'), 'styles.css debe definir @keyframes weightExplosionFly');
+assert.ok(cssContent.includes('.fx-weight-item.fx-plate'), 'styles.css debe definir .fx-plate');
+assert.ok(cssContent.includes('.fx-weight-item.fx-dumbbell'), 'styles.css debe definir .fx-dumbbell');
+
+// 54.4 Verificación absoluta de CERO etiquetas SVG en el DOM
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con 0% <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 54 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

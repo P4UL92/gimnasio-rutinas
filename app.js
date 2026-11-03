@@ -1320,53 +1320,13 @@
       return false;
     }
 
-    const activeTrainingDays = DAYS_ORDER.filter(k => !isRestDay(k));
-    const freshSchedule = deepClone(state.schedule);
-
-    if (activeTrainingDays.includes(sourceDayId) && activeTrainingDays.includes(todayId)) {
-      const srcIdx = activeTrainingDays.indexOf(sourceDayId);
-      const dstIdx = activeTrainingDays.indexOf(todayId);
-      const offset = (srcIdx - dstIdx + activeTrainingDays.length) % activeTrainingDays.length;
-
-      activeTrainingDays.forEach((dKey, i) => {
-        const fromKey = activeTrainingDays[(i + offset) % activeTrainingDays.length];
-        const donor = freshSchedule[fromKey];
-        state.schedule[dKey] = {
-          ...state.schedule[dKey],
-          muscleGroup: donor.muscleGroup,
-          title: donor.title,
-          subtitle: donor.subtitle,
-          accentHue: donor.accentHue,
-          exercises: deepClone(donor.exercises).map(ex => ({
-            ...ex,
-            completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
-          }))
-        };
-      });
-    } else {
-      const srcIdx = DAYS_ORDER.indexOf(sourceDayId);
-      const dstIdx = DAYS_ORDER.indexOf(todayId);
-      const offset = (srcIdx - dstIdx + DAYS_ORDER.length) % DAYS_ORDER.length;
-
-      DAYS_ORDER.forEach((dKey, i) => {
-        const fromKey = DAYS_ORDER[(i + offset) % DAYS_ORDER.length];
-        const donor = freshSchedule[fromKey];
-        state.schedule[dKey] = {
-          ...state.schedule[dKey],
-          muscleGroup: donor.muscleGroup,
-          title: donor.title,
-          subtitle: donor.subtitle,
-          accentHue: donor.accentHue,
-          exercises: deepClone(donor.exercises).map(ex => ({
-            ...ex,
-            completedSets: Array.from({ length: Number(ex.sets) || 4 }, () => false)
-          }))
-        };
-      });
-    }
+    rebalanceWeeklyScheduleEngine({
+      movedSourceDayId: sourceDayId,
+      movedTargetDayId: todayId,
+      action: 'move_muscle'
+    });
 
     state.selectedDay = todayId;
-    enforceRestDaysCount();
     saveState();
     renderAll();
     playScheduleRecalcAnimation();
@@ -1385,15 +1345,15 @@
     const currentRestDayKeys = DAYS_ORDER.filter(isRestDay);
     if (currentRestDayKeys.length > targetRestDays) {
       const surplusCount = currentRestDayKeys.length - targetRestDays;
-      const baseSchedule = (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function')
-        ? GYM_VISUALS.generatePersonalizedSchedule(state.userProfile || {}, GYM_DATA.INITIAL_SCHEDULE)
-        : GYM_DATA.INITIAL_SCHEDULE;
+      const masterRoutines = getCanonicalWeeklyRoutines();
+      const activeTitles = new Set(DAYS_ORDER.filter(k => !isRestDay(k)).map(k => state.schedule[k].title));
+      const unusedRoutines = masterRoutines.filter(r => !activeTitles.has(r.title));
 
       for (let i = 0; i < surplusCount; i++) {
         const dayToRestore = currentRestDayKeys[i];
-        const baseDay = baseSchedule[dayToRestore] || GYM_DATA.INITIAL_SCHEDULE[dayToRestore];
-        if (baseDay && baseDay.exercises && baseDay.exercises.length > 0) {
-          assignRoutineToDay(state.schedule[dayToRestore], baseDay, false);
+        const routineToAssign = unusedRoutines[i] || masterRoutines[i % masterRoutines.length];
+        if (routineToAssign) {
+          assignRoutineToDay(state.schedule[dayToRestore], routineToAssign, false);
         }
       }
     }
@@ -1418,7 +1378,8 @@
     const container = document.getElementById('schedule-fx-container');
     if (!container) return;
 
-    triggerHaptic([35, 45, 55, 35, 60]);
+    triggerHaptic([45, 65, 80, 50, 95]);
+    playCompletionTone();
 
     const tabsList = document.getElementById('day-tabs-list');
     if (tabsList) {
@@ -1427,13 +1388,14 @@
       tabsList.classList.add('is-schedule-animating');
       setTimeout(() => {
         tabsList.classList.remove('is-schedule-animating');
-      }, 1250);
+      }, 1300);
     }
 
     const anchor = document.createElement('div');
-    anchor.className = 'fx-origin-anchor';
+    anchor.className = 'fx-origin-anchor fx-weights-explosion-origin';
 
-    const ringColors = ['#34d399', '#38bdf8'];
+    // 1. Anillos de choque de fuerza metálica y energía
+    const ringColors = ['#f59e0b', '#38bdf8', '#ef4444', '#34d399'];
     ringColors.forEach(color => {
       const ring = document.createElement('div');
       ring.className = 'fx-energy-ring';
@@ -1441,50 +1403,72 @@
       anchor.appendChild(ring);
     });
 
-    const neonColors = ['#34d399', '#38bdf8', '#fbbf24', '#f43f5e', '#a855f7', '#06b6d4', '#f97316', '#4ade80'];
-    const sparkCount = 18;
+    // 2. EXPLOSIÓN DE PESAS DE GIMNASIO (Mancuernas, Discos Olímpicos y Pesas Rusas en 360°)
+    const weightDefs = [
+      { type: 'fx-dumbbell', symbol: '🏋️', size: 44, glow: 'rgba(56, 189, 248, 0.9)' },
+      { type: 'fx-plate', text: '20KG', size: 42, glow: 'rgba(245, 158, 11, 0.9)' },
+      { type: 'fx-kettlebell', symbol: '🪨', size: 40, glow: 'rgba(239, 68, 68, 0.85)' },
+      { type: 'fx-dumbbell', symbol: '🦾', size: 42, glow: 'rgba(52, 211, 153, 0.85)' },
+      { type: 'fx-plate', text: '25KG', size: 46, glow: 'rgba(245, 158, 11, 0.95)' },
+      { type: 'fx-plate', text: '15KG', size: 38, glow: 'rgba(251, 191, 36, 0.85)' },
+      { type: 'fx-dumbbell', symbol: '🏋️‍♂️', size: 44, glow: 'rgba(168, 85, 247, 0.85)' },
+      { type: 'fx-plate', text: '10KG', size: 34, glow: 'rgba(245, 158, 11, 0.8)' }
+    ];
+
+    const totalWeights = 16;
+    for (let i = 0; i < totalWeights; i++) {
+      const wDef = weightDefs[i % weightDefs.length];
+      const item = document.createElement('div');
+      item.className = `fx-weight-item ${wDef.type}`;
+      if (wDef.text) {
+        item.textContent = wDef.text;
+      } else {
+        item.textContent = wDef.symbol;
+      }
+
+      const angle = (i / totalWeights) * 2 * Math.PI + (Math.random() * 0.25 - 0.12);
+      const distance = 110 + Math.random() * 160;
+      const destX = Math.round(Math.cos(angle) * distance);
+      const destY = Math.round(Math.sin(angle) * distance) - 20;
+      const spinDeg = Math.round((Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360));
+      const dur = (0.95 + Math.random() * 0.45).toFixed(2);
+
+      item.style.setProperty('--dest-x', `${destX}px`);
+      item.style.setProperty('--dest-y', `${destY}px`);
+      item.style.setProperty('--spin-deg', `${spinDeg}deg`);
+      item.style.setProperty('--weight-size', `${wDef.size}px`);
+      item.style.setProperty('--weight-glow', wDef.glow);
+      item.style.setProperty('--weight-dur', `${dur}s`);
+
+      anchor.appendChild(item);
+    }
+
+    // 3. Chispas doradas de impacto
+    const sparkCount = 14;
     for (let i = 0; i < sparkCount; i++) {
       const spark = document.createElement('div');
       spark.className = 'fx-firework-spark';
-      const angle = (i / sparkCount) * 2 * Math.PI + (Math.random() * 0.2 - 0.1);
-      const dist = 90 + Math.random() * 160;
-      const destX = Math.round(Math.cos(angle) * dist);
-      const destY = Math.round(Math.sin(angle) * dist);
-      const color = neonColors[i % neonColors.length];
-      const size = 6 + Math.floor(Math.random() * 6);
-      const dur = (0.75 + Math.random() * 0.45).toFixed(2);
-
-      spark.style.setProperty('--dest-x', `${destX}px`);
-      spark.style.setProperty('--dest-y', `${destY}px`);
-      spark.style.setProperty('--spark-color', color);
-      spark.style.setProperty('--spark-size', `${size}px`);
-      spark.style.setProperty('--spark-dur', `${dur}s`);
+      const angle = (i / sparkCount) * 2 * Math.PI;
+      const dist = 70 + Math.random() * 130;
+      spark.style.setProperty('--dest-x', `${Math.round(Math.cos(angle) * dist)}px`);
+      spark.style.setProperty('--dest-y', `${Math.round(Math.sin(angle) * dist)}px`);
+      spark.style.setProperty('--spark-color', '#fbbf24');
+      spark.style.setProperty('--spark-size', `${7 + Math.floor(Math.random() * 6)}px`);
+      spark.style.setProperty('--spark-dur', `${(0.7 + Math.random() * 0.4).toFixed(2)}s`);
       anchor.appendChild(spark);
     }
 
-    const bubbleTints = [
-      'rgba(56, 189, 248, 0.5)',
-      'rgba(52, 211, 153, 0.5)',
-      'rgba(251, 191, 36, 0.45)',
-      'rgba(168, 85, 247, 0.45)',
-      'rgba(244, 63, 94, 0.45)'
-    ];
-    const bubbleCount = 14;
+    // 4. Burbujas de choque de impacto
+    const bubbleCount = 10;
     for (let i = 0; i < bubbleCount; i++) {
       const bubble = document.createElement('div');
       bubble.className = 'fx-bubble';
-      const destX = Math.round((Math.random() - 0.5) * 260);
-      const destY = -Math.round(70 + Math.random() * 180);
-      const size = 18 + Math.floor(Math.random() * 18);
-      const tint = bubbleTints[i % bubbleTints.length];
-      const dur = (0.85 + Math.random() * 0.45).toFixed(2);
-
-      bubble.style.setProperty('--dest-x', `${destX}px`);
-      bubble.style.setProperty('--dest-y', `${destY}px`);
-      bubble.style.setProperty('--bubble-tint', tint);
-      bubble.style.setProperty('--bubble-glow', tint);
-      bubble.style.setProperty('--bubble-size', `${size}px`);
-      bubble.style.setProperty('--bubble-dur', `${dur}s`);
+      bubble.style.setProperty('--dest-x', `${Math.round((Math.random() - 0.5) * 220)}px`);
+      bubble.style.setProperty('--dest-y', `${-Math.round(60 + Math.random() * 140)}px`);
+      bubble.style.setProperty('--bubble-tint', 'rgba(245, 158, 11, 0.5)');
+      bubble.style.setProperty('--bubble-glow', 'rgba(245, 158, 11, 0.7)');
+      bubble.style.setProperty('--bubble-size', `${20 + Math.floor(Math.random() * 16)}px`);
+      bubble.style.setProperty('--bubble-dur', `${(0.85 + Math.random() * 0.4).toFixed(2)}s`);
       anchor.appendChild(bubble);
     }
 
@@ -1494,119 +1478,193 @@
       if (anchor.parentNode === container) {
         container.removeChild(anchor);
       }
-    }, 1300);
+    }, 1450);
   }
 
-  function recalculateWeeklySchedule(options = {}) {
+  // =========================================================================
+  // MOTOR DE DISTRIBUCIÓN SEMANAL ARMÓNICA Y BIOMECÁNICA (HARMONIC GYM ENGINE)
+  // =========================================================================
+
+  function getCanonicalWeeklyRoutines() {
     const targetTrainingDays = Number(state.userProfile?.daysPerWeek) || 6;
-    const targetRestDays = Math.max(1, 7 - targetTrainingDays);
-    const restDayToSet = options.restDayToSet || null;
+    const baseSchedule = (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function')
+      ? GYM_VISUALS.generatePersonalizedSchedule(state.userProfile || {}, GYM_DATA.INITIAL_SCHEDULE)
+      : GYM_DATA.INITIAL_SCHEDULE;
 
-    const currentSchedule = deepClone(state.schedule);
+    const routines = [];
+    const seenTitles = new Set();
 
-    // 1. Extraer las rutinas de entrenamiento existentes para preservarlas
-    const preservedRoutines = [];
     for (const k of DAYS_ORDER) {
-      const d = currentSchedule[k];
-      if (d && d.exercises && d.exercises.length > 0 && d.muscleGroup && !d.muscleGroup.includes('Día de descanso')) {
-        preservedRoutines.push({
-          title: d.title.replace(/\s*\(Recorrido.*?\)/g, '').replace(/\s*\(Reprogramado.*?\)/g, '').replace(/\s*\(Recuperado.*?\)/g, '').trim(),
-          subtitle: d.subtitle || '',
-          muscleGroup: d.muscleGroup,
-          accentHue: d.accentHue || 160,
-          estimatedMinutes: d.estimatedMinutes || 55,
-          exercises: deepClone(d.exercises)
-        });
+      const d = baseSchedule[k];
+      if (d && Array.isArray(d.exercises) && d.exercises.length > 0 && !d.muscleGroup.includes('Día de descanso')) {
+        const cleanTitle = d.title.replace(/\s*\(Recorrido.*?\)/g, '').replace(/\s*\(Reprogramado.*?\)/g, '').replace(/\s*\(Recuperado.*?\)/g, '').trim();
+        if (!seenTitles.has(cleanTitle)) {
+          seenTitles.add(cleanTitle);
+          routines.push({
+            canonicalDayKey: k,
+            title: cleanTitle,
+            subtitle: d.subtitle || '',
+            muscleGroup: d.muscleGroup,
+            accentHue: d.accentHue || 160,
+            estimatedMinutes: d.estimatedMinutes || 55,
+            exercises: deepClone(d.exercises)
+          });
+          if (routines.length >= targetTrainingDays) break;
+        }
       }
     }
 
-    if (preservedRoutines.length < targetTrainingDays) {
-      const baseSchedule = (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function')
-        ? GYM_VISUALS.generatePersonalizedSchedule(state.userProfile || {}, GYM_DATA.INITIAL_SCHEDULE)
-        : GYM_DATA.INITIAL_SCHEDULE;
-
+    if (routines.length < targetTrainingDays) {
       for (const k of DAYS_ORDER) {
-        if (preservedRoutines.length >= targetTrainingDays) break;
-        const baseDay = baseSchedule[k];
-        if (baseDay && baseDay.exercises && baseDay.exercises.length > 0 && !baseDay.muscleGroup.includes('Día de descanso')) {
-          const alreadyIn = preservedRoutines.some(r => r.muscleGroup === baseDay.muscleGroup || r.title === baseDay.title);
-          if (!alreadyIn) {
-            preservedRoutines.push({
-              title: baseDay.title,
-              subtitle: baseDay.subtitle || '',
-              muscleGroup: baseDay.muscleGroup,
-              accentHue: baseDay.accentHue || 160,
-              estimatedMinutes: baseDay.estimatedMinutes || 55,
-              exercises: deepClone(baseDay.exercises)
+        if (routines.length >= targetTrainingDays) break;
+        const d = GYM_DATA.INITIAL_SCHEDULE[k];
+        if (d && Array.isArray(d.exercises) && d.exercises.length > 0 && !d.muscleGroup.includes('Día de descanso')) {
+          const cleanTitle = d.title.trim();
+          if (!seenTitles.has(cleanTitle)) {
+            seenTitles.add(cleanTitle);
+            routines.push({
+              canonicalDayKey: k,
+              title: cleanTitle,
+              subtitle: d.subtitle || '',
+              muscleGroup: d.muscleGroup,
+              accentHue: d.accentHue || 160,
+              estimatedMinutes: d.estimatedMinutes || 55,
+              exercises: deepClone(d.exercises)
             });
           }
         }
       }
     }
 
-    const trainingRoutinesToAssign = preservedRoutines.slice(0, targetTrainingDays);
+    return routines;
+  }
 
-    // 2. Determinar días de descanso estrictos (NUNCA más de targetRestDays)
-    let newRestDayKeys = [];
+  function rebalanceWeeklyScheduleEngine(options = {}) {
+    const targetTrainingDays = Number(state.userProfile?.daysPerWeek) || 6;
+    const targetRestDays = Math.max(1, 7 - targetTrainingDays);
+    const restDayToSet = options.restDayToSet || null;
+    const movedSourceDayId = options.movedSourceDayId || null;
+    const movedTargetDayId = options.movedTargetDayId || null;
+
+    // 1. Obtener el catálogo canónico completo de rutinas planificadas
+    const masterRoutines = getCanonicalWeeklyRoutines();
+
+    // 2. Determinar días estrictos de descanso
+    let finalRestDayKeys = [];
     if (restDayToSet && DAYS_ORDER.includes(restDayToSet)) {
-      newRestDayKeys.push(restDayToSet);
+      finalRestDayKeys.push(restDayToSet);
     }
 
-    const previousRestKeys = DAYS_ORDER.filter(k => isRestDay(k) && k !== restDayToSet);
-    for (const k of previousRestKeys) {
-      if (newRestDayKeys.length < targetRestDays) {
-        newRestDayKeys.push(k);
+    // Si se traslada una rutina a un día que actualmente es de descanso, ese día se convierte en día activo de entrenamiento
+    // y el día origen toma su lugar como descanso para preservar estrictamente los días de descanso fijados
+    if (movedSourceDayId && movedTargetDayId && isRestDay(movedTargetDayId)) {
+      if (!finalRestDayKeys.includes(movedSourceDayId)) {
+        finalRestDayKeys.push(movedSourceDayId);
       }
     }
 
-    if (newRestDayKeys.length < targetRestDays) {
+    const previousRestKeys = DAYS_ORDER.filter(k => isRestDay(k) && k !== restDayToSet && k !== movedTargetDayId);
+    for (const k of previousRestKeys) {
+      if (finalRestDayKeys.length < targetRestDays && !finalRestDayKeys.includes(k)) {
+        finalRestDayKeys.push(k);
+      }
+    }
+
+    if (finalRestDayKeys.length < targetRestDays) {
       for (let i = DAYS_ORDER.length - 1; i >= 0; i--) {
         const k = DAYS_ORDER[i];
-        if (!newRestDayKeys.includes(k)) {
-          newRestDayKeys.push(k);
-          if (newRestDayKeys.length >= targetRestDays) break;
+        if (!finalRestDayKeys.includes(k) && k !== movedTargetDayId) {
+          finalRestDayKeys.push(k);
+          if (finalRestDayKeys.length >= targetRestDays) break;
         }
       }
     }
 
-    if (newRestDayKeys.length > targetRestDays) {
-      newRestDayKeys = newRestDayKeys.slice(0, targetRestDays);
+    if (finalRestDayKeys.length > targetRestDays) {
+      finalRestDayKeys = finalRestDayKeys.slice(0, targetRestDays);
     }
 
-    // 3. Días de entrenamiento activos
-    const newTrainingDayKeys = DAYS_ORDER.filter(k => !newRestDayKeys.includes(k));
+    const activeTrainingDayKeys = DAYS_ORDER.filter(k => !finalRestDayKeys.includes(k));
 
-    // 4. Distribuir las rutinas ordenadamente entre los días de entrenamiento
+    // 3. Asignación de rutinas respetando días culminados y evitando duplicados
+    const planAssignment = {};
+    const usedIndices = new Set();
+
+    // A. Días culminados: Bloqueados y protegidos al 100%
+    for (const dKey of activeTrainingDayKeys) {
+      if (isDayCompleted(dKey)) {
+        const currentDay = state.schedule[dKey];
+        planAssignment[dKey] = {
+          title: currentDay.title,
+          subtitle: currentDay.subtitle,
+          muscleGroup: currentDay.muscleGroup,
+          accentHue: currentDay.accentHue,
+          estimatedMinutes: currentDay.estimatedMinutes,
+          exercises: deepClone(currentDay.exercises),
+          isLocked: true
+        };
+        const matchIdx = masterRoutines.findIndex((r, idx) => !usedIndices.has(idx) && (
+          r.canonicalDayKey === dKey ||
+          r.muscleGroup === currentDay.muscleGroup ||
+          r.title === currentDay.title
+        ));
+        if (matchIdx !== -1) usedIndices.add(matchIdx);
+      }
+    }
+
+    // B. Rutina movida explícitamente
+    if (movedSourceDayId && movedTargetDayId && activeTrainingDayKeys.includes(movedTargetDayId)) {
+      if (!planAssignment[movedTargetDayId]) {
+        const sourceRoutine = masterRoutines.find((r, idx) => !usedIndices.has(idx) && r.canonicalDayKey === movedSourceDayId) ||
+          state.schedule[movedSourceDayId] ||
+          masterRoutines.find((r, idx) => !usedIndices.has(idx));
+
+        if (sourceRoutine) {
+          planAssignment[movedTargetDayId] = {
+            title: sourceRoutine.title,
+            subtitle: sourceRoutine.subtitle,
+            muscleGroup: sourceRoutine.muscleGroup,
+            accentHue: sourceRoutine.accentHue,
+            estimatedMinutes: sourceRoutine.estimatedMinutes,
+            exercises: deepClone(sourceRoutine.exercises),
+            isLocked: false
+          };
+          const matchIdx = masterRoutines.findIndex((r, idx) => !usedIndices.has(idx) && (
+            r.canonicalDayKey === movedSourceDayId ||
+            r.muscleGroup === sourceRoutine.muscleGroup ||
+            r.title === sourceRoutine.title
+          ));
+          if (matchIdx !== -1) usedIndices.add(matchIdx);
+        }
+      }
+    }
+
+    // C. Rutinas maestras restantes que aún no han sido asignadas
+    const unassignedRoutines = masterRoutines.filter((r, idx) => !usedIndices.has(idx));
+    const unassignedDayKeys = activeTrainingDayKeys.filter(dKey => !planAssignment[dKey]);
+
+    // D. Distribución armónica continua
     if (restDayToSet) {
       const restDayIndex = DAYS_ORDER.indexOf(restDayToSet);
-      const daysBefore = newTrainingDayKeys.filter(k => DAYS_ORDER.indexOf(k) < restDayIndex);
-      const daysAfter = newTrainingDayKeys.filter(k => DAYS_ORDER.indexOf(k) > restDayIndex);
+      const daysBeforeRest = unassignedDayKeys.filter(k => DAYS_ORDER.indexOf(k) < restDayIndex);
+      const daysAfterRest = unassignedDayKeys.filter(k => DAYS_ORDER.indexOf(k) > restDayIndex);
 
-      daysBefore.forEach((dKey, idx) => {
-        const routine = trainingRoutinesToAssign[idx];
-        if (routine) {
-          assignRoutineToDay(state.schedule[dKey], routine, false);
-        }
+      daysBeforeRest.forEach((dKey, idx) => {
+        planAssignment[dKey] = unassignedRoutines[idx] || masterRoutines[idx % masterRoutines.length];
       });
 
-      const remainingRoutines = trainingRoutinesToAssign.slice(daysBefore.length);
-      daysAfter.forEach((dKey, idx) => {
-        const routine = remainingRoutines[idx];
-        if (routine) {
-          assignRoutineToDay(state.schedule[dKey], routine, true);
-        }
+      const remainingAfter = unassignedRoutines.slice(daysBeforeRest.length);
+      daysAfterRest.forEach((dKey, idx) => {
+        planAssignment[dKey] = remainingAfter[idx] || masterRoutines[idx % masterRoutines.length];
       });
     } else {
-      newTrainingDayKeys.forEach((dKey, idx) => {
-        const routine = trainingRoutinesToAssign[idx];
-        if (routine) {
-          assignRoutineToDay(state.schedule[dKey], routine, false);
-        }
+      unassignedDayKeys.forEach((dKey, idx) => {
+        planAssignment[dKey] = unassignedRoutines[idx] || masterRoutines[idx % masterRoutines.length];
       });
     }
 
-    // 5. Configurar los días de descanso estrictos
-    newRestDayKeys.forEach(restKey => {
+    // E. Aplicar a state.schedule
+    finalRestDayKeys.forEach(restKey => {
       const d = state.schedule[restKey];
       if (d) {
         d.title = '🌿 Día de descanso';
@@ -1620,10 +1678,24 @@
       }
     });
 
-    enforceRestDaysCount();
+    activeTrainingDayKeys.forEach(dKey => {
+      const routine = planAssignment[dKey];
+      if (routine && !isDayCompleted(dKey)) {
+        assignRoutineToDay(state.schedule[dKey], routine, Boolean(restDayToSet || movedSourceDayId));
+      }
+    });
 
-    if (restDayToSet) {
-      state.selectedDay = restDayToSet;
+    return {
+      finalRestDayKeys,
+      activeTrainingDayKeys
+    };
+  }
+
+  function recalculateWeeklySchedule(options = {}) {
+    const result = rebalanceWeeklyScheduleEngine(options);
+
+    if (options.restDayToSet) {
+      state.selectedDay = options.restDayToSet;
     }
 
     saveState();
@@ -1631,9 +1703,9 @@
     playScheduleRecalcAnimation();
 
     if (options.reason === 'user_switch_rest_today') {
-      showCelebrationToast('🌿 Día de descanso asignado a hoy. Horarios y días de entrenamiento recalculados.');
+      showCelebrationToast('🌿 Día de descanso asignado a hoy. Horarios y días de entrenamiento recalculados con explosión de fuerza.');
     } else {
-      showCelebrationToast('⚡ Días de entrenamiento recalculados con descanso óptimo.');
+      showCelebrationToast('⚡ Días de entrenamiento recalculados armónicamente sin repetir músculos.');
     }
 
     return true;
@@ -7123,6 +7195,8 @@
     openSwitchRestConfirmDialog,
     closeSwitchRestConfirmDialog,
     recalculateWeeklySchedule,
+    rebalanceWeeklyScheduleEngine,
+    getCanonicalWeeklyRoutines,
     enforceRestDaysCount,
     playScheduleRecalcAnimation,
     setSimulatedDay: (dayId) => { simulatedDay = dayId; }

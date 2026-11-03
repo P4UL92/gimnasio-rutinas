@@ -7428,6 +7428,70 @@ details.anatomy-collapsible[open] > summary::after {
   height: 0;
 }
 
+/* =========================================================================
+   EXPLOSIÓN DE PESAS DE GIMNASIO (MANCUERNAS, DISCOS Y PESAS RUSAS)
+   0% SVG - 100% CSS PURO CON FÍSICA BALÍSTICA Y ACELERACIÓN GPU
+   ========================================================================= */
+
+.fx-weight-item {
+  position: absolute;
+  top: -24px;
+  left: -24px;
+  width: var(--weight-size, 46px);
+  height: var(--weight-size, 46px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  pointer-events: none;
+  font-size: 1.85rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 14px var(--weight-glow, rgba(245, 158, 11, 0.85)));
+  animation: weightExplosionFly var(--weight-dur, 1.25s) cubic-bezier(0.12, 0.9, 0.28, 1) forwards;
+  will-change: transform, opacity;
+  z-index: 20;
+}
+
+@keyframes weightExplosionFly {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.2);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translate3d(calc(var(--dest-x, 100px) * 0.25), calc(var(--dest-y, -100px) * 0.25), 0) rotate(calc(var(--spin-deg, 360deg) * 0.2)) scale(1.35);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(calc(var(--dest-x, 100px) * 0.75), calc(var(--dest-y, -100px) * 0.75), 0) rotate(calc(var(--spin-deg, 360deg) * 0.7)) scale(1.1);
+  }
+  100% {
+    transform: translate3d(var(--dest-x, 100px), var(--dest-y, -100px), 0) rotate(var(--spin-deg, 360deg)) scale(0.75);
+    opacity: 0;
+  }
+}
+
+.fx-weight-item.fx-plate {
+  border-radius: 50%;
+  background: radial-gradient(circle, #334155 25%, #1e293b 65%, #0f172a 100%);
+  border: 3px solid #f59e0b;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.7), inset 0 0 8px rgba(0, 0, 0, 0.9);
+  color: #fbbf24;
+  font-weight: 900;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 3px #000;
+  font-family: monospace, sans-serif;
+}
+
+.fx-weight-item.fx-dumbbell {
+  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.85));
+}
+
+.fx-weight-item.fx-kettlebell {
+  filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.85));
+}
+
 .fx-firework-spark {
   position: absolute;
   width: var(--spark-size, 8px);
