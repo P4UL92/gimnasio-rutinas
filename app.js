@@ -2094,29 +2094,9 @@
 
       if (startBtn) {
         startBtn.classList.remove('is-day-completed-cta', 'btn-move-muscle-cta', 'btn-sunday-recover-cta');
-        const currentIsRest = isRestDay(currentRealDay);
-        if (currentIsRest) {
-          startBtn.style.display = '';
-          startBtn.hidden = false;
-          if (isViewingToday) {
-            if (dayCompleted) {
-              startBtn.textContent = '🏆 Ver Estadísticas del Entrenamiento';
-              startBtn.classList.add('is-day-completed-cta');
-            } else {
-              startBtn.classList.add('btn-sunday-recover-cta');
-              startBtn.textContent = 'Iniciar día de ejercicio';
-            }
-          } else {
-            startBtn.classList.add('btn-move-muscle-cta');
-            const targetDay = state.schedule[currentRealDay];
-            const targetDayName = targetDay ? targetDay.dayName : 'Hoy';
-            startBtn.textContent = `🔄 Mover entrenamiento a Hoy (${targetDayName})`;
-          }
-        } else {
-          // Solo se debe mostrar el botón cuando el día actual sea el de descanso
-          startBtn.style.display = 'none';
-          startBtn.hidden = true;
-        }
+        // En día de descanso se muestra la información básica de descanso y NUNCA el botón de iniciar ejercicio
+        startBtn.style.display = 'none';
+        startBtn.hidden = true;
       }
       return;
     }
@@ -3410,9 +3390,43 @@
         const h3 = document.createElement('h3');
         h3.textContent = '🌿 Día de descanso';
         const p = document.createElement('p');
+        p.className = 'rest-day-lead';
         p.textContent =
-          'Hoy es tu día de descanso semanal y recuperación neuromuscular. Puedes aprovechar para hidratarte y recargar energía para la semana.';
-        emptyLi.append(h3, p);
+          'Hoy es tu día de descanso semanal y recuperación neuromuscular. Puedes aprovechar para hidratarte, recargar energía y reparar tejidos musculares para la semana.';
+
+        const basicsGrid = document.createElement('div');
+        basicsGrid.className = 'rest-day-basics-grid';
+        basicsGrid.innerHTML = `
+          <div class="rest-basic-card">
+            <span class="rest-basic-icon">🔋</span>
+            <div>
+              <strong>Recuperación Neuromuscular</strong>
+              <small>Reparación de fibras musculares y síntesis proteica.</small>
+            </div>
+          </div>
+          <div class="rest-basic-card">
+            <span class="rest-basic-icon">💧</span>
+            <div>
+              <strong>Hidratación y Nutrición</strong>
+              <small>Mantén 2.5 - 3.5 L de agua e ingesta adecuada de nutrientes.</small>
+            </div>
+          </div>
+          <div class="rest-basic-card">
+            <span class="rest-basic-icon">🛌</span>
+            <div>
+              <strong>Sueño y Descanso Reparador</strong>
+              <small>7 - 9 horas de sueño para regenerar el sistema nervioso.</small>
+            </div>
+          </div>
+          <div class="rest-basic-card">
+            <span class="rest-basic-icon">🧘</span>
+            <div>
+              <strong>Movilidad y Salud Articular</strong>
+              <small>Alivia la tensión muscular y recarga energía para la siguiente sesión.</small>
+            </div>
+          </div>
+        `;
+        emptyLi.append(h3, p, basicsGrid);
       }
 
       listEl.appendChild(emptyLi);

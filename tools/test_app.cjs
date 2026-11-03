@@ -1608,13 +1608,7 @@ app.selectDay('domingo');
 
 const sundayStartBtn = doc.getElementById('btn-start-day-workout');
 assert.ok(sundayStartBtn, 'Debe existir el botón principal de inicio en domingo');
-const todayKey44 = app.detectDefaultDay();
-if (todayKey44 === 'domingo') {
-  assert.equal(sundayStartBtn.textContent.trim(), 'Iniciar día de ejercicio', 'El botón en domingo debe titular "Iniciar día de ejercicio"');
-  assert.ok(sundayStartBtn.classList.contains('btn-sunday-recover-cta'), 'El botón debe tener la clase temática .btn-sunday-recover-cta');
-} else {
-  assert.equal(sundayStartBtn.style.display, 'none', 'En día de descanso no se muestra el botón si el día actual no es de descanso');
-}
+assert.equal(sundayStartBtn.style.display, 'none', 'En día de descanso NO debe mostrarse el botón de iniciar ejercicio');
 
 // 44.2 Elementos prohibidos en Domingo: Sin opciones de día, sin mapa anatómico, sin opciones de días incrustadas
 const sundayMenu = doc.getElementById('day-secondary-menu');
@@ -2316,6 +2310,16 @@ const scheduleAfterSwitch = app.getState().schedule;
 assert.equal(scheduleAfterSwitch.martes.exercises.length, 0, 'Martes debe quedar sin ejercicios (día de descanso)');
 assert.ok(scheduleAfterSwitch.martes.title.includes('Día de descanso'), 'El título de Martes debe decir Día de descanso');
 assert.ok(scheduleAfterSwitch.martes.muscleGroup.includes('Día de descanso'), 'El grupo muscular de Martes debe ser Día de descanso');
+
+// Al volverse día de descanso, NO debe mostrar botón de iniciar ejercicio y debe mostrar la información básica de descanso
+const startBtnOnRest = doc.getElementById('btn-start-day-workout');
+assert.equal(startBtnOnRest.style.display, 'none', 'Al volverse día de descanso NO debe mostrar botón de iniciar ejercicio');
+assert.equal(startBtnOnRest.hidden, true, 'startBtn debe estar hidden en día de descanso');
+
+const restBasicsGrid = doc.querySelector('.rest-day-basics-grid');
+assert.ok(restBasicsGrid, 'Debe mostrar la información básica de un día de descanso (.rest-day-basics-grid)');
+const restBasicCards = restBasicsGrid.querySelectorAll('.rest-basic-card');
+assert.ok(restBasicCards.length >= 3, 'Debe incluir tarjetas básicas de recuperación, hidratación y sueño');
 
 // 52.6 Verificar que Domingo ahora es día de entrenamiento (no queda como descanso extra)
 assert.ok(scheduleAfterSwitch.domingo.exercises.length > 0, 'Domingo debe convertirse en día de entrenamiento');

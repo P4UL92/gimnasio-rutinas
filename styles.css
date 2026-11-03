@@ -1314,6 +1314,53 @@ body.animations-paused .phase-pill-dot {
   gap: 8px;
 }
 
+/* Información Básica de Día de Descanso (0% SVG) */
+.rest-day-basics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.rest-basic-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.rest-basic-card:hover {
+  border-color: rgba(52, 211, 153, 0.45);
+  transform: translateY(-1px);
+}
+
+.rest-basic-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rest-basic-card strong {
+  display: block;
+  font-size: 0.86rem;
+  color: #6ee7b7;
+  margin-bottom: 3px;
+}
+
+.rest-basic-card small {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
 /* Weekly Overview Accordion */
 .weekly-overview-section {
   margin-top: 20px;
