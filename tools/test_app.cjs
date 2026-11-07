@@ -2762,7 +2762,156 @@ app.closeTrophyCelebrationDialog();
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM completo debe cumplir con 0% <svg>');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 55 Suites de pruebas pasaron con éxito.');
+
+// =====================================================================
+// SUITE 56: IMÁGENES DE AVATAR EN ARTE 9-BITS ESTILIZADO DE TRAZO SUAVE,
+// PROGRESIÓN DE DEFINICIÓN MUSCULAR Y ATUENDO DE GIMNASIO
+// =====================================================================
+console.log('Ejecutando Suite 56: Imágenes de Avatar 9-Bits Estilizado, Progresión Muscular y Atuendo...');
+
+// 56.1 Existencia de Archivos Raster Generados en assets/avatars/
+const avatarsDir = path.join(__dirname, '..', 'assets', 'avatars');
+assert.ok(fs.existsSync(avatarsDir), 'El directorio assets/avatars debe existir');
+
+const requiredAvatarFiles = [
+  'avatar_male_stage1.jpg',
+  'avatar_male_stage2.jpg',
+  'avatar_male_stage3.jpg',
+  'avatar_male_stage4.jpg',
+  'avatar_male_stage5.jpg',
+  'avatar_female_stage1.jpg',
+  'avatar_female_stage2.jpg',
+  'avatar_female_stage3.jpg',
+  'avatar_female_stage4.jpg',
+  'avatar_female_stage5.jpg'
+];
+
+requiredAvatarFiles.forEach(file => {
+  const filePath = path.join(avatarsDir, file);
+  assert.ok(fs.existsSync(filePath), `Debe existir la imagen de avatar ${file}`);
+  const stats = fs.statSync(filePath);
+  assert.ok(stats.size > 20000, `La imagen ${file} debe tener contenido raster válido (>20KB)`);
+});
+
+// 56.2 Catálogo Canónico AVATAR_STAGES
+assert.ok(Array.isArray(app.AVATAR_STAGES), 'app.AVATAR_STAGES debe ser un array de etapas de avatar');
+assert.equal(app.AVATAR_STAGES.length, 5, 'Deben existir exactamente 5 etapas de evolución estética');
+
+const stage1 = app.AVATAR_STAGES[0];
+assert.equal(stage1.stage, 1);
+assert.equal(stage1.name, 'Principiante');
+assert.equal(stage1.requiredMonths, 0);
+assert.ok(stage1.maleImage.includes('avatar_male_stage1.jpg'));
+assert.ok(stage1.femaleImage.includes('avatar_female_stage1.jpg'));
+
+const stage5 = app.AVATAR_STAGES[4];
+assert.equal(stage5.stage, 5);
+assert.equal(stage5.name, 'Élite');
+assert.equal(stage5.requiredMonths, 10);
+assert.ok(stage5.title.includes('Olimpo'));
+assert.ok(stage5.maleImage.includes('avatar_male_stage5.jpg'));
+assert.ok(stage5.femaleImage.includes('avatar_female_stage5.jpg'));
+
+// 56.3 Progresión Dinámica por Entrenamientos Completados y Género
+// Test Masculino - Nivel 1 Principiante
+app.saveUserProfile({ name: 'Alexander Gym', gender: 'male', weightKg: 82, heightCm: 182, daysPerWeek: 6 });
+app.getState().totalCompletedDays = 0;
+app.renderUserAvatarAndTrophies();
+
+let avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.gender, 'male');
+assert.equal(avatarStatus.stageNumber, 1, 'Con 0 días debe estar en etapa 1');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_male_stage1.jpg');
+
+// Test Femenino - Nivel 1 Principiante
+app.saveUserProfile({ name: 'Elena Fit', gender: 'female', weightKg: 58, heightCm: 168, daysPerWeek: 6 });
+app.renderUserAvatarAndTrophies();
+avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.gender, 'female');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_female_stage1.jpg');
+
+// Test de Progresión Femenina: 2 meses (48 días con 6 d/sem) -> Etapa 2 (Tonificada)
+app.getState().totalCompletedDays = 48;
+app.renderUserAvatarAndTrophies();
+avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.stageNumber, 2, 'Con 2 meses completados debe estar en etapa 2 (Tonificada)');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_female_stage2.jpg');
+assert.equal(avatarStatus.currentStage.name, 'Tonificado');
+
+// Test de Progresión: 4 meses (96 días) -> Etapa 3 (Atlética)
+app.getState().totalCompletedDays = 96;
+app.renderUserAvatarAndTrophies();
+avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.stageNumber, 3, 'Con 4 meses completados debe estar en etapa 3 (Atlética)');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_female_stage3.jpg');
+
+// Test de Progresión Masculina: 7 meses (168 días) -> Etapa 4 (Avanzado)
+app.saveUserProfile({ name: 'Alexander Gym', gender: 'male', weightKg: 82, heightCm: 182, daysPerWeek: 6 });
+app.getState().totalCompletedDays = 168;
+app.renderUserAvatarAndTrophies();
+avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.stageNumber, 4, 'Con 7 meses completados debe estar en etapa 4 (Avanzado)');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_male_stage4.jpg');
+
+// Test de Progresión: 10+ meses (240 días) -> Etapa 5 (Élite)
+app.getState().totalCompletedDays = 240;
+app.renderUserAvatarAndTrophies();
+avatarStatus = app.getUserAvatarProgressionStatus();
+assert.equal(avatarStatus.stageNumber, 5, 'Con 10+ meses debe alcanzar etapa 5 (Élite)');
+assert.equal(avatarStatus.imageSrc, 'assets/avatars/avatar_male_stage5.jpg');
+
+// 56.4 Renderizado en Header, Home y Perfil con Imágenes Raster y Fallback
+const headerImg = doc.getElementById('header-user-avatar-img');
+const homeImg = doc.getElementById('home-user-avatar-img');
+const profileImg = doc.getElementById('profile-avatar-img');
+
+assert.ok(headerImg, 'Debe existir el elemento <img> en la cabecera');
+assert.ok(homeImg, 'Debe existir el elemento <img> en el Home');
+assert.ok(profileImg, 'Debe existir el elemento <img> en la pantalla de Perfil');
+
+assert.ok(headerImg.getAttribute('src').includes('assets/avatars/avatar_male_stage5.jpg'));
+assert.ok(homeImg.getAttribute('src').includes('assets/avatars/avatar_male_stage5.jpg'));
+assert.ok(profileImg.getAttribute('src').includes('assets/avatars/avatar_male_stage5.jpg'));
+
+// Verificar que el símbolo emoji de fallback se mantiene para retrocompatibilidad
+const headerSym = doc.getElementById('header-user-avatar-symbol');
+assert.equal(headerSym.textContent, '🏋️‍♂️');
+
+// 56.5 Sección de Evolución Estética y Visor Interactivo en Pantalla de Perfil
+app.switchAppScreen('profile');
+app.renderUserProfileScreen();
+
+const evolutionCard = doc.getElementById('profile-avatar-evolution-card');
+assert.ok(evolutionCard, 'Debe existir la tarjeta #profile-avatar-evolution-card en perfil');
+
+const evolutionPreviewImg = doc.getElementById('avatar-evolution-preview-img');
+assert.ok(evolutionPreviewImg, 'Debe existir el visor grande de imagen de evolución');
+assert.ok(evolutionPreviewImg.getAttribute('src').includes('assets/avatars/avatar_male_stage5.jpg'));
+
+const currentLevelTag = doc.getElementById('avatar-current-level-tag');
+assert.ok(currentLevelTag.textContent.includes('Élite'), 'El tag de nivel actual debe indicar Élite');
+
+const trackGrid = doc.getElementById('avatar-stages-track');
+assert.ok(trackGrid, 'Debe existir la pista de etapas #avatar-stages-track');
+const stageCards = trackGrid.querySelectorAll('.avatar-stage-card');
+assert.equal(stageCards.length, 5, 'Debe renderizar las 5 tarjetas de etapas');
+
+// Probar interactividad: previsualizar Nivel 2 (Tonificado)
+app.setPreviewAvatarStage(1); // índice 1 = Etapa 2
+assert.ok(evolutionPreviewImg.getAttribute('src').includes('assets/avatars/avatar_male_stage2.jpg'), 'Al previsualizar etapa 2 debe actualizar la imagen');
+const resetPreviewBtn = doc.getElementById('btn-reset-avatar-preview');
+assert.equal(resetPreviewBtn.hidden, false, 'El botón de resetear preview debe mostrarse al explorar otra etapa');
+
+// Resetear previsualización a la etapa real
+resetPreviewBtn.click();
+assert.ok(evolutionPreviewImg.getAttribute('src').includes('assets/avatars/avatar_male_stage5.jpg'), 'Al resetear debe volver a la etapa real');
+assert.equal(resetPreviewBtn.hidden, true, 'El botón de reset debe ocultarse al estar en la etapa real');
+
+// 56.6 Verificación de Estricto 0% SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en la aplicación');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 56 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

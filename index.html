@@ -16,6 +16,7 @@
       <!-- Avatar genérico en la esquina superior izquierda según género -->
       <div class="header-user-avatar-badge" id="header-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
         <div class="user-avatar-circle" id="header-user-avatar-circle">
+          <img id="header-user-avatar-img" class="user-avatar-raster-img" alt="Avatar Atleta" src="assets/avatars/avatar_male_stage1.jpg">
           <span class="user-avatar-symbol" id="header-user-avatar-symbol">🏋️‍♂️</span>
         </div>
         <div class="user-avatar-info">
@@ -104,6 +105,7 @@
         <div class="home-user-trophy-bar">
           <div class="home-user-avatar-badge" id="home-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
             <div class="user-avatar-circle" id="home-user-avatar-circle">
+              <img id="home-user-avatar-img" class="user-avatar-raster-img" alt="Avatar Atleta" src="assets/avatars/avatar_male_stage1.jpg">
               <span class="user-avatar-symbol" id="home-user-avatar-symbol">🏋️‍♂️</span>
             </div>
             <div class="user-avatar-info">
@@ -923,6 +925,7 @@
         <div class="profile-fullscreen-card">
           <div class="profile-avatar-header">
             <div class="profile-fullscreen-avatar" id="profile-fullscreen-avatar">
+              <img id="profile-avatar-img" class="profile-avatar-raster-img" alt="Avatar Atleta" src="assets/avatars/avatar_male_stage1.jpg">
               <span class="profile-avatar-emoji" id="profile-avatar-emoji">🏋️‍♂️</span>
             </div>
             <div class="profile-main-meta">
@@ -958,6 +961,48 @@
             <div class="pm-card">
               <span class="pm-card-label">🎯 Objetivo Principal</span>
               <strong class="pm-card-value" id="profile-card-goal">Hipertrofia Muscular</strong>
+            </div>
+          </div>
+
+          <!-- Sección de Evolución Estética y Atuendo de Gimnasio (Arte 9-Bits Progresivo) -->
+          <div class="profile-avatar-evolution-card" id="profile-avatar-evolution-card">
+            <div class="avatar-evolution-header">
+              <div>
+                <span class="avatar-evolution-badge">🎨 ARTE 9-BITS ESTILIZADO · TRAZO SUAVE</span>
+                <h3 class="avatar-evolution-title">Evolución de Físico y Atuendo</h3>
+              </div>
+              <span class="avatar-current-level-tag" id="avatar-current-level-tag">Nivel 1: Principiante</span>
+            </div>
+
+            <div class="avatar-evolution-body">
+              <div class="avatar-evolution-portrait-box">
+                <div class="avatar-portrait-frame" id="avatar-portrait-frame">
+                  <img id="avatar-evolution-preview-img" class="avatar-evolution-big-img" src="assets/avatars/avatar_male_stage1.jpg" alt="Retrato de evolución del atleta">
+                </div>
+                <div class="avatar-portrait-meta">
+                  <div class="avatar-portrait-title-row">
+                    <strong class="avatar-stage-title" id="avatar-preview-stage-title">Físico Base Inicial</strong>
+                    <span class="avatar-stage-chip" id="avatar-preview-stage-chip">Etapa Actual</span>
+                  </div>
+                  <p class="avatar-stage-desc" id="avatar-preview-stage-desc">Camiseta de algodón básica y contextura natural al comenzar el gimnasio.</p>
+                  <div class="avatar-perks-row">
+                    <span class="avatar-perk-pill" id="avatar-preview-perk-muscles">💪 Músculos: Tono inicial en deltoides</span>
+                    <span class="avatar-perk-pill" id="avatar-preview-perk-attire">🎽 Atuendo: Algodón clásico holgado</span>
+                  </div>
+                  <div class="avatar-preview-actions">
+                    <button type="button" id="btn-reset-avatar-preview" class="btn-ghost btn-sm-reset-preview" hidden>
+                      ↩️ Volver a mi etapa actual
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="avatar-stages-track-container">
+                <span class="avatar-track-label">Etapas de Progresión Estética (Toca para inspeccionar):</span>
+                <div class="avatar-stages-track" id="avatar-stages-track">
+                  <!-- Generado dinámicamente con las 5 etapas -->
+                </div>
+              </div>
             </div>
           </div>
 

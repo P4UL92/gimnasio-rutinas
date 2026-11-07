@@ -4415,6 +4415,106 @@
     { tier: 12, months: 12, name: 'Leyenda Suprema del Olimpo', symbol: '👑', desc: '1 año completo de transformación y gloria' }
   ];
 
+  // Catálogo de Etapas de Evolución Estética del Atleta (Arte 9-Bits Estilizado de Trazo Suave)
+  const AVATAR_STAGES = [
+    {
+      stage: 1,
+      name: 'Principiante',
+      levelName: 'Nivel 1: Principiante',
+      title: 'Físico Base Inicial',
+      desc: 'Camiseta de algodón clásica holgada y tono muscular inicial de arranque.',
+      attire: 'Algodón clásico holgado',
+      physique: 'Tono muscular inicial en deltoides y torso',
+      requiredMonths: 0,
+      maleImage: 'assets/avatars/avatar_male_stage1.jpg',
+      femaleImage: 'assets/avatars/avatar_female_stage1.jpg'
+    },
+    {
+      stage: 2,
+      name: 'Tonificado',
+      levelName: 'Nivel 2: Tonificado',
+      title: 'Definición Inicial',
+      desc: 'Camisilla deportiva ceñida, trapecios firmes y deltoides con definición perceptible.',
+      attire: 'Camisilla deportiva ceñida',
+      physique: 'Hombros más firmes y trapecios atléticos',
+      requiredMonths: 2,
+      maleImage: 'assets/avatars/avatar_male_stage2.jpg',
+      femaleImage: 'assets/avatars/avatar_female_stage2.jpg'
+    },
+    {
+      stage: 3,
+      name: 'Atlético',
+      levelName: 'Nivel 3: Atlético',
+      title: 'Definición Notable',
+      desc: 'Prenda técnica de tirantes, muñequera deportiva y deltoides redondeados marcados.',
+      attire: 'Top técnico y muñequera deportiva',
+      physique: 'Deltoides esculpidos, clavícula y pecho marcados',
+      requiredMonths: 4,
+      maleImage: 'assets/avatars/avatar_male_stage3.jpg',
+      femaleImage: 'assets/avatars/avatar_female_stage3.jpg'
+    },
+    {
+      stage: 4,
+      name: 'Avanzado',
+      levelName: 'Nivel 4: Avanzado',
+      title: 'Definición Esculpida',
+      desc: 'Compresión técnica con vivos neón, estriaciones en hombros y separación muscular.',
+      attire: 'Compresión técnica con vivos neón',
+      physique: 'Hombros estriados, vascularidad y tono notable',
+      requiredMonths: 7,
+      maleImage: 'assets/avatars/avatar_male_stage4.jpg',
+      femaleImage: 'assets/avatars/avatar_female_stage4.jpg'
+    },
+    {
+      stage: 5,
+      name: 'Élite',
+      levelName: 'Nivel 5: Élite',
+      title: 'Físico de Olimpo',
+      desc: 'Atuendo de campeonato con acentos dorados, máxima rocosidad y vascularidad atlética.',
+      attire: 'Atuendo pro de campeonato con acentos dorados',
+      physique: 'Máxima rocosidad 3D, deltoides estriados y aura de victoria',
+      requiredMonths: 10,
+      maleImage: 'assets/avatars/avatar_male_stage5.jpg',
+      femaleImage: 'assets/avatars/avatar_female_stage5.jpg'
+    }
+  ];
+
+  let selectedPreviewAvatarStage = null;
+
+  function getUserAvatarProgressionStatus() {
+    const p = state.userProfile || {};
+    const gender = (p.gender === 'female') ? 'female' : 'male';
+    const completedDays = getTotalCompletedWorkoutsCount();
+    const monthDays = getDaysPerMonthForUser();
+
+    let currentStageIndex = 0;
+    for (let i = AVATAR_STAGES.length - 1; i >= 0; i--) {
+      const reqDays = AVATAR_STAGES[i].requiredMonths * monthDays;
+      if (completedDays >= reqDays) {
+        currentStageIndex = i;
+        break;
+      }
+    }
+
+    const currentStage = AVATAR_STAGES[currentStageIndex];
+    const nextStage = AVATAR_STAGES[currentStageIndex + 1] || null;
+    const nextRequiredDays = nextStage ? (nextStage.requiredMonths * monthDays) : null;
+    const imageSrc = (gender === 'female') ? currentStage.femaleImage : currentStage.maleImage;
+
+    return {
+      gender,
+      completedDays,
+      monthDays,
+      currentStage,
+      currentStageIndex,
+      stageNumber: currentStage.stage,
+      nextStage,
+      nextRequiredDays,
+      imageSrc,
+      stages: AVATAR_STAGES
+    };
+  }
+
   function getDaysPerMonthForUser() {
     const daysPerWeek = Number(state.userProfile?.daysPerWeek) || 6;
     return Math.max(12, Math.round(daysPerWeek * 4));
@@ -4606,28 +4706,54 @@
     const avatarEmoji = (gender === 'female') ? '🏋️‍♀️' : '🏋️‍♂️';
     const genderLabel = (gender === 'female') ? 'Mujer' : 'Hombre';
     const userName = (p.name || 'Atleta').trim();
+    const avatarStatus = getUserAvatarProgressionStatus();
+    const avatarImgSrc = avatarStatus.imageSrc;
 
     // 1. Avatar en cabecera (esquina superior izquierda)
     const headerAvatar = document.getElementById('header-user-avatar-symbol');
+    const headerImg = document.getElementById('header-user-avatar-img');
+    const headerCircle = document.getElementById('header-user-avatar-circle');
     const headerName = document.getElementById('header-user-name');
     const headerGender = document.getElementById('header-user-gender-pill');
     if (headerAvatar) headerAvatar.textContent = avatarEmoji;
+    if (headerImg) {
+      headerImg.src = avatarImgSrc;
+      headerImg.alt = `Avatar ${userName} - ${avatarStatus.currentStage.name}`;
+      headerImg.hidden = false;
+    }
+    if (headerCircle) headerCircle.classList.add('has-raster-avatar');
     if (headerName) headerName.textContent = userName;
     if (headerGender) headerGender.textContent = genderLabel;
 
     // 2. Avatar en Menú Principal (Home)
     const homeAvatar = document.getElementById('home-user-avatar-symbol');
+    const homeImg = document.getElementById('home-user-avatar-img');
+    const homeCircle = document.getElementById('home-user-avatar-circle');
     const homeName = document.getElementById('home-user-name');
     const homeGender = document.getElementById('home-user-gender-pill');
     if (homeAvatar) homeAvatar.textContent = avatarEmoji;
+    if (homeImg) {
+      homeImg.src = avatarImgSrc;
+      homeImg.alt = `Avatar ${userName} - ${avatarStatus.currentStage.name}`;
+      homeImg.hidden = false;
+    }
+    if (homeCircle) homeCircle.classList.add('has-raster-avatar');
     if (homeName) homeName.textContent = userName;
     if (homeGender) homeGender.textContent = genderLabel;
 
     // 3. Avatar en Pantalla de Perfil
     const profileAvatar = document.getElementById('profile-avatar-emoji');
+    const profileImg = document.getElementById('profile-avatar-img');
+    const profileBox = document.getElementById('profile-fullscreen-avatar');
     const profileScreenName = document.getElementById('profile-screen-heading');
     const profileGenderBadge = document.getElementById('profile-gender-badge');
     if (profileAvatar) profileAvatar.textContent = avatarEmoji;
+    if (profileImg) {
+      profileImg.src = avatarImgSrc;
+      profileImg.alt = `Avatar ${userName} - ${avatarStatus.currentStage.name}`;
+      profileImg.hidden = false;
+    }
+    if (profileBox) profileBox.classList.add('has-raster-avatar');
     if (profileScreenName) profileScreenName.textContent = userName;
     if (profileGenderBadge) profileGenderBadge.textContent = genderLabel;
 
@@ -4739,6 +4865,81 @@
     if (bmiEl) bmiEl.textContent = `${bmi} IMC`;
     if (daysEl) daysEl.textContent = `${days} días / semana`;
     if (goalEl) goalEl.textContent = goalLabels[p.primaryGoal] || 'Hipertrofia Muscular';
+
+    // Renderizar Card de Evolución Estética del Atleta (Arte 9-Bits Progresivo)
+    const avatarStatus = getUserAvatarProgressionStatus();
+    const currentStage = avatarStatus.currentStage;
+    const activeStage = (selectedPreviewAvatarStage !== null && AVATAR_STAGES[selectedPreviewAvatarStage])
+      ? AVATAR_STAGES[selectedPreviewAvatarStage]
+      : currentStage;
+    const isInspectingCurrent = (activeStage.stage === currentStage.stage);
+
+    const levelTag = document.getElementById('avatar-current-level-tag');
+    const bigImg = document.getElementById('avatar-evolution-preview-img');
+    const titleEl = document.getElementById('avatar-preview-stage-title');
+    const descEl = document.getElementById('avatar-preview-stage-desc');
+    const chipEl = document.getElementById('avatar-preview-stage-chip');
+    const musclesEl = document.getElementById('avatar-preview-perk-muscles');
+    const attireEl = document.getElementById('avatar-preview-perk-attire');
+    const resetPreviewBtn = document.getElementById('btn-reset-avatar-preview');
+    const trackContainer = document.getElementById('avatar-stages-track');
+
+    if (levelTag) levelTag.textContent = currentStage.levelName;
+    if (bigImg) {
+      bigImg.src = (gender === 'female') ? activeStage.femaleImage : activeStage.maleImage;
+      bigImg.alt = `Evolución ${activeStage.title} - ${genderLabel}`;
+    }
+    if (titleEl) titleEl.textContent = activeStage.title;
+    if (descEl) descEl.textContent = activeStage.desc;
+    if (chipEl) {
+      chipEl.textContent = isInspectingCurrent ? 'Etapa Actual' : 'Vista Previa';
+      chipEl.style.borderColor = isInspectingCurrent ? '#10b981' : '#38bdf8';
+      chipEl.style.color = isInspectingCurrent ? '#34d399' : '#38bdf8';
+      chipEl.style.background = isInspectingCurrent ? 'rgba(16, 185, 129, 0.2)' : 'rgba(56, 189, 248, 0.2)';
+    }
+    if (musclesEl) musclesEl.textContent = `💪 Músculos: ${activeStage.physique}`;
+    if (attireEl) attireEl.textContent = `🎽 Atuendo: ${activeStage.attire}`;
+    if (resetPreviewBtn) {
+      resetPreviewBtn.hidden = isInspectingCurrent;
+    }
+
+    if (trackContainer) {
+      trackContainer.innerHTML = '';
+      AVATAR_STAGES.forEach((stageItem, idx) => {
+        const isCurrent = (stageItem.stage === currentStage.stage);
+        const isPreviewing = (stageItem.stage === activeStage.stage);
+        const thumbSrc = (gender === 'female') ? stageItem.femaleImage : stageItem.maleImage;
+        const requiredDays = stageItem.requiredMonths * avatarStatus.monthDays;
+        const isUnlocked = (avatarStatus.completedDays >= requiredDays);
+
+        const card = document.createElement('div');
+        card.className = `avatar-stage-card ${isCurrent ? 'is-current-stage' : ''} ${isPreviewing ? 'is-previewing' : ''} ${isUnlocked ? 'is-unlocked' : 'is-locked'}`;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('data-stage-index', String(idx));
+        card.title = `Ver ${stageItem.title} (${stageItem.name})`;
+
+        const reqLabel = (stageItem.requiredMonths === 0)
+          ? 'Inicio'
+          : `Mes ${stageItem.requiredMonths} (${requiredDays}d)`;
+
+        card.innerHTML = `
+          <img class="avatar-stage-thumb" src="${thumbSrc}" alt="${stageItem.name}">
+          <div class="avatar-stage-meta">
+            <span class="avatar-stage-name">${stageItem.name}</span>
+            <span class="avatar-stage-req">${reqLabel}</span>
+            <span class="avatar-stage-status-badge">${isCurrent ? 'Actual' : (isUnlocked ? 'Desbloqueado' : 'Próximo')}</span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          selectedPreviewAvatarStage = idx;
+          renderUserProfileScreen();
+        });
+
+        trackContainer.appendChild(card);
+      });
+    }
   }
 
   function accommodateMissedDayAction(missedDayKey, strategyKey) {
@@ -7467,6 +7668,12 @@
     // Modales de Trofeos
     document.getElementById('btn-close-trophy-celebration')?.addEventListener('click', closeTrophyCelebrationDialog);
     document.getElementById('btn-close-trophy-cabinet')?.addEventListener('click', closeTrophyCabinetDialog);
+
+    // Resetear preview de evolución de avatar
+    document.getElementById('btn-reset-avatar-preview')?.addEventListener('click', () => {
+      selectedPreviewAvatarStage = null;
+      renderUserProfileScreen();
+    });
   }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -7636,6 +7843,13 @@
     renderUserAvatarAndTrophies,
     renderHomeDashboard,
     renderUserProfileScreen,
+    // APIs Evolución Estética de Avatar en Arte 9-Bits
+    AVATAR_STAGES,
+    getUserAvatarProgressionStatus,
+    setPreviewAvatarStage: (stageIndex) => {
+      selectedPreviewAvatarStage = stageIndex;
+      renderUserProfileScreen();
+    },
     setSimulatedDay: (dayId) => { simulatedDay = dayId; }
   };
 
