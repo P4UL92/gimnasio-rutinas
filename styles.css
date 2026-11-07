@@ -67,7 +67,7 @@ body {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 92px;
+  padding-bottom: 24px;
 }
 
 body.animations-paused * {
@@ -4720,26 +4720,12 @@ body.animations-paused .focus-sprite-frame {
 }
 
 /* ==========================================================================
-   BARRA DE NAVEGACIÓN INFERIOR ANDROID (#bottom-app-nav) Y AJUSTES VERTICALES
+   BARRA DE NAVEGACIÓN INFERIOR (#bottom-app-nav) - OCULTA SEGÚN REQUERIMIENTO
+   La navegación se realiza exclusivamente mediante los botones del Menú Principal
    ========================================================================== */
-.bottom-app-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  max-width: 100vw;
-  box-sizing: border-box;
-  z-index: 45;
-  background: rgba(9, 13, 22, 0.96);
-  backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border-subtle);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left));
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
-  overflow: hidden;
+.bottom-app-nav,
+#bottom-app-nav {
+  display: none !important;
 }
 
 .bottom-nav-btn {
@@ -7957,9 +7943,9 @@ details.anatomy-collapsible[open] > summary::after {
 }
 
 .hero-workout-icon-box {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 68px;
+  height: 68px;
+  border-radius: 18px;
   background: rgba(0, 0, 0, 0.35);
   border: 1.5px solid rgba(255, 255, 255, 0.3);
   display: flex;
@@ -7969,6 +7955,22 @@ details.anatomy-collapsible[open] > summary::after {
   line-height: 1;
   flex-shrink: 0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-hero-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  display: block;
+  transition: transform 0.22s ease, filter 0.22s ease;
+}
+
+.btn-home-hero-workout:hover .menu-hero-icon-img {
+  transform: scale(1.08) rotate(-2deg);
+  filter: brightness(1.1);
 }
 
 .hero-workout-content {
@@ -8055,8 +8057,8 @@ details.anatomy-collapsible[open] > summary::after {
 }
 
 .nav-card-icon-box {
-  width: 50px;
-  height: 50px;
+  width: 52px;
+  height: 52px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -8066,6 +8068,22 @@ details.anatomy-collapsible[open] > summary::after {
   font-size: 1.8rem;
   line-height: 1;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-nav-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  transition: transform 0.22s ease, filter 0.22s ease;
+}
+
+.btn-home-nav-card:hover .menu-nav-icon-img {
+  transform: scale(1.08);
+  filter: brightness(1.15);
 }
 
 .nav-card-content {

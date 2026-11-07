@@ -2911,7 +2911,75 @@ assert.equal(resetPreviewBtn.hidden, true, 'El botón de reset debe ocultarse al
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en la aplicación');
 
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 56 Suites de pruebas pasaron con éxito.');
+
+// =====================================================================
+// SUITE 57: ICONOS ORIGINALES ESTILIZADOS EN EL MENÚ PRINCIPAL
+// Y SUPRESIÓN DE LA BARRA INFERIOR DE PESTAÑAS EN LA INTERFAZ
+// =====================================================================
+console.log('Ejecutando Suite 57: Iconos Originales en Menú Principal y Supresión de Pestañas Inferiores...');
+
+// 57.1 Existencia de las 3 imágenes de iconos originales
+const iconsDir = path.join(__dirname, '..', 'assets', 'icons');
+const trainingIconPath = path.join(iconsDir, 'menu_icon_training.jpg');
+const statsIconPath = path.join(iconsDir, 'menu_icon_stats.jpg');
+const extrasIconPath = path.join(iconsDir, 'menu_icon_extras.png');
+
+assert.ok(fs.existsSync(trainingIconPath), 'Debe existir menu_icon_training.jpg');
+assert.ok(fs.statSync(trainingIconPath).size > 20000, 'menu_icon_training.jpg debe tener tamaño válido (>20KB)');
+
+assert.ok(fs.existsSync(statsIconPath), 'Debe existir menu_icon_stats.jpg');
+assert.ok(fs.statSync(statsIconPath).size > 20000, 'menu_icon_stats.jpg debe tener tamaño válido (>20KB)');
+
+assert.ok(fs.existsSync(extrasIconPath), 'Debe existir menu_icon_extras.png');
+assert.ok(fs.statSync(extrasIconPath).size > 5000, 'menu_icon_extras.png debe tener tamaño válido (>5KB)');
+
+// 57.2 Integración en los 3 botones centrales de la pantalla principal
+app.switchAppScreen('home');
+
+const btnStart = doc.getElementById('btn-home-start-workout');
+const btnStats = doc.getElementById('btn-home-stats');
+const btnHub = doc.getElementById('btn-home-hub');
+
+assert.ok(btnStart, 'Debe existir #btn-home-start-workout');
+const imgStart = btnStart.querySelector('.menu-hero-icon-img');
+assert.ok(imgStart, 'El botón de entrenamiento debe incluir la imagen de icono original');
+assert.ok(imgStart.getAttribute('src').includes('menu_icon_training.jpg'), 'El icono debe ser menu_icon_training.jpg');
+
+assert.ok(btnStats, 'Debe existir #btn-home-stats');
+const imgStats = btnStats.querySelector('.menu-nav-icon-img');
+assert.ok(imgStats, 'El botón de estadísticas debe incluir la imagen de icono original');
+assert.ok(imgStats.getAttribute('src').includes('menu_icon_stats.jpg'), 'El icono debe ser menu_icon_stats.jpg');
+
+assert.ok(btnHub, 'Debe existir #btn-home-hub');
+const imgHub = btnHub.querySelector('.menu-nav-icon-img');
+assert.ok(imgHub, 'El botón de opciones extras debe incluir la imagen de icono original');
+assert.ok(imgHub.getAttribute('src').includes('menu_icon_extras.png'), 'El icono debe ser menu_icon_extras.png');
+
+// 57.3 Supresión de la barra inferior de navegación en estilos CSS
+const currentStyles = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(currentStyles.includes('.bottom-app-nav') && currentStyles.includes('display: none !important'), 'styles.css debe ocultar .bottom-app-nav con display: none !important');
+
+// 57.4 Navegación exclusiva mediante botones centrales y retornos a Menú Principal
+btnStart.click();
+assert.equal(app.getState().activeScreen, 'plan', 'Click en Entrenamiento debe llevar a la pantalla plan');
+doc.getElementById('btn-plan-back-home').click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+btnStats.click();
+assert.equal(app.getState().activeScreen, 'stats', 'Click en Estadísticas debe llevar a la pantalla stats');
+doc.getElementById('btn-stats-back-home').click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+btnHub.click();
+assert.equal(app.getState().activeScreen, 'hub', 'Click en Opciones Extras debe llevar a la pantalla hub');
+doc.getElementById('btn-hub-back-home').click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+// 57.5 Verificación absoluta de 0% <svg>
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en la aplicación');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 57 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
