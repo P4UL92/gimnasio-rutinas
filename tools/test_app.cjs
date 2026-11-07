@@ -2608,8 +2608,161 @@ assert.ok(cssContent.includes('.fx-weight-item.fx-dumbbell'), 'styles.css debe d
 // 54.4 Verificación absoluta de CERO etiquetas SVG en el DOM
 assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM debe cumplir estrictamente con 0% <svg>');
 
+// ==========================================
+// SUITE 55: Reestructuración de Funciones en Menú Principal, Avatares por Género y Sistema de Trofeos Progresivos con Animación Pendular
+// ==========================================
+console.log('Ejecutando Suite 55: Reestructuración de Funciones en Menú Principal, Avatares por Género y Sistema de Trofeos Progresivos con Animación Pendular...');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 54 Suites de pruebas pasaron con éxito.');
+
+// 55.1 Estructura del Menú Principal (#screen-home) y sus 4 Ventanas Distintas
+const homeScreen = doc.getElementById('screen-home');
+assert.ok(homeScreen, 'Debe existir la pantalla del Menú Principal #screen-home');
+
+// Cambiar al menú principal
+app.switchAppScreen('home');
+assert.equal(app.getState().activeScreen, 'home', 'Debe permitir cambiar a la pantalla home');
+assert.equal(homeScreen.hidden, false, 'El panel del Menú Principal debe estar visible');
+
+// Botón 1: Iniciar Entrenamiento (más grande que los demás, resaltante y con símbolo de entrenamiento)
+const btnHomeStart = doc.getElementById('btn-home-start-workout');
+assert.ok(btnHomeStart, 'Debe existir el botón principal #btn-home-start-workout');
+assert.ok(btnHomeStart.classList.contains('btn-home-hero-workout'), 'Debe tener la clase .btn-home-hero-workout');
+assert.ok(btnHomeStart.textContent.includes('INICIAR ENTRENAMIENTO'), 'Debe contener el texto INICIAR ENTRENAMIENTO');
+assert.ok(btnHomeStart.textContent.includes('⚡') || btnHomeStart.textContent.includes('🏋️'), 'Debe incluir el símbolo de entrenamiento');
+
+// Botón 2: Estadísticas y Seguimiento Personal
+const btnHomeStats = doc.getElementById('btn-home-stats');
+assert.ok(btnHomeStats, 'Debe existir el botón #btn-home-stats');
+assert.ok(btnHomeStats.textContent.includes('Estadísticas'), 'Debe ser la opción de estadísticas y seguimiento');
+
+// Botón 3: Configuración y Extras
+const btnHomeHub = doc.getElementById('btn-home-hub');
+assert.ok(btnHomeHub, 'Debe existir el botón #btn-home-hub');
+assert.ok(btnHomeHub.textContent.includes('Configuración') || btnHomeHub.textContent.includes('Extras'), 'Debe ser la opción de configuración y extras');
+
+// Botón 4: Mi Perfil
+const btnHomeProfile = doc.getElementById('btn-home-profile');
+assert.ok(btnHomeProfile, 'Debe existir el botón #btn-home-profile');
+assert.ok(btnHomeProfile.textContent.includes('Mi Perfil'), 'Debe ser la opción de Mi Perfil');
+
+// Verificar navegación independiente entre las 4 ventanas
+// Ventana 1: Entrenamiento (Plan)
+btnHomeStart.click();
+assert.equal(app.getState().activeScreen, 'plan', 'Click en Iniciar Entrenamiento debe llevar a la pantalla plan');
+assert.equal(doc.getElementById('screen-plan').hidden, false, 'La pantalla de entrenamiento debe estar visible');
+const btnPlanBackHome = doc.getElementById('btn-plan-back-home');
+assert.ok(btnPlanBackHome, 'La pantalla de entrenamiento debe tener botón de retorno al Menú Principal');
+btnPlanBackHome.click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+// Ventana 2: Estadísticas
+btnHomeStats.click();
+assert.equal(app.getState().activeScreen, 'stats', 'Click en estadísticas debe llevar a screen-stats');
+const btnStatsBackHome = doc.getElementById('btn-stats-back-home');
+assert.ok(btnStatsBackHome, 'La pantalla de estadísticas debe tener botón de retorno al Menú Principal');
+btnStatsBackHome.click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+// Ventana 3: Configuración y Extras
+btnHomeHub.click();
+assert.equal(app.getState().activeScreen, 'hub', 'Click en extras debe llevar a screen-hub');
+const btnHubBackHome = doc.getElementById('btn-hub-back-home');
+assert.ok(btnHubBackHome, 'La pantalla de extras debe tener botón de retorno al Menú Principal');
+btnHubBackHome.click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+// Ventana 4: Mi Perfil (Pantalla independiente)
+const profileScreen = doc.getElementById('screen-profile');
+assert.ok(profileScreen, 'Debe existir la pantalla independiente #screen-profile');
+btnHomeProfile.click();
+assert.equal(app.getState().activeScreen, 'profile', 'Click en Mi Perfil debe llevar a screen-profile');
+assert.equal(profileScreen.hidden, false, 'La pantalla de perfil debe estar visible');
+const btnProfileBackHome = doc.getElementById('btn-profile-back-home');
+assert.ok(btnProfileBackHome, 'La pantalla de perfil debe tener botón de retorno al Menú Principal');
+btnProfileBackHome.click();
+assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Principal');
+
+// 55.2 Avatar Genérico según Género en la Parte Superior Izquierda
+// Género Masculino (Hombre)
+app.saveUserProfile({ name: 'Carlos Gym', gender: 'male', weightKg: 80, heightCm: 180, daysPerWeek: 6 });
+app.renderUserAvatarAndTrophies();
+const avatarSymbolHeader = doc.getElementById('header-user-avatar-symbol');
+const avatarGenderPill = doc.getElementById('header-user-gender-pill');
+assert.equal(avatarSymbolHeader.textContent, '🏋️‍♂️', 'Para género male debe mostrar el avatar masculino 🏋️‍♂️');
+assert.equal(avatarGenderPill.textContent, 'Hombre', 'El tag de género debe indicar Hombre');
+
+// Género Femenino (Mujer)
+app.saveUserProfile({ name: 'Laura Fit', gender: 'female', weightKg: 60, heightCm: 165, daysPerWeek: 6 });
+app.renderUserAvatarAndTrophies();
+assert.equal(avatarSymbolHeader.textContent, '🏋️‍♀️', 'Para género female debe mostrar el avatar femenino 🏋️‍♀️');
+assert.equal(avatarGenderPill.textContent, 'Mujer', 'El tag de género debe indicar Mujer');
+const avatarHomeSymbol = doc.getElementById('home-user-avatar-symbol');
+assert.equal(avatarHomeSymbol.textContent, '🏋️‍♀️', 'El avatar en home debe reflejar el género femenino 🏋️‍♀️');
+
+// 55.3 Sistema de Progresión de Trofeos e Implementos (Bronce, Plata, Oro; Mancuernas, Pesas Rusas, Discos)
+assert.ok(Array.isArray(app.TROPHY_TIERS), 'TROPHY_TIERS debe ser un catálogo de trofeos e implementos');
+assert.ok(app.TROPHY_TIERS.length >= 12, 'Debe contar con al menos 12 niveles de progresión');
+
+// Comprobar secuencia de trofeos: Bronce, Plata, Oro
+assert.equal(app.TROPHY_TIERS[1].name, 'Guerrero de Bronce', 'Tier 1 debe ser Trofeo de Bronce (1 mes)');
+assert.equal(app.TROPHY_TIERS[1].symbol, '🥉');
+assert.equal(app.TROPHY_TIERS[2].name, 'Titán de Plata', 'Tier 2 debe ser Trofeo de Plata (2 meses)');
+assert.equal(app.TROPHY_TIERS[2].symbol, '🥈');
+assert.equal(app.TROPHY_TIERS[3].name, 'Campeón de Oro', 'Tier 3 debe ser Trofeo de Oro (3 meses)');
+assert.equal(app.TROPHY_TIERS[3].symbol, '🥇');
+
+// Comprobar secuencia de mancuernas: Bronce, Plata, Oro
+assert.ok(app.TROPHY_TIERS[4].name.includes('Bronce') && app.TROPHY_TIERS[4].desc.includes('mancuerna'), 'Tier 4 debe ser Mancuerna de Bronce');
+assert.ok(app.TROPHY_TIERS[5].name.includes('Plata') && app.TROPHY_TIERS[5].name.includes('Mancuerna'), 'Tier 5 debe ser Mancuerna de Plata');
+assert.ok(app.TROPHY_TIERS[6].name.includes('Oro') && app.TROPHY_TIERS[6].name.includes('Mancuerna'), 'Tier 6 debe ser Mancuerna de Oro');
+
+// Comprobar secuencia de pesas rusas / discos
+assert.ok(app.TROPHY_TIERS[7].name.includes('Pesa Rusa') || app.TROPHY_TIERS[7].symbol === '🪨', 'Tier 7 debe premiar con implemento de Pesa Rusa');
+assert.ok(app.TROPHY_TIERS[10].name.includes('Placa') || app.TROPHY_TIERS[10].name.includes('Disco') || app.TROPHY_TIERS[10].symbol === '💿', 'Tier 10 debe premiar con Disco Olímpico');
+
+// Cálculo dinámico según frecuencia semanal: 1 mes = daysPerWeek * 4
+const monthDays6 = app.getDaysPerMonthForUser();
+assert.equal(monthDays6, 24, 'Para 6 días por semana, 1 mes corresponde a 24 días de entrenamiento');
+
+// Simular progreso de 24 días completados (1 mes alcanzado)
+app.getState().totalCompletedDays = 24;
+const progStatus = app.getTrophyProgressionStatus();
+assert.equal(progStatus.currentTier.tier, 1, 'Al completar 24 días debe alcanzar el Tier 1 (Trofeo de Bronce)');
+assert.equal(progStatus.currentTier.name, 'Guerrero de Bronce');
+
+// 55.4 Animación de Celebración con Movimiento Pendular y Flash de Luz
+app.openTrophyCelebrationDialog(app.TROPHY_TIERS[1]);
+const celebrationDialog = doc.getElementById('trophy-celebration-dialog');
+assert.ok(celebrationDialog.hasAttribute('open') || !celebrationDialog.hidden, 'El modal de celebración de trofeo debe abrirse');
+
+const pendulumBox = doc.getElementById('trophy-pendulum-box');
+assert.ok(pendulumBox, 'Debe existir el contenedor del dibujo con oscilación pendular');
+const pendulumSymbol = doc.getElementById('trophy-pendulum-symbol');
+assert.equal(pendulumSymbol.textContent, '🥉', 'El dibujo debe mostrar el trofeo de bronce');
+
+const flashHalo = doc.getElementById('trophy-flash-halo');
+assert.ok(flashHalo, 'Debe existir el efecto de halo de luz / flash');
+
+const rankTitle = doc.getElementById('trophy-rank-denomination');
+assert.equal(rankTitle.textContent, 'Guerrero de Bronce', 'Debe reflejar la denominación de Guerrero de Bronce');
+
+const dialogTitle = doc.getElementById('trophy-dialog-title');
+assert.ok(dialogTitle.textContent.includes('1 mes'), 'Debe certificar haber completado satisfactoriamente 1 mes');
+
+// Verificar reglas de estilos en styles.css para la animación pendular y flash
+const updatedCss = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(updatedCss.includes('trophyPendulumSwing'), 'styles.css debe definir la animación pendular trophyPendulumSwing');
+assert.ok(updatedCss.includes('trophyFlashSurprise'), 'styles.css debe definir el efecto de flash trophyFlashSurprise');
+assert.ok(updatedCss.includes('.btn-home-hero-workout'), 'styles.css debe definir estilos para el botón más grande');
+
+app.closeTrophyCelebrationDialog();
+
+// 55.5 Verificación absoluta de CERO etiquetas SVG en todo el DOM
+assert.equal(doc.querySelectorAll('svg').length, 0, 'El DOM completo debe cumplir con 0% <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 55 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

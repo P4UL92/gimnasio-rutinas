@@ -53,6 +53,8 @@
       progressionHistory: [],
       bodyMetrics: [],
       history: [],
+      totalCompletedDays: 0,
+      unlockedTrophyTier: 0,
       userProfile: {
         configured: false,
         name: 'Atleta',
@@ -145,7 +147,13 @@
       if (!parsed.journalNotesByDay || typeof parsed.journalNotesByDay !== 'object') {
         parsed.journalNotesByDay = {};
       }
-      if (!['plan', 'workout', 'stats', 'hub'].includes(parsed.activeScreen)) {
+      if (typeof parsed.totalCompletedDays !== 'number') {
+        parsed.totalCompletedDays = (parsed.history || []).filter(h => h.status === 'completed' || (h.setsDone && h.setsDone > 0)).length;
+      }
+      if (typeof parsed.unlockedTrophyTier !== 'number') {
+        parsed.unlockedTrophyTier = 0;
+      }
+      if (!['home', 'plan', 'workout', 'stats', 'hub', 'profile'].includes(parsed.activeScreen)) {
         parsed.activeScreen = 'plan';
       }
       if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < -1) {
@@ -854,12 +862,20 @@
     }
     day.lastSessionRecord = deepClone(record);
 
+    const prevCompletedCount = getTotalCompletedWorkoutsCount();
+
     state.history.unshift(record);
+    state.totalCompletedDays = Math.max(Number(state.totalCompletedDays) || 0, state.history.length);
+    if (!isTruncated) {
+      state.totalCompletedDays = (Number(state.totalCompletedDays) || 0) + 1;
+    }
     if (state.history.length > 30) {
       state.history.length = 30;
     }
     saveState();
     renderAll();
+    const newCompletedCount = getTotalCompletedWorkoutsCount();
+    checkAndTriggerTrophyUnlock(prevCompletedCount, newCompletedCount);
     const durMsg = durationText ? ` · ⏱️ ${durationText}` : '';
     if (!options.silent) {
       if (isTruncated) {
@@ -4379,6 +4395,352 @@
     `;
   }
 
+  // =========================================================================
+  // SISTEMA DE TROFEOS DE PROGRESIÓN, AVATARES DE GÉNERO Y MENÚ PRINCIPAL v2.0
+  // =========================================================================
+
+  const TROPHY_TIERS = [
+    { tier: 0, months: 0, name: 'Aspirante al Hierro', symbol: '🔰', desc: 'Comenzando el camino del entrenamiento' },
+    { tier: 1, months: 1, name: 'Guerrero de Bronce', symbol: '🥉', desc: '1 mes de disciplina completado' },
+    { tier: 2, months: 2, name: 'Titán de Plata', symbol: '🥈', desc: '2 meses de consistencia implacable' },
+    { tier: 3, months: 3, name: 'Campeón de Oro', symbol: '🥇', desc: '3 meses de dominio del entrenamiento' },
+    { tier: 4, months: 4, name: 'Levantador de Bronce', symbol: '🏋️', desc: '4 meses forjando técnica en mancuernas' },
+    { tier: 5, months: 5, name: 'Poder de Mancuerna Plata', symbol: '🦾', desc: '5 meses de sobrecarga progresiva' },
+    { tier: 6, months: 6, name: 'Maestro de Mancuernas Oro', symbol: '🏋️‍♂️', desc: 'Medio año ininterrumpido de fuerza pura' },
+    { tier: 7, months: 7, name: 'Fuerza Balística Bronce', symbol: '🪨', desc: '7 meses desarrollando potencia funcional' },
+    { tier: 8, months: 8, name: 'Potencia Funcional Plata', symbol: '⚡', desc: '8 meses de resistencia y estabilidad' },
+    { tier: 9, months: 9, name: 'Titán de Pesa Rusa Oro', symbol: '💥', desc: '9 meses de acondicionamiento de élite' },
+    { tier: 10, months: 10, name: 'Placa Olímpica de Bronce', symbol: '💿', desc: '10 meses cargando discos pesados' },
+    { tier: 11, months: 11, name: 'Pilar de Carga Plata', symbol: '🛡️', desc: '11 meses de tonelaje y marcas récord' },
+    { tier: 12, months: 12, name: 'Leyenda Suprema del Olimpo', symbol: '👑', desc: '1 año completo de transformación y gloria' }
+  ];
+
+  function getDaysPerMonthForUser() {
+    const daysPerWeek = Number(state.userProfile?.daysPerWeek) || 6;
+    return Math.max(12, Math.round(daysPerWeek * 4));
+  }
+
+  function getTotalCompletedWorkoutsCount() {
+    const fromHistory = (state.history || []).filter(h => h.status === 'completed' || (h.setsDone && h.setsDone > 0)).length;
+    const directTotal = Number(state.totalCompletedDays) || 0;
+    return Math.max(fromHistory, directTotal);
+  }
+
+  function getTrophyProgressionStatus() {
+    const completedDays = getTotalCompletedWorkoutsCount();
+    const monthDays = getDaysPerMonthForUser();
+
+    let currentTierIndex = 0;
+    for (let i = TROPHY_TIERS.length - 1; i >= 1; i--) {
+      const requiredDays = TROPHY_TIERS[i].months * monthDays;
+      if (completedDays >= requiredDays) {
+        currentTierIndex = i;
+        break;
+      }
+    }
+
+    const currentTier = TROPHY_TIERS[currentTierIndex];
+    const nextTier = TROPHY_TIERS[currentTierIndex + 1] || null;
+    const currentTierRequired = currentTier.months * monthDays;
+    const nextTierRequired = nextTier ? (nextTier.months * monthDays) : currentTierRequired;
+    const daysIntoCurrentTier = Math.max(0, completedDays - currentTierRequired);
+    const tierSpanDays = nextTier ? Math.max(1, nextTierRequired - currentTierRequired) : 1;
+    const progressPercent = nextTier
+      ? Math.min(100, Math.round((daysIntoCurrentTier / tierSpanDays) * 100))
+      : 100;
+
+    return {
+      completedDays,
+      monthDays,
+      currentTier,
+      nextTier,
+      currentTierRequired,
+      nextTierRequired,
+      progressPercent
+    };
+  }
+
+  function checkAndTriggerTrophyUnlock(prevCompletedCount, newCompletedCount) {
+    const monthDays = getDaysPerMonthForUser();
+    let oldTier = 0;
+    for (let i = TROPHY_TIERS.length - 1; i >= 1; i--) {
+      if (prevCompletedCount >= TROPHY_TIERS[i].months * monthDays) {
+        oldTier = i;
+        break;
+      }
+    }
+
+    let newTier = 0;
+    for (let i = TROPHY_TIERS.length - 1; i >= 1; i--) {
+      if (newCompletedCount >= TROPHY_TIERS[i].months * monthDays) {
+        newTier = i;
+        break;
+      }
+    }
+
+    if (newTier > oldTier) {
+      state.unlockedTrophyTier = newTier;
+      saveState();
+      openTrophyCelebrationDialog(TROPHY_TIERS[newTier]);
+      return true;
+    }
+    return false;
+  }
+
+  function openTrophyCelebrationDialog(tier) {
+    if (!tier) return;
+    const dialog = document.getElementById('trophy-celebration-dialog');
+    if (!dialog) return;
+
+    const symbolEl = document.getElementById('trophy-pendulum-symbol');
+    const titleEl = document.getElementById('trophy-dialog-title');
+    const denomEl = document.getElementById('trophy-rank-denomination');
+    const descEl = document.getElementById('trophy-dialog-desc');
+    const haloEl = document.getElementById('trophy-flash-halo');
+    const pendulumBox = document.getElementById('trophy-pendulum-box');
+
+    if (symbolEl) symbolEl.textContent = tier.symbol;
+    if (titleEl) titleEl.textContent = `¡Has completado satisfactoriamente ${tier.months} mes${tier.months > 1 ? 'es' : ''} de entrenamiento!`;
+    if (denomEl) denomEl.textContent = tier.name;
+    if (descEl) {
+      const monthDays = getDaysPerMonthForUser();
+      const totalDays = tier.months * monthDays;
+      descEl.textContent = `Has forjado una disciplina inquebrantable alcanzando ${totalDays} sesiones completadas de fuerza e hipertrofia.`;
+    }
+
+    if (pendulumBox) {
+      pendulumBox.style.animation = 'none';
+      void pendulumBox.offsetWidth;
+      pendulumBox.style.animation = 'trophyPendulumSwing 2s cubic-bezier(0.25, 1, 0.5, 1) forwards';
+    }
+
+    if (haloEl) {
+      haloEl.style.animation = 'none';
+      void haloEl.offsetWidth;
+      haloEl.style.animation = 'trophyFlashSurprise 1.4s ease-out forwards';
+    }
+
+    triggerHaptic([70, 50, 100, 60, 120]);
+    playCompletionTone();
+
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeTrophyCelebrationDialog() {
+    const dialog = document.getElementById('trophy-celebration-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function openTrophyCabinetDialog() {
+    const dialog = document.getElementById('trophy-cabinet-dialog');
+    const grid = document.getElementById('trophy-tiers-grid');
+    const summary = document.getElementById('trophy-cabinet-summary');
+    if (!dialog || !grid) return;
+
+    const status = getTrophyProgressionStatus();
+    if (summary) {
+      summary.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <strong style="color:#fbbf24; font-size:1.1rem;">🏆 Rango Actual: ${status.currentTier.name}</strong>
+            <div style="color:#94a3b8; font-size:0.85rem;">${status.completedDays} entrenamientos completados en total</div>
+          </div>
+          <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid #f59e0b; border-radius:8px; padding:4px 10px; font-weight:800; font-size:0.85rem;">
+            ${status.nextTier ? `Próximo: ${status.nextTier.name} (${status.completedDays}/${status.nextTierRequired} días)` : '¡Máxima Gloria Alcanzada!'}
+          </span>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = '';
+    const monthDays = getDaysPerMonthForUser();
+
+    TROPHY_TIERS.forEach(t => {
+      if (t.tier === 0) return;
+      const reqDays = t.months * monthDays;
+      const isUnlocked = status.completedDays >= reqDays;
+
+      const card = document.createElement('div');
+      card.className = `trophy-tier-card ${isUnlocked ? 'is-unlocked' : 'is-locked'}`;
+      card.innerHTML = `
+        <span class="trophy-tier-card-symbol">${t.symbol}</span>
+        <strong class="trophy-tier-card-name">${t.name}</strong>
+        <span class="trophy-tier-card-req">${isUnlocked ? '✅ Desbloqueado' : `🔒 ${reqDays} días (Mes ${t.months})`}</span>
+      `;
+      grid.appendChild(card);
+    });
+
+    if (typeof dialog.showModal === 'function') {
+      try { dialog.showModal(); } catch (_) { dialog.hidden = false; dialog.setAttribute('open', ''); }
+    } else {
+      dialog.hidden = false;
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  function closeTrophyCabinetDialog() {
+    const dialog = document.getElementById('trophy-cabinet-dialog');
+    if (!dialog) return;
+    if (typeof dialog.close === 'function') {
+      try { dialog.close(); } catch (_) {}
+    } else {
+      dialog.hidden = true;
+      dialog.removeAttribute('open');
+    }
+  }
+
+  function renderUserAvatarAndTrophies() {
+    const p = state.userProfile || {};
+    const gender = (p.gender === 'female') ? 'female' : 'male';
+    const avatarEmoji = (gender === 'female') ? '🏋️‍♀️' : '🏋️‍♂️';
+    const genderLabel = (gender === 'female') ? 'Mujer' : 'Hombre';
+    const userName = (p.name || 'Atleta').trim();
+
+    // 1. Avatar en cabecera (esquina superior izquierda)
+    const headerAvatar = document.getElementById('header-user-avatar-symbol');
+    const headerName = document.getElementById('header-user-name');
+    const headerGender = document.getElementById('header-user-gender-pill');
+    if (headerAvatar) headerAvatar.textContent = avatarEmoji;
+    if (headerName) headerName.textContent = userName;
+    if (headerGender) headerGender.textContent = genderLabel;
+
+    // 2. Avatar en Menú Principal (Home)
+    const homeAvatar = document.getElementById('home-user-avatar-symbol');
+    const homeName = document.getElementById('home-user-name');
+    const homeGender = document.getElementById('home-user-gender-pill');
+    if (homeAvatar) homeAvatar.textContent = avatarEmoji;
+    if (homeName) homeName.textContent = userName;
+    if (homeGender) homeGender.textContent = genderLabel;
+
+    // 3. Avatar en Pantalla de Perfil
+    const profileAvatar = document.getElementById('profile-avatar-emoji');
+    const profileScreenName = document.getElementById('profile-screen-heading');
+    const profileGenderBadge = document.getElementById('profile-gender-badge');
+    if (profileAvatar) profileAvatar.textContent = avatarEmoji;
+    if (profileScreenName) profileScreenName.textContent = userName;
+    if (profileGenderBadge) profileGenderBadge.textContent = genderLabel;
+
+    // 4. Trofeos en cabecera y en Menú Principal (esquina superior derecha)
+    const status = getTrophyProgressionStatus();
+    const currentTier = status.currentTier;
+
+    const hTrophySym = document.getElementById('header-trophy-symbol');
+    const hTrophyName = document.getElementById('header-trophy-tier-name');
+    const hTrophyDays = document.getElementById('header-trophy-days-pill');
+    if (hTrophySym) hTrophySym.textContent = currentTier.symbol;
+    if (hTrophyName) hTrophyName.textContent = currentTier.name;
+    if (hTrophyDays) {
+      if (status.nextTier) {
+        hTrophyDays.textContent = `${status.completedDays}/${status.nextTierRequired} días (Mes ${currentTier.months || 1})`;
+      } else {
+        hTrophyDays.textContent = `${status.completedDays} días · Nivel Máximo`;
+      }
+    }
+
+    const homeTrophySym = document.getElementById('home-trophy-symbol');
+    const homeTrophyName = document.getElementById('home-trophy-tier-name');
+    const homeTrophyDays = document.getElementById('home-trophy-days-pill');
+    if (homeTrophySym) homeTrophySym.textContent = currentTier.symbol;
+    if (homeTrophyName) homeTrophyName.textContent = currentTier.name;
+    if (homeTrophyDays) {
+      if (status.nextTier) {
+        homeTrophyDays.textContent = `${status.completedDays}/${status.nextTierRequired} días · ${status.progressPercent}%`;
+      } else {
+        homeTrophyDays.textContent = `${status.completedDays} días · Nivel Máximo`;
+      }
+    }
+  }
+
+  function renderHomeDashboard() {
+    const p = state.userProfile || {};
+    const greetingEl = document.getElementById('home-greeting-title');
+    if (greetingEl) {
+      greetingEl.textContent = `¡A entrenar, ${p.name || 'Atleta'}!`;
+    }
+
+    const currentDayKey = detectDefaultDay();
+    const day = state.schedule[currentDayKey];
+    if (!day) return;
+
+    const dayTag = document.getElementById('home-today-day-tag');
+    const muscleEl = document.getElementById('home-today-muscle');
+    const metaEl = document.getElementById('home-today-meta');
+    const heroDesc = document.getElementById('hero-workout-desc');
+
+    if (isRestDay(currentDayKey)) {
+      if (dayTag) dayTag.textContent = `Hoy: ${day.dayName}`;
+      if (muscleEl) muscleEl.textContent = '🌿 Día de Descanso Programado';
+      if (metaEl) metaEl.textContent = 'Recuperación Biológica y Articular Activa';
+      if (heroDesc) heroDesc.textContent = 'Hoy es tu día de descanso programado. Toca para ver tu semana o ajustar horarios.';
+    } else {
+      const exCount = (day.exercises || []).length;
+      const setsCount = (day.exercises || []).reduce((acc, ex) => acc + (Number(ex.sets) || 4), 0);
+      if (dayTag) dayTag.textContent = `Hoy: ${day.dayName}`;
+      if (muscleEl) muscleEl.textContent = day.title || day.muscleGroup;
+      if (metaEl) metaEl.textContent = `${exCount} Ejercicios · ~${day.estimatedMinutes || 55} min · ${setsCount} Series`;
+      if (heroDesc) heroDesc.textContent = `Rutina: ${day.muscleGroup} (${exCount} ejercicios). Toca para iniciar.`;
+    }
+  }
+
+  function renderUserProfileScreen() {
+    const p = state.userProfile || {};
+    const gender = (p.gender === 'female') ? 'female' : 'male';
+    const avatarEmoji = (gender === 'female') ? '🏋️‍♀️' : '🏋️‍♂️';
+    const genderLabel = (gender === 'female') ? 'Mujer' : 'Hombre';
+    const userName = (p.name || 'Atleta').trim();
+    const weight = Number(p.weightKg) || 75;
+    const height = Number(p.heightCm) || 175;
+    const age = Number(p.age) || 28;
+    const heightM = height / 100;
+    const bmi = ((weight) / (heightM * heightM)).toFixed(1);
+    const days = Number(p.daysPerWeek) || 6;
+
+    const levelLabels = {
+      beginner: 'Nivel Principiante',
+      intermediate: 'Nivel Intermedio',
+      advanced: 'Nivel Avanzado'
+    };
+    const goalLabels = {
+      hypertrophy: 'Hipertrofia Muscular',
+      strength: 'Fuerza Máxima y Potencia',
+      fat_loss: 'Definición y Pérdida Grasa',
+      health: 'Salud y Condición Física'
+    };
+
+    const avatarEl = document.getElementById('profile-avatar-emoji');
+    const nameEl = document.getElementById('profile-screen-heading');
+    const genderEl = document.getElementById('profile-gender-badge');
+    const levelEl = document.getElementById('profile-level-badge');
+    const weightEl = document.getElementById('profile-card-weight');
+    const heightEl = document.getElementById('profile-card-height');
+    const ageEl = document.getElementById('profile-card-age');
+    const bmiEl = document.getElementById('profile-card-bmi');
+    const daysEl = document.getElementById('profile-card-days');
+    const goalEl = document.getElementById('profile-card-goal');
+
+    if (avatarEl) avatarEl.textContent = avatarEmoji;
+    if (nameEl) nameEl.textContent = userName;
+    if (genderEl) genderEl.textContent = genderLabel;
+    if (levelEl) levelEl.textContent = levelLabels[p.fitnessLevel] || 'Nivel Intermedio';
+    if (weightEl) weightEl.textContent = `${weight} kg`;
+    if (heightEl) heightEl.textContent = `${height} cm`;
+    if (ageEl) ageEl.textContent = `${age} años`;
+    if (bmiEl) bmiEl.textContent = `${bmi} IMC`;
+    if (daysEl) daysEl.textContent = `${days} días / semana`;
+    if (goalEl) goalEl.textContent = goalLabels[p.primaryGoal] || 'Hipertrofia Muscular';
+  }
+
   function accommodateMissedDayAction(missedDayKey, strategyKey) {
     if (!GYM_VISUALS || typeof GYM_VISUALS.accommodateMissedDay !== 'function') {
       showCelebrationToast('⚠️ Módulo de acomodación no disponible');
@@ -4741,10 +5103,10 @@
   }
 
   // =========================================================================
-  // Módulo Focus UI v1.8: Navegación Direccional Multi-Pantalla y Modo Entrenamiento Activo
+  // Módulo Focus UI v1.8 & v2.0: Navegación Direccional Multi-Pantalla y Menú Principal
   // =========================================================================
-  const SCREENS_ORDER = ['plan', 'workout', 'stats', 'hub'];
-  const MAIN_SCREENS_ORDER = ['plan', 'stats', 'hub'];
+  const SCREENS_ORDER = ['home', 'plan', 'workout', 'stats', 'hub', 'profile'];
+  const MAIN_SCREENS_ORDER = ['home', 'plan', 'stats', 'hub', 'profile'];
 
   function syncScreenVisibility(direction = 'right') {
     const activeScreen = SCREENS_ORDER.includes(state.activeScreen) ? state.activeScreen : 'plan';
@@ -4795,6 +5157,12 @@
     const appFooter = document.querySelector('.app-footer');
     if (appFooter) {
       appFooter.hidden = isWorkout;
+    }
+
+    if (activeScreen === 'home') {
+      renderHomeDashboard();
+    } else if (activeScreen === 'profile') {
+      renderUserProfileScreen();
     }
   }
 
@@ -5867,6 +6235,9 @@
     renderGamificationDashboard();
     renderRecoveryAndReadinessDashboard();
     renderUserProfileSummary();
+    renderUserAvatarAndTrophies();
+    renderHomeDashboard();
+    renderUserProfileScreen();
     renderWeeklyMatrix();
   }
 
@@ -7043,6 +7414,59 @@
         closeTutModal();
       });
     }
+
+    // Navegación del Menú Principal v2.0
+    document.getElementById('btn-home-start-workout')?.addEventListener('click', () => {
+      switchAppScreen('plan');
+    });
+    document.getElementById('btn-home-stats')?.addEventListener('click', () => {
+      switchAppScreen('stats');
+    });
+    document.getElementById('btn-home-hub')?.addEventListener('click', () => {
+      switchAppScreen('hub');
+    });
+    document.getElementById('btn-home-profile')?.addEventListener('click', () => {
+      switchAppScreen('profile');
+    });
+
+    // Clicks en Avatares (Superior Izquierda) y Trofeos (Superior Derecha)
+    document.getElementById('header-user-avatar-badge')?.addEventListener('click', () => {
+      switchAppScreen('profile');
+    });
+    document.getElementById('home-user-avatar-badge')?.addEventListener('click', () => {
+      switchAppScreen('profile');
+    });
+    document.getElementById('header-brand-title')?.addEventListener('click', () => {
+      switchAppScreen('home');
+    });
+    document.getElementById('header-trophy-progression-badge')?.addEventListener('click', () => {
+      openTrophyCabinetDialog();
+    });
+    document.getElementById('home-trophy-badge')?.addEventListener('click', () => {
+      openTrophyCabinetDialog();
+    });
+
+    // Botones de Retorno al Menú Principal en cada ventana
+    ['btn-plan-back-home', 'btn-stats-back-home', 'btn-hub-back-home', 'btn-profile-back-home'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', () => {
+        switchAppScreen('home');
+      });
+    });
+
+    // Pantalla de Perfil
+    document.getElementById('btn-edit-profile-screen')?.addEventListener('click', () => {
+      openProfileOnboardingDialog(false);
+    });
+    document.getElementById('btn-reset-profile-screen')?.addEventListener('click', () => {
+      if (typeof confirm !== 'function' || confirm('¿Restablecer el entrenamiento a la rutina original base?')) {
+        restoreOriginalSchedule();
+        showCelebrationToast('🔄 Rutina restablecida a los valores originales');
+      }
+    });
+
+    // Modales de Trofeos
+    document.getElementById('btn-close-trophy-celebration')?.addEventListener('click', closeTrophyCelebrationDialog);
+    document.getElementById('btn-close-trophy-cabinet')?.addEventListener('click', closeTrophyCabinetDialog);
   }
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
@@ -7199,6 +7623,19 @@
     getCanonicalWeeklyRoutines,
     enforceRestDaysCount,
     playScheduleRecalcAnimation,
+    // APIs Menú Principal, Avatar de Género y Progresión de Trofeos v2.0
+    TROPHY_TIERS,
+    getDaysPerMonthForUser,
+    getTotalCompletedWorkoutsCount,
+    getTrophyProgressionStatus,
+    checkAndTriggerTrophyUnlock,
+    openTrophyCelebrationDialog,
+    closeTrophyCelebrationDialog,
+    openTrophyCabinetDialog,
+    closeTrophyCabinetDialog,
+    renderUserAvatarAndTrophies,
+    renderHomeDashboard,
+    renderUserProfileScreen,
     setSimulatedDay: (dayId) => { simulatedDay = dayId; }
   };
 

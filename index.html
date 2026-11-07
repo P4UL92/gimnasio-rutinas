@@ -13,17 +13,40 @@
 <body>
   <header class="app-header">
     <div class="brand-row">
-      <div class="brand-identity">
+      <!-- Avatar genérico en la esquina superior izquierda según género -->
+      <div class="header-user-avatar-badge" id="header-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
+        <div class="user-avatar-circle" id="header-user-avatar-circle">
+          <span class="user-avatar-symbol" id="header-user-avatar-symbol">🏋️‍♂️</span>
+        </div>
+        <div class="user-avatar-info">
+          <span class="user-avatar-name" id="header-user-name">Atleta</span>
+          <span class="user-avatar-gender-pill" id="header-user-gender-pill">Hombre</span>
+        </div>
+      </div>
+
+      <div class="brand-identity" id="header-brand-title" role="button" tabindex="0" title="Ir al Menú Principal">
         <span class="brand-icon-badge" aria-hidden="true">
           <img src="assets/icons/icon-192.png" alt="" class="brand-logo-img" width="36" height="36">
         </span>
         <div>
-          <span class="eyebrow">ANDROID WORKOUT PLANNER · v1.8 FOCUS UI</span>
+          <span class="eyebrow">ANDROID WORKOUT PLANNER · v2.0 SYSTEM</span>
           <h1>Gym Rutinas Pro</h1>
         </div>
       </div>
 
-      <div class="header-quick-actions">
+      <!-- Trofeo animado en la esquina superior derecha -->
+      <div class="header-trophy-badge" id="header-trophy-progression-badge" role="button" tabindex="0" title="Progreso de Trofeos">
+        <div class="trophy-widget-box" id="header-trophy-widget-box">
+          <span class="trophy-widget-symbol" id="header-trophy-symbol">🥉</span>
+          <div class="trophy-widget-meta">
+            <span class="trophy-widget-tier-name" id="header-trophy-tier-name">Guerrero de Bronce</span>
+            <span class="trophy-widget-days-pill" id="header-trophy-days-pill">0 / 24 días</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acceso a perfil conservado para pruebas y compatibilidad -->
+      <div class="header-quick-actions" style="display: none;" aria-hidden="true">
         <button type="button" id="btn-header-profile" class="btn-ghost btn-header-profile" title="Ver o editar parámetros de tu perfil de entrenamiento" aria-label="Abrir perfil de entrenamiento">
           <span class="btn-profile-avatar" aria-hidden="true">👤</span>
           <span id="header-profile-tag" class="btn-profile-tag">Mi Perfil</span>
@@ -74,9 +97,107 @@
 
   <main class="app-main" id="main-content" data-active-screen="plan">
     <!-- =====================================================================
-         PANTALLA 1: PLANIFICADOR DEL DÍA (VISTA POR DEFECTO)
+         PANTALLA 0: MENÚ PRINCIPAL (DASHBOARD)
+         ===================================================================== -->
+    <div id="screen-home" class="app-screen-panel" data-screen-panel="home" hidden>
+      <section class="home-hero-section">
+        <div class="home-user-trophy-bar">
+          <div class="home-user-avatar-badge" id="home-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
+            <div class="user-avatar-circle" id="home-user-avatar-circle">
+              <span class="user-avatar-symbol" id="home-user-avatar-symbol">🏋️‍♂️</span>
+            </div>
+            <div class="user-avatar-info">
+              <span class="user-avatar-name" id="home-user-name">Atleta</span>
+              <span class="user-avatar-gender-pill" id="home-user-gender-pill">Hombre</span>
+            </div>
+          </div>
+
+          <div class="home-trophy-badge" id="home-trophy-badge" role="button" tabindex="0" title="Ver Progreso y Trofeos">
+            <div class="trophy-widget-box" id="home-trophy-widget-box">
+              <span class="trophy-widget-symbol" id="home-trophy-symbol">🥉</span>
+              <div class="trophy-widget-meta">
+                <span class="trophy-widget-tier-name" id="home-trophy-tier-name">Guerrero de Bronce</span>
+                <span class="trophy-widget-days-pill" id="home-trophy-days-pill">0 / 24 días</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-greeting-card">
+          <div class="home-greeting-header">
+            <span class="home-greeting-eyebrow">PLAN SEMANAL INTELIGENTE</span>
+            <h2 class="home-greeting-title" id="home-greeting-title">¡A entrenar, Atleta!</h2>
+          </div>
+          <div class="home-today-preview" id="home-today-preview">
+            <div class="home-today-day-tag" id="home-today-day-tag">Hoy: Lunes</div>
+            <div class="home-today-muscle" id="home-today-muscle">Espalda y Bíceps braquial</div>
+            <div class="home-today-meta" id="home-today-meta">6 Ejercicios · ~55 min · 24 Series</div>
+          </div>
+        </div>
+
+        <div class="home-menu-grid">
+          <!-- 1. INICIAR ENTRENAMIENTO: Botón más grande y resaltante con símbolo de entrenamiento -->
+          <button type="button" id="btn-home-start-workout" class="btn-home-hero-workout" title="Iniciar sesión de entrenamiento de hoy">
+            <div class="hero-workout-icon-box">
+              <span class="hero-workout-icon">⚡🏋️‍♂️</span>
+            </div>
+            <div class="hero-workout-content">
+              <span class="hero-workout-badge">RUTINA DEL DÍA</span>
+              <strong class="hero-workout-title">INICIAR ENTRENAMIENTO</strong>
+              <span class="hero-workout-desc" id="hero-workout-desc">Comenzar sesión de hoy con calentamiento y control de series</span>
+            </div>
+            <div class="hero-workout-arrow">➔</div>
+          </button>
+
+          <!-- 2. ESTADÍSTICAS Y SEGUIMIENTO PERSONAL -->
+          <button type="button" id="btn-home-stats" class="btn-home-nav-card btn-home-stats" title="Ver estadísticas, gráficos de volumen e historial">
+            <div class="nav-card-icon-box">
+              <span class="nav-card-icon">📊</span>
+            </div>
+            <div class="nav-card-content">
+              <strong class="nav-card-title">Estadísticas y Seguimiento Personal</strong>
+              <span class="nav-card-desc">Historial de sesiones, volumen, tonelaje y constancia</span>
+            </div>
+            <div class="nav-card-arrow">➔</div>
+          </button>
+
+          <!-- 3. CONFIGURACIÓN Y EXTRAS -->
+          <button type="button" id="btn-home-hub" class="btn-home-nav-card btn-home-hub" title="Ver herramientas extras, calculadora y ajustes">
+            <div class="nav-card-icon-box">
+              <span class="nav-card-icon">⚙️</span>
+            </div>
+            <div class="nav-card-content">
+              <strong class="nav-card-title">Configuración y Extras</strong>
+              <span class="nav-card-desc">Calculadora 1RM, Discos, Restaura Días, Nutrición e Hidratación</span>
+            </div>
+            <div class="nav-card-arrow">➔</div>
+          </button>
+
+          <!-- 4. MI PERFIL -->
+          <button type="button" id="btn-home-profile" class="btn-home-nav-card btn-home-profile" title="Ver y modificar datos de tu perfil">
+            <div class="nav-card-icon-box">
+              <span class="nav-card-icon">👤</span>
+            </div>
+            <div class="nav-card-content">
+              <strong class="nav-card-title">Mi Perfil</strong>
+              <span class="nav-card-desc">Datos del atleta, género, días por semana y modificación</span>
+            </div>
+            <div class="nav-card-arrow">➔</div>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         PANTALLA 1: PLANIFICADOR DEL DÍA (VENTANA DE ENTRENAMIENTO)
          ===================================================================== -->
     <div id="screen-plan" class="app-screen-panel is-active-screen" data-screen-panel="plan">
+      <div class="screen-top-nav-bar" id="plan-top-nav-bar">
+        <button type="button" id="btn-plan-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          ⬅ 🏠 Menú Principal
+        </button>
+        <span class="screen-view-badge">🏋️ Ventana de Entrenamiento</span>
+      </div>
       <section class="day-hero-card" id="day-hero-card" style="--day-hue: 160;">
         <div class="day-hero-grid">
           <div class="day-hero-info">
@@ -361,6 +482,12 @@
          PANTALLA 3: ESTADÍSTICAS, GRÁFICOS, MAPA SEMANAL E HISTORIAL
          ===================================================================== -->
     <div id="screen-stats" class="app-screen-panel" data-screen-panel="stats" hidden>
+      <div class="screen-top-nav-bar" id="stats-top-nav-bar">
+        <button type="button" id="btn-stats-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          ⬅ 🏠 Menú Principal
+        </button>
+        <span class="screen-view-badge">📊 Estadísticas y Seguimiento Personal</span>
+      </div>
       <!-- Panel de Estadísticas, Gráficos e Historial -->
       <section class="analytics-dashboard-section" aria-labelledby="stats-heading">
         <div class="section-header-row">
@@ -460,6 +587,12 @@
          PANTALLA 4: MENÚ AGRUPADO DE MÓDULOS Y HERRAMIENTAS EXTRAS
          ===================================================================== -->
     <div id="screen-hub" class="app-screen-panel" data-screen-panel="hub" hidden>
+      <div class="screen-top-nav-bar" id="hub-top-nav-bar">
+        <button type="button" id="btn-hub-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          ⬅ 🏠 Menú Principal
+        </button>
+        <span class="screen-view-badge">⚙️ Configuración y Extras</span>
+      </div>
       <section class="weekly-overview-section" aria-label="Módulos adicionales y herramientas">
         <div class="section-header-row">
           <h2 class="section-title">🧰 Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
@@ -772,6 +905,71 @@
           </div>
         </div>
       </details>
+      </section>
+    </div>
+
+    <!-- =====================================================================
+         PANTALLA 5: MI PERFIL (INFORMACIÓN DEL USUARIO Y MODIFICACIÓN)
+         ===================================================================== -->
+    <div id="screen-profile" class="app-screen-panel" data-screen-panel="profile" hidden>
+      <div class="screen-top-nav-bar" id="profile-top-nav-bar">
+        <button type="button" id="btn-profile-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          ⬅ 🏠 Menú Principal
+        </button>
+        <span class="screen-view-badge">👤 Mi Perfil Deportivo</span>
+      </div>
+
+      <section class="user-profile-fullscreen-section" aria-labelledby="profile-screen-heading">
+        <div class="profile-fullscreen-card">
+          <div class="profile-avatar-header">
+            <div class="profile-fullscreen-avatar" id="profile-fullscreen-avatar">
+              <span class="profile-avatar-emoji" id="profile-avatar-emoji">🏋️‍♂️</span>
+            </div>
+            <div class="profile-main-meta">
+              <h2 id="profile-screen-heading" class="profile-screen-name">Atleta</h2>
+              <div class="profile-badges-row">
+                <span class="profile-gender-badge" id="profile-gender-badge">Hombre</span>
+                <span class="profile-level-badge" id="profile-level-badge">Nivel Intermedio</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-metrics-cards-grid">
+            <div class="pm-card">
+              <span class="pm-card-label">⚖️ Peso Corporal</span>
+              <strong class="pm-card-value" id="profile-card-weight">75 kg</strong>
+            </div>
+            <div class="pm-card">
+              <span class="pm-card-label">📏 Estatura</span>
+              <strong class="pm-card-value" id="profile-card-height">175 cm</strong>
+            </div>
+            <div class="pm-card">
+              <span class="pm-card-label">🎂 Edad</span>
+              <strong class="pm-card-value" id="profile-card-age">28 años</strong>
+            </div>
+            <div class="pm-card">
+              <span class="pm-card-label">📊 Índice IMC</span>
+              <strong class="pm-card-value" id="profile-card-bmi">24.5</strong>
+            </div>
+            <div class="pm-card">
+              <span class="pm-card-label">📅 Días por Semana</span>
+              <strong class="pm-card-value" id="profile-card-days">6 días / semana</strong>
+            </div>
+            <div class="pm-card">
+              <span class="pm-card-label">🎯 Objetivo Principal</span>
+              <strong class="pm-card-value" id="profile-card-goal">Hipertrofia Muscular</strong>
+            </div>
+          </div>
+
+          <div class="profile-actions-panel">
+            <button type="button" id="btn-edit-profile-screen" class="btn-primary btn-edit-profile-lg">
+              ✏️ Modificar Parámetros / Editar Información
+            </button>
+            <button type="button" id="btn-reset-profile-screen" class="btn-ghost">
+              🔄 Restablecer a Valores de Fábrica
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   </main>
@@ -1921,6 +2119,48 @@
             </div>
           </footer>
         </section>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal de Celebración de Desbloqueo de Trofeo con Animación Pendular y Flash -->
+  <dialog id="trophy-celebration-dialog" class="trophy-celebration-dialog" aria-labelledby="trophy-dialog-title">
+    <div class="trophy-celebration-content">
+      <div class="trophy-flash-halo" id="trophy-flash-halo"></div>
+      <div class="trophy-pendulum-box" id="trophy-pendulum-box">
+        <span class="trophy-pendulum-symbol" id="trophy-pendulum-symbol">🥉</span>
+      </div>
+
+      <div class="trophy-dialog-body">
+        <span class="trophy-unlock-tag">✨ ¡NUEVA META DE ENTRENAMIENTO ALCANZADA! ✨</span>
+        <h3 id="trophy-dialog-title" class="trophy-dialog-title">¡Has completado satisfactoriamente 1 mes de entrenamiento!</h3>
+        <p class="trophy-dialog-subtitle">Ahora tu rango es:</p>
+        <div class="trophy-rank-banner" id="trophy-rank-banner">
+          <span class="trophy-rank-denomination" id="trophy-rank-denomination">Guerrero de Bronce</span>
+        </div>
+        <p class="trophy-dialog-desc" id="trophy-dialog-desc">
+          Has demostrado una disciplina inquebrantable acumulando 24 sesiones de fuerza e hipertrofia.
+        </p>
+
+        <button type="button" id="btn-close-trophy-celebration" class="btn-primary btn-claim-trophy-lg">
+          🏆 Reclamar Premio y Continuar
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Vitrina / Galería de Trofeos e Implementos de Progreso -->
+  <dialog id="trophy-cabinet-dialog" class="trophy-cabinet-dialog" aria-labelledby="trophy-cabinet-title">
+    <div class="dialog-header-clean">
+      <h3 id="trophy-cabinet-title" class="dialog-title-clean">🏆 Progresión y Trofeos de Entrenamiento</h3>
+      <button type="button" id="btn-close-trophy-cabinet" class="btn-dialog-close-x" aria-label="Cerrar vitrina">✕</button>
+    </div>
+    <div class="trophy-cabinet-body">
+      <div class="trophy-cabinet-summary" id="trophy-cabinet-summary">
+        <!-- Resumen de días completados y próximo rango -->
+      </div>
+      <div class="trophy-tiers-grid" id="trophy-tiers-grid">
+        <!-- Renderizado dinámicamente por app.js -->
       </div>
     </div>
   </dialog>
