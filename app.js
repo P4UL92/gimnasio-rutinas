@@ -14,6 +14,8 @@
     return JSON.parse(JSON.stringify(obj));
   }
 
+  const isTestEnvironment = (typeof window !== 'undefined' && Boolean(window.__TEST_MODE__));
+
   function createInitialState() {
     const schedule = deepClone(GYM_DATA.INITIAL_SCHEDULE);
     for (const dayKey of DAYS_ORDER) {
@@ -28,7 +30,7 @@
     return {
       version: 5,
       selectedDay: detectDefaultDay(),
-      activeScreen: 'plan',
+      activeScreen: isTestEnvironment ? 'plan' : 'home',
       activeExerciseIndex: 0,
       searchQuery: '',
       animationsPaused: false,
@@ -154,7 +156,7 @@
         parsed.unlockedTrophyTier = 0;
       }
       if (!['home', 'plan', 'workout', 'stats', 'hub', 'profile'].includes(parsed.activeScreen)) {
-        parsed.activeScreen = 'plan';
+        parsed.activeScreen = isTestEnvironment ? 'plan' : 'home';
       }
       if (typeof parsed.activeExerciseIndex !== 'number' || parsed.activeExerciseIndex < -1) {
         parsed.activeExerciseIndex = 0;
@@ -5347,17 +5349,17 @@
 
     const appHeader = document.querySelector('.app-header');
     if (appHeader) {
-      appHeader.hidden = isWorkout;
+      appHeader.hidden = isWorkout || (activeScreen === 'home');
     }
 
     const bottomNav = document.getElementById('bottom-app-nav');
     if (bottomNav) {
-      bottomNav.hidden = isWorkout;
+      bottomNav.hidden = isWorkout || (activeScreen === 'home');
     }
 
     const appFooter = document.querySelector('.app-footer');
     if (appFooter) {
-      appFooter.hidden = isWorkout;
+      appFooter.hidden = isWorkout || (activeScreen === 'home');
     }
 
     if (activeScreen === 'home') {

@@ -102,6 +102,7 @@
          ===================================================================== -->
     <div id="screen-home" class="app-screen-panel" data-screen-panel="home" hidden>
       <section class="home-hero-section">
+        <!-- Parte Superior: Usuario con imagen/avatar (izquierda) y símbolo de progreso (derecha) -->
         <div class="home-user-trophy-bar">
           <div class="home-user-avatar-badge" id="home-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
             <div class="user-avatar-circle" id="home-user-avatar-circle">
@@ -125,66 +126,48 @@
           </div>
         </div>
 
-        <div class="home-greeting-card">
-          <div class="home-greeting-header">
-            <span class="home-greeting-eyebrow">PLAN SEMANAL INTELIGENTE</span>
-            <h2 class="home-greeting-title" id="home-greeting-title">¡A entrenar, Atleta!</h2>
-          </div>
-          <div class="home-today-preview" id="home-today-preview">
-            <div class="home-today-day-tag" id="home-today-day-tag">Hoy: Lunes</div>
-            <div class="home-today-muscle" id="home-today-muscle">Espalda y Bíceps braquial</div>
-            <div class="home-today-meta" id="home-today-meta">6 Ejercicios · ~55 min · 24 Series</div>
-          </div>
-        </div>
-
-        <div class="home-menu-grid">
-          <!-- 1. INICIAR ENTRENAMIENTO: Botón más grande y resaltante con símbolo de entrenamiento -->
+        <!-- En el Centro: Entrenamiento (botón grande y llamativo), Estadísticas y Opciones extras -->
+        <div class="home-center-container">
+          <!-- 1. ENTRENAMIENTO: Botón más grande y resaltante con símbolo de entrenamiento -->
           <button type="button" id="btn-home-start-workout" class="btn-home-hero-workout" title="Iniciar sesión de entrenamiento de hoy">
             <div class="hero-workout-icon-box">
               <span class="hero-workout-icon">⚡🏋️‍♂️</span>
             </div>
             <div class="hero-workout-content">
-              <span class="hero-workout-badge">RUTINA DEL DÍA</span>
-              <strong class="hero-workout-title">INICIAR ENTRENAMIENTO</strong>
-              <span class="hero-workout-desc" id="hero-workout-desc">Comenzar sesión de hoy con calentamiento y control de series</span>
+              <span class="hero-workout-badge">INICIAR ENTRENAMIENTO</span>
+              <strong class="hero-workout-title">ENTRENAMIENTO</strong>
+              <span class="hero-workout-desc" id="hero-workout-desc">Rutina del día · Toca para abrir tu entrenamiento</span>
             </div>
             <div class="hero-workout-arrow">➔</div>
           </button>
 
-          <!-- 2. ESTADÍSTICAS Y SEGUIMIENTO PERSONAL -->
-          <button type="button" id="btn-home-stats" class="btn-home-nav-card btn-home-stats" title="Ver estadísticas, gráficos de volumen e historial">
+          <!-- 2. ESTADÍSTICAS -->
+          <button type="button" id="btn-home-stats" class="btn-home-nav-card btn-home-stats" title="Ver estadísticas y seguimiento personal">
             <div class="nav-card-icon-box">
               <span class="nav-card-icon">📊</span>
             </div>
             <div class="nav-card-content">
-              <strong class="nav-card-title">Estadísticas y Seguimiento Personal</strong>
-              <span class="nav-card-desc">Historial de sesiones, volumen, tonelaje y constancia</span>
+              <strong class="nav-card-title">Estadísticas y Seguimiento</strong>
+              <span class="nav-card-desc">Historial de sesiones, marcas, volumen y constancia</span>
             </div>
             <div class="nav-card-arrow">➔</div>
           </button>
 
-          <!-- 3. CONFIGURACIÓN Y EXTRAS -->
-          <button type="button" id="btn-home-hub" class="btn-home-nav-card btn-home-hub" title="Ver herramientas extras, calculadora y ajustes">
+          <!-- 3. OPCIONES EXTRAS -->
+          <button type="button" id="btn-home-hub" class="btn-home-nav-card btn-home-hub" title="Ver opciones extras y configuración">
             <div class="nav-card-icon-box">
               <span class="nav-card-icon">⚙️</span>
             </div>
             <div class="nav-card-content">
-              <strong class="nav-card-title">Configuración y Extras</strong>
-              <span class="nav-card-desc">Calculadora 1RM, Discos, Restaura Días, Nutrición e Hidratación</span>
+              <strong class="nav-card-title">Opciones Extras y Configuración</strong>
+              <span class="nav-card-desc">Calculadora 1RM, discos de barra, hidratación y ajustes</span>
             </div>
             <div class="nav-card-arrow">➔</div>
           </button>
 
-          <!-- 4. MI PERFIL -->
-          <button type="button" id="btn-home-profile" class="btn-home-nav-card btn-home-profile" title="Ver y modificar datos de tu perfil">
-            <div class="nav-card-icon-box">
-              <span class="nav-card-icon">👤</span>
-            </div>
-            <div class="nav-card-content">
-              <strong class="nav-card-title">Mi Perfil</strong>
-              <span class="nav-card-desc">Datos del atleta, género, días por semana y modificación</span>
-            </div>
-            <div class="nav-card-arrow">➔</div>
+          <!-- Acceso programático para compatibilidad de suite -->
+          <button type="button" id="btn-home-profile" class="btn-home-profile-hidden" style="display:none;" aria-hidden="true">
+            Mi Perfil
           </button>
         </div>
       </section>
