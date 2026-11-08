@@ -102,7 +102,8 @@ body.animations-paused * {
   margin: 0 auto 10px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
   gap: 10px;
   flex-wrap: wrap;
 }
@@ -110,6 +111,9 @@ body.animations-paused * {
 .brand-identity {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: 0 auto;
   gap: 10px;
 }
 
@@ -4966,14 +4970,18 @@ body.animations-paused .focus-sprite-frame {
   }
   .brand-row {
     flex-wrap: nowrap;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     gap: 8px;
     margin-bottom: 6px;
+    text-align: center;
   }
   .brand-identity {
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    justify-content: center;
+    margin: 0 auto;
+    text-align: center;
     gap: 8px;
   }
   .brand-icon-badge {
@@ -7760,6 +7768,18 @@ details.anatomy-collapsible[open] > summary::after {
   backdrop-filter: blur(8px);
 }
 
+.screen-top-left-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.screen-top-nav-bar .btn-back-home {
+  margin-left: auto;
+  order: 2;
+}
+
 .btn-back-home {
   font-size: 0.88rem;
   font-weight: 800;
@@ -7808,6 +7828,23 @@ details.anatomy-collapsible[open] > summary::after {
   gap: 12px;
   flex-wrap: wrap;
   width: 100%;
+}
+
+.home-brand-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1 1 auto;
+}
+
+.home-app-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
 }
 
 .home-center-container {

@@ -102,7 +102,7 @@
          ===================================================================== -->
     <div id="screen-home" class="app-screen-panel" data-screen-panel="home" hidden>
       <section class="home-hero-section">
-        <!-- Parte Superior: Usuario con imagen/avatar (izquierda) y símbolo de progreso (derecha) -->
+        <!-- Parte Superior: Usuario con imagen/avatar (izquierda), Nombre de la App (centro superior) y símbolo de progreso (derecha) -->
         <div class="home-user-trophy-bar">
           <div class="home-user-avatar-badge" id="home-user-avatar-badge" role="button" tabindex="0" title="Ver Mi Perfil">
             <div class="user-avatar-circle" id="home-user-avatar-circle">
@@ -113,6 +113,11 @@
               <span class="user-avatar-name" id="home-user-name">Atleta</span>
               <span class="user-avatar-gender-pill" id="home-user-gender-pill">Hombre</span>
             </div>
+          </div>
+
+          <div class="home-brand-identity" id="home-brand-title">
+            <span class="eyebrow">ANDROID WORKOUT PLANNER</span>
+            <h1 class="home-app-title">Gym Rutinas Pro</h1>
           </div>
 
           <div class="home-trophy-badge" id="home-trophy-badge" role="button" tabindex="0" title="Ver Progreso y Trofeos">
@@ -181,10 +186,10 @@
          ===================================================================== -->
     <div id="screen-plan" class="app-screen-panel is-active-screen" data-screen-panel="plan">
       <div class="screen-top-nav-bar" id="plan-top-nav-bar">
-        <button type="button" id="btn-plan-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
-          ⬅ 🏠 Menú Principal
-        </button>
         <span class="screen-view-badge">🏋️ Ventana de Entrenamiento</span>
+        <button type="button" id="btn-plan-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          🏠 Menú Principal ➔
+        </button>
       </div>
       <section class="day-hero-card" id="day-hero-card" style="--day-hue: 160;">
         <div class="day-hero-grid">
@@ -471,12 +476,14 @@
          ===================================================================== -->
     <div id="screen-stats" class="app-screen-panel" data-screen-panel="stats" hidden>
       <div class="screen-top-nav-bar" id="stats-top-nav-bar">
+        <div class="screen-top-left-actions">
+          <span class="screen-view-badge">📊 Estadísticas y Seguimiento Personal</span>
+          <button type="button" id="btn-export-stats-csv" class="btn-primary btn-sm btn-export-stats-top" title="Exportar reporte de entrenamiento a Excel / CSV">
+            📊 Exportar CSV
+          </button>
+        </div>
         <button type="button" id="btn-stats-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
-          ⬅ 🏠 Menú Principal
-        </button>
-        <span class="screen-view-badge">📊 Estadísticas y Seguimiento Personal</span>
-        <button type="button" id="btn-export-stats-csv" class="btn-primary btn-sm btn-export-stats-top" title="Exportar reporte de entrenamiento a Excel / CSV">
-          📊 Exportar CSV
+          🏠 Menú Principal ➔
         </button>
       </div>
       <!-- Panel de Estadísticas, Gráficos e Historial -->
@@ -579,10 +586,10 @@
          ===================================================================== -->
     <div id="screen-hub" class="app-screen-panel" data-screen-panel="hub" hidden>
       <div class="screen-top-nav-bar" id="hub-top-nav-bar">
-        <button type="button" id="btn-hub-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
-          ⬅ 🏠 Menú Principal
-        </button>
         <span class="screen-view-badge">⚙️ Configuración y Extras</span>
+        <button type="button" id="btn-hub-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          🏠 Menú Principal ➔
+        </button>
       </div>
       <section class="weekly-overview-section" aria-label="Módulos adicionales y herramientas">
         <div class="section-header-row">
@@ -904,10 +911,10 @@
          ===================================================================== -->
     <div id="screen-profile" class="app-screen-panel" data-screen-panel="profile" hidden>
       <div class="screen-top-nav-bar" id="profile-top-nav-bar">
-        <button type="button" id="btn-profile-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
-          ⬅ 🏠 Menú Principal
-        </button>
         <span class="screen-view-badge">👤 Mi Perfil Deportivo</span>
+        <button type="button" id="btn-profile-back-home" class="btn-ghost btn-back-home" title="Volver al Menú Principal">
+          🏠 Menú Principal ➔
+        </button>
       </div>
 
       <section class="user-profile-fullscreen-section" aria-labelledby="profile-screen-heading">

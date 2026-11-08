@@ -3042,8 +3042,69 @@ assert.ok(doc.getElementById('profile-avatar-evolution-card'), 'La pantalla de p
 // 58.5 Verificación de 0% <svg> en toda la aplicación
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en toda la aplicación');
 
+// =========================================================================
+// SUITE 59: BOTÓN DE RETORNO EN PARTE SUPERIOR DERECHA Y NOMBRE DE APP EN CENTRO SUPERIOR
+// =========================================================================
+console.log('Ejecutando Suite 59: Botón de Retorno en Superior Derecha y Nombre de App en Centro Superior...');
+
+// 59.1 Botón de retorno al Menú Principal en la parte superior derecha de cada pantalla
+const screensWithBackButtons = [
+  { screen: 'plan', barId: 'plan-top-nav-bar', btnId: 'btn-plan-back-home' },
+  { screen: 'stats', barId: 'stats-top-nav-bar', btnId: 'btn-stats-back-home' },
+  { screen: 'hub', barId: 'hub-top-nav-bar', btnId: 'btn-hub-back-home' },
+  { screen: 'profile', barId: 'profile-top-nav-bar', btnId: 'btn-profile-back-home' }
+];
+
+for (const { screen, barId, btnId } of screensWithBackButtons) {
+  const bar = doc.getElementById(barId);
+  assert.ok(bar, `Debe existir la barra superior #${barId}`);
+  const btn = doc.getElementById(btnId);
+  assert.ok(btn, `Debe existir el botón #${btnId}`);
+  assert.ok(bar.contains(btn), `La barra #${barId} debe contener #${btnId}`);
+  assert.equal(bar.lastElementChild, btn, `En #${barId}, #${btnId} debe estar posicionado al final (parte superior derecha)`);
+}
+
+// 59.2 Regla CSS que garantiza la ubicación del botón de retorno a la derecha
+const stylesSuite59 = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(
+  stylesSuite59.includes('.screen-top-nav-bar .btn-back-home') &&
+  stylesSuite59.includes('margin-left: auto'),
+  'styles.css debe posicionar .btn-back-home en la parte superior derecha mediante margin-left: auto'
+);
+
+// 59.3 Nombre de la aplicación en el centro superior (movido de la parte superior izquierda)
+assert.ok(
+  stylesSuite59.includes('.brand-row') &&
+  stylesSuite59.includes('justify-content: center'),
+  'styles.css debe centrar .brand-row horizontalmente'
+);
+assert.ok(
+  stylesSuite59.includes('.brand-identity') &&
+  stylesSuite59.includes('margin: 0 auto'),
+  'styles.css debe centrar .brand-identity en el centro superior'
+);
+
+// En Pantalla Principal (#screen-home), el nombre de la app está centrado en la barra superior
+const homeBrandTitle = doc.getElementById('home-brand-title');
+assert.ok(homeBrandTitle, 'Debe existir #home-brand-title en la pantalla principal');
+assert.ok(homeBrandTitle.textContent.includes('Gym Rutinas Pro'), 'Debe contener el nombre Gym Rutinas Pro');
+const homeUserBar = doc.querySelector('.home-user-trophy-bar');
+assert.ok(homeUserBar && homeUserBar.contains(homeBrandTitle), 'El título debe estar en la barra superior de la pantalla principal');
+
+// 59.4 Funcionalidad intacta de los botones de retorno al menú principal
+for (const { screen, btnId } of screensWithBackButtons) {
+  app.switchAppScreen(screen);
+  assert.equal(app.getState().activeScreen, screen, `Debe cambiar a la pantalla ${screen}`);
+  const btn = doc.getElementById(btnId);
+  btn.click();
+  assert.equal(app.getState().activeScreen, 'home', `Al hacer click en #${btnId} debe volver al Menú Principal`);
+}
+
+// 59.5 Cero etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 58 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 59 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
