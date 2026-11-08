@@ -135,11 +135,13 @@ body.animations-paused * {
   color: var(--accent-emerald);
 }
 
-.brand-identity h1 {
+.brand-identity h1,
+.header-screen-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  color: #f8fafc;
 }
 
 .header-actions {

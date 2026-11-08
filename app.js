@@ -5348,6 +5348,18 @@
 
     document.body.dataset.activeScreen = activeScreen;
 
+    const SCREEN_TITLES = {
+      plan: 'Entrenamiento',
+      stats: 'Estadísticas',
+      hub: 'Configuración',
+      profile: 'Mi Perfil',
+      workout: 'Entrenamiento'
+    };
+    const headerTitleEl = document.getElementById('header-screen-title');
+    if (headerTitleEl) {
+      headerTitleEl.textContent = SCREEN_TITLES[activeScreen] || 'Entrenamiento';
+    }
+
     const dayTabsNav = document.getElementById('day-tabs-nav');
     if (dayTabsNav) {
       dayTabsNav.hidden = (activeScreen !== 'plan');

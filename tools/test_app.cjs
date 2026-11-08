@@ -3142,8 +3142,50 @@ assert.equal(metricsDrawer.hidden, false, 'Al volver a plan, el resumen semanal 
 // 60.5 Cero etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
 
+// =========================================================================
+// SUITE 61: EN PANTALLAS SECUNDARIAS ÍCONO DE APP Y TÍTULO DE PANTALLA
+// =========================================================================
+console.log('Ejecutando Suite 61: Ícono de App y Título de Pantalla en Pantallas Secundarias...');
+
+// 61.1 En pantalla principal se mantiene el título de la aplicación Gym Rutinas Pro
+app.switchAppScreen('home');
+const homeTitleEl = doc.getElementById('home-brand-title');
+assert.ok(homeTitleEl, 'Debe existir #home-brand-title en la pantalla principal');
+assert.ok(homeTitleEl.textContent.includes('Gym Rutinas Pro'), 'La pantalla principal debe tener el nombre de la app Gym Rutinas Pro');
+
+// 61.2 En las pantallas secundarias se muestra el ícono de la app y el título correspondiente
+const screenExpectations = [
+  { screen: 'plan', expectedTitle: 'Entrenamiento' },
+  { screen: 'stats', expectedTitle: 'Estadísticas' },
+  { screen: 'hub', expectedTitle: 'Configuración' },
+  { screen: 'profile', expectedTitle: 'Mi Perfil' }
+];
+
+const headerTitleEl = doc.getElementById('header-screen-title');
+assert.ok(headerTitleEl, 'Debe existir #header-screen-title en la cabecera');
+const headerIconImg = doc.querySelector('.brand-identity .brand-logo-img');
+assert.ok(headerIconImg, 'Debe existir el ícono de la aplicación .brand-logo-img en la cabecera');
+assert.ok(headerIconImg.getAttribute('src').includes('icon-192.png'), 'El ícono debe ser icon-192.png');
+
+for (const { screen, expectedTitle } of screenExpectations) {
+  app.switchAppScreen(screen);
+  assert.equal(
+    headerTitleEl.textContent.trim(),
+    expectedTitle,
+    `En la pantalla ${screen}, la cabecera debe mostrar "${expectedTitle}"`
+  );
+  // Verificar que NO dice "Gym Rutinas Pro" en el header
+  assert.ok(
+    !headerTitleEl.textContent.includes('Gym Rutinas Pro'),
+    `En la pantalla ${screen}, el encabezado NO debe mostrar el título de la aplicación`
+  );
+}
+
+// 61.3 Cero etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 60 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 61 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
