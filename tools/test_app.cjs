@@ -3043,11 +3043,11 @@ assert.ok(doc.getElementById('profile-avatar-evolution-card'), 'La pantalla de p
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en toda la aplicación');
 
 // =========================================================================
-// SUITE 59: BOTÓN DE RETORNO EN PARTE SUPERIOR DERECHA Y NOMBRE DE APP EN CENTRO SUPERIOR
+// SUITE 59: BOTÓN DE RETORNO EN PARTE SUPERIOR IZQUIERDA Y NOMBRE DE APP EN CENTRO SUPERIOR
 // =========================================================================
-console.log('Ejecutando Suite 59: Botón de Retorno en Superior Derecha y Nombre de App en Centro Superior...');
+console.log('Ejecutando Suite 59: Botón de Retorno en Superior Izquierda y Nombre de App en Centro Superior...');
 
-// 59.1 Botón de retorno al Menú Principal en la parte superior derecha de cada pantalla
+// 59.1 Botón de retorno al Menú Principal en la parte superior izquierda de cada pantalla
 const screensWithBackButtons = [
   { screen: 'plan', barId: 'plan-top-nav-bar', btnId: 'btn-plan-back-home' },
   { screen: 'stats', barId: 'stats-top-nav-bar', btnId: 'btn-stats-back-home' },
@@ -3061,15 +3061,15 @@ for (const { screen, barId, btnId } of screensWithBackButtons) {
   const btn = doc.getElementById(btnId);
   assert.ok(btn, `Debe existir el botón #${btnId}`);
   assert.ok(bar.contains(btn), `La barra #${barId} debe contener #${btnId}`);
-  assert.equal(bar.lastElementChild, btn, `En #${barId}, #${btnId} debe estar posicionado al final (parte superior derecha)`);
+  assert.equal(bar.firstElementChild, btn, `En #${barId}, #${btnId} debe estar posicionado al inicio (parte superior izquierda)`);
 }
 
-// 59.2 Regla CSS que garantiza la ubicación del botón de retorno a la derecha
+// 59.2 Regla CSS que garantiza la ubicación del botón de retorno a la izquierda
 const stylesSuite59 = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
 assert.ok(
   stylesSuite59.includes('.screen-top-nav-bar .btn-back-home') &&
-  stylesSuite59.includes('margin-left: auto'),
-  'styles.css debe posicionar .btn-back-home en la parte superior derecha mediante margin-left: auto'
+  stylesSuite59.includes('margin-right: auto'),
+  'styles.css debe posicionar .btn-back-home en la parte superior izquierda mediante margin-right: auto'
 );
 
 // 59.3 Nombre de la aplicación en el centro superior (movido de la parte superior izquierda)
@@ -3103,8 +3103,47 @@ for (const { screen, btnId } of screensWithBackButtons) {
 // 59.5 Cero etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
 
+// =========================================================================
+// SUITE 60: PESTAÑA DE RESUMEN SEMANAL EXCLUSIVA EN PANTALLA DE ENTRENAMIENTO
+// =========================================================================
+console.log('Ejecutando Suite 60: Resumen Semanal Exclusivo en Pantalla de Entrenamiento...');
+
+// 60.1 En pantalla de entrenamiento ('plan'), la pestaña de resumen semanal debe estar visible
+app.switchAppScreen('plan');
+const metricsDrawer = doc.getElementById('header-metrics-drawer');
+assert.ok(metricsDrawer, 'Debe existir #header-metrics-drawer');
+assert.equal(metricsDrawer.hidden, false, 'En pantalla plan, el resumen semanal debe estar visible (hidden=false)');
+const summaryEl60 = doc.querySelector('.weekly-summary-bar');
+assert.ok(summaryEl60, 'El panel .weekly-summary-bar debe estar presente en pantalla plan');
+
+// 60.2 En las demás pantallas ('stats', 'hub', 'profile', 'home'), la pestaña de resumen semanal debe estar oculta
+const otherScreensForMetrics = ['stats', 'hub', 'profile', 'home'];
+for (const screenKey of otherScreensForMetrics) {
+  app.switchAppScreen(screenKey);
+  assert.equal(
+    metricsDrawer.hidden,
+    true,
+    `En pantalla ${screenKey}, la pestaña de resumen semanal (#header-metrics-drawer) NO debe mostrarse (hidden=true)`
+  );
+}
+
+// 60.3 Regla CSS que garantiza que la pestaña de resumen semanal solo se encuentre en la pantalla de entrenamiento
+const stylesSuite60 = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(
+  stylesSuite60.includes('body:not([data-active-screen="plan"]) #header-metrics-drawer') &&
+  stylesSuite60.includes('display: none !important'),
+  'styles.css debe incluir regla para ocultar #header-metrics-drawer en cualquier pantalla distinta a plan'
+);
+
+// 60.4 Retorno a pantalla plan y verificación de visibilidad
+app.switchAppScreen('plan');
+assert.equal(metricsDrawer.hidden, false, 'Al volver a plan, el resumen semanal debe volver a estar visible');
+
+// 60.5 Cero etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 59 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 60 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

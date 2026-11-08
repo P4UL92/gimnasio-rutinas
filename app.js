@@ -5346,9 +5346,16 @@
       }
     });
 
+    document.body.dataset.activeScreen = activeScreen;
+
     const dayTabsNav = document.getElementById('day-tabs-nav');
     if (dayTabsNav) {
       dayTabsNav.hidden = (activeScreen !== 'plan');
+    }
+
+    const metricsDrawer = document.getElementById('header-metrics-drawer');
+    if (metricsDrawer) {
+      metricsDrawer.hidden = (activeScreen !== 'plan');
     }
 
     const appHeader = document.querySelector('.app-header');

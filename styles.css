@@ -7594,6 +7594,11 @@ details.anatomy-collapsible[open] > summary::after {
   display: none !important;
 }
 
+/* La pestaña de resumen semanal solo debe encontrarse en la pantalla de entrenamiento */
+body:not([data-active-screen="plan"]) #header-metrics-drawer {
+  display: none !important;
+}
+
 .home-user-avatar-badge,
 .home-trophy-badge {
   display: flex !important;
@@ -7768,7 +7773,7 @@ details.anatomy-collapsible[open] > summary::after {
   backdrop-filter: blur(8px);
 }
 
-.screen-top-left-actions {
+.screen-top-right-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -7776,8 +7781,8 @@ details.anatomy-collapsible[open] > summary::after {
 }
 
 .screen-top-nav-bar .btn-back-home {
-  margin-left: auto;
-  order: 2;
+  margin-right: auto;
+  order: 0;
 }
 
 .btn-back-home {
