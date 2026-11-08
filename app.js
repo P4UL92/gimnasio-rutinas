@@ -2593,7 +2593,11 @@
     }
 
     if (daySecondaryMenu) {
-      daySecondaryMenu.hidden = !isViewingToday;
+      if (state.selectedDay === 'domingo') {
+        daySecondaryMenu.hidden = true;
+      } else {
+        daySecondaryMenu.hidden = !isViewingToday;
+      }
       if (daySecondaryMenu.hidden) {
         daySecondaryMenu.open = false;
       }
@@ -6765,6 +6769,10 @@
     });
 
     document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+      exportWorkoutCsv();
+    });
+
+    document.getElementById('btn-export-stats-csv')?.addEventListener('click', () => {
       exportWorkoutCsv();
     });
 

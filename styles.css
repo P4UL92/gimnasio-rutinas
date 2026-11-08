@@ -7580,6 +7580,34 @@ details.anatomy-collapsible[open] > summary::after {
    ========================================================================= */
 
 /* 1. Header: Avatar de Usuario (Top-Left) y Trofeo de Progresión (Top-Right) */
+/* El botón de perfil del usuario y las medallas solo deben mostrarse en la pantalla principal */
+.app-header .header-user-avatar-badge,
+.app-header .header-trophy-badge {
+  display: none !important;
+}
+
+.home-user-avatar-badge,
+.home-trophy-badge {
+  display: flex !important;
+}
+
+.btn-export-stats-top {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #fff;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-export-stats-top:hover {
+  background: linear-gradient(135deg, #0369a1, #075985);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
 .header-user-avatar-badge {
   display: flex;
   align-items: center;

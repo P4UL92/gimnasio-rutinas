@@ -1664,6 +1664,8 @@ const sundayExercises = doc.querySelectorAll('#exercises-list .exercise-card');
 assert.equal(sundayExercises.length, 6, 'Domingo debe tener cargados los 6 ejercicios de la rutina elegida');
 
 // Cuando Domingo NO es el día actual, no debe decir Iniciar sino ofrecer mover el entrenamiento a hoy
+app.setSimulatedDay('lunes');
+app.selectDay('domingo');
 const updatedSundayBtn = doc.getElementById('btn-start-day-workout');
 assert.ok(updatedSundayBtn.textContent.includes('Mover entrenamiento a Hoy'), 'Cuando no es hoy, el botón debe indicar Mover entrenamiento a Hoy');
 
@@ -1893,12 +1895,15 @@ assert.ok(!subMartes || subMartes.style.display === 'none' || subMartes.textCont
 
 // 47.5 Botón de iniciar día de ejercicio solo dice "Iniciar día de ejercicio"
 const defaultDayKey = app.detectDefaultDay();
-app.selectDay(defaultDayKey);
+const testDay47 = defaultDayKey === 'domingo' ? 'lunes' : defaultDayKey;
+app.setSimulatedDay(testDay47);
+app.selectDay(testDay47);
 const startBtn47 = doc.getElementById('btn-start-day-workout');
 assert.ok(startBtn47, 'Debe existir el botón #btn-start-day-workout');
-if (!app.isDayCompleted(defaultDayKey)) {
+if (!app.isDayCompleted(testDay47)) {
   assert.equal(startBtn47.textContent.trim(), 'Iniciar día de ejercicio', 'El botón principal debe decir estrictamente "Iniciar día de ejercicio"');
 }
+app.setSimulatedDay(null);
 
 // 47.6 Dibujos de calentamiento generados a detalle
 const warmupFiles = [
@@ -2978,8 +2983,67 @@ assert.equal(app.getState().activeScreen, 'home', 'Debe regresar al Menú Princi
 // 57.5 Verificación absoluta de 0% <svg>
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en la aplicación');
 
+// =========================================================================
+// SUITE 58: PERFIL Y MEDALLAS EXCLUSIVOS EN PANTALLA PRINCIPAL Y FUNCIONES INDEPENDIENTES
+// =========================================================================
+console.log('Ejecutando Suite 58: Perfil y Medallas Exclusivos en Pantalla Principal y Funciones Independientes...');
+
+// 58.1 Perfil del usuario y Medallas/Trofeos presentes en la Pantalla Principal
+const homeAvatarBadge = doc.getElementById('home-user-avatar-badge');
+const homeTrophyBadge = doc.getElementById('home-trophy-badge');
+assert.ok(homeAvatarBadge, 'Debe existir el botón de perfil del usuario #home-user-avatar-badge en la pantalla principal');
+assert.ok(homeTrophyBadge, 'Debe existir el botón de medallas/trofeos #home-trophy-badge en la pantalla principal');
+
+// 58.2 El botón de perfil y el de medallas en la cabecera (.app-header) NO se muestran en las demás pantallas
+const cssContent58 = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+assert.ok(
+  cssContent58.includes('.app-header .header-user-avatar-badge') &&
+  cssContent58.includes('.app-header .header-trophy-badge') &&
+  cssContent58.includes('display: none !important'),
+  'styles.css debe asegurar que perfil y medallas solo estén en pantalla principal y no en .app-header'
+);
+
+// 58.3 Cada pantalla cuenta con su propia barra superior de navegación y título independiente
+const planTopBar = doc.getElementById('plan-top-nav-bar');
+const statsTopBar = doc.getElementById('stats-top-nav-bar');
+const hubTopBar = doc.getElementById('hub-top-nav-bar');
+const profileTopBar = doc.getElementById('profile-top-nav-bar');
+
+assert.ok(planTopBar, 'La pantalla de entrenamiento debe tener su barra superior #plan-top-nav-bar');
+assert.ok(statsTopBar, 'La pantalla de estadísticas debe tener su barra superior #stats-top-nav-bar');
+assert.ok(hubTopBar, 'La pantalla de opciones extras debe tener su barra superior #hub-top-nav-bar');
+assert.ok(profileTopBar, 'La pantalla de mi perfil debe tener su barra superior #profile-top-nav-bar');
+
+// Botones de retorno independientes para cada pantalla
+assert.ok(doc.getElementById('btn-plan-back-home'), 'Debe existir #btn-plan-back-home');
+assert.ok(doc.getElementById('btn-stats-back-home'), 'Debe existir #btn-stats-back-home');
+assert.ok(doc.getElementById('btn-hub-back-home'), 'Debe existir #btn-hub-back-home');
+assert.ok(doc.getElementById('btn-profile-back-home'), 'Debe existir #btn-profile-back-home');
+
+// 58.4 Funciones y botones exclusivos no compartidos entre pantallas
+// Pantalla Entrenamiento: Pestañas de días (#day-tabs-nav) e iniciar entrenamiento
+assert.ok(doc.getElementById('day-tabs-nav'), 'La pantalla de entrenamiento debe tener las pestañas de días de la semana');
+assert.ok(doc.getElementById('btn-start-day-workout'), 'La pantalla de entrenamiento debe tener #btn-start-day-workout');
+assert.ok(doc.getElementById('btn-switch-rest-today'), 'La pantalla de entrenamiento debe tener #btn-switch-rest-today');
+
+// Pantalla Estadísticas: Botón dedicado de exportación CSV (#btn-export-stats-csv) y gráficos
+const btnExportStats = doc.getElementById('btn-export-stats-csv');
+assert.ok(btnExportStats, 'La pantalla de estadísticas debe tener su propio botón #btn-export-stats-csv');
+assert.ok(doc.getElementById('daily-bars-chart'), 'La pantalla de estadísticas debe tener sus gráficos de series por día');
+
+// Pantalla Opciones Extras: Acordeón de herramientas y calculadoras
+assert.ok(doc.getElementById('btn-restore-schedule'), 'La pantalla de opciones extras debe tener botón para restaurar horario predeterminado');
+
+// Pantalla Mi Perfil: Botones de edición y reseteo
+assert.ok(doc.getElementById('btn-edit-profile-screen'), 'La pantalla de perfil debe tener su propio botón de edición');
+assert.ok(doc.getElementById('btn-reset-profile-screen'), 'La pantalla de perfil debe tener su propio botón de reset');
+assert.ok(doc.getElementById('profile-avatar-evolution-card'), 'La pantalla de perfil debe tener la tarjeta de evolución 9-bits');
+
+// 58.5 Verificación de 0% <svg> en toda la aplicación
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg> en toda la aplicación');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 57 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 58 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 
