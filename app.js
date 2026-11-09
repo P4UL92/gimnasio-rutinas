@@ -3770,8 +3770,22 @@
         actionsDiv.append(btnGoSun, btnRevert);
         emptyLi.append(h3, p, actionsDiv);
       } else {
-        const h3 = document.createElement('h3');
-        h3.textContent = '🌿 Día de descanso';
+        const details = document.createElement('details');
+        details.className = 'overview-accordion rest-day-collapse';
+        details.id = 'rest-day-collapsible';
+
+        const summary = document.createElement('summary');
+        summary.className = 'rest-day-summary';
+        summary.innerHTML = `
+          <div class="summary-header-wrap">
+            <h3 class="rest-day-title">🌿 Día de descanso</h3>
+            <span class="rest-day-toggle-hint">Ver pautas de recuperación y descanso ▾</span>
+          </div>
+        `;
+
+        const content = document.createElement('div');
+        content.className = 'overview-content rest-day-body';
+
         const p = document.createElement('p');
         p.className = 'rest-day-lead';
         p.textContent =
@@ -3809,7 +3823,11 @@
             </div>
           </div>
         `;
-        emptyLi.append(h3, p, basicsGrid);
+
+        content.append(p, basicsGrid);
+        details.append(summary, content);
+        emptyLi.append(details);
+        initSmoothCollapsibles();
       }
 
       listEl.appendChild(emptyLi);

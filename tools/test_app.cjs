@@ -1703,6 +1703,8 @@ const initialOpen = accordionEl.open;
 summaryEl.click();
 // El estado debe alternar correctamente
 assert.equal(accordionEl.open, !initialOpen, 'El clic en summary debe alternar el estado de apertura');
+summaryEl.click();
+assert.equal(accordionEl.open, initialOpen, 'Un segundo clic en summary debe volver a cerrarlo');
 
 // Reglas CSS de animación suave y chevron rotatorio
 assert.ok(cssContent.includes('details.overview-accordion'), 'styles.css debe definir estilos de transición para details.overview-accordion');
@@ -3184,8 +3186,58 @@ for (const { screen, expectedTitle } of screenExpectations) {
 // 61.3 Cero etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
 
+// =========================================================================
+// SUITE 62: PESTAÑAS Y FUNCIONES INFORMATIVAS DE TIPO COLLAPSE CONTRAÍDAS POR DEFECTO
+// =========================================================================
+console.log('Ejecutando Suite 62: Pestañas Informativas de Tipo Collapse Contraídas por Defecto...');
+
+// 62.1 Resumen semanal: De tipo collapse y contraído por defecto
+app.switchAppScreen('plan');
+const metricsDrawer62 = doc.getElementById('header-metrics-drawer');
+assert.ok(metricsDrawer62, 'Debe existir #header-metrics-drawer');
+assert.equal(metricsDrawer62.tagName.toLowerCase(), 'details', '#header-metrics-drawer debe ser un elemento <details> (tipo collapse)');
+assert.equal(metricsDrawer62.open, false, 'El Resumen Semanal debe estar contraído por defecto (open=false)');
+assert.equal(metricsDrawer62.hasAttribute('open'), false, 'El Resumen Semanal no debe tener el atributo open en HTML');
+
+// 62.2 Día de descanso: De tipo collapse y contraído por defecto
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 61 Suites de pruebas pasaron con éxito.');
+app.selectDay('domingo');
+const restCollapse = doc.getElementById('rest-day-collapsible');
+assert.ok(restCollapse, 'Debe existir #rest-day-collapsible');
+assert.equal(restCollapse.tagName.toLowerCase(), 'details', '#rest-day-collapsible debe ser un elemento <details> (tipo collapse)');
+assert.equal(restCollapse.open, false, 'El panel de Día de descanso debe estar contraído por defecto (open=false)');
+assert.equal(restCollapse.hasAttribute('open'), false, 'El panel de Día de descanso no debe tener el atributo open');
+const restSummaryH3 = restCollapse.querySelector('summary h3');
+assert.ok(restSummaryH3 && restSummaryH3.textContent.includes('Día de descanso'), 'El summary debe incluir el encabezado Día de descanso');
+
+// 62.3 Estadísticas: "Estadísticas, Gráficos de Volumen y Tonelaje" de tipo collapse y contraído por defecto
+app.switchAppScreen('stats');
+const statsDrawer = doc.getElementById('stats-analytics-drawer');
+assert.ok(statsDrawer, 'Debe existir #stats-analytics-drawer en la pantalla de estadísticas');
+assert.equal(statsDrawer.tagName.toLowerCase(), 'details', '#stats-analytics-drawer debe ser un elemento <details> (tipo collapse)');
+assert.equal(statsDrawer.open, false, 'El panel de Estadísticas, Gráficos de Volumen y Tonelaje debe estar contraído por defecto (open=false)');
+assert.equal(statsDrawer.hasAttribute('open'), false, 'El panel no debe tener el atributo open');
+
+const statsHeading = statsDrawer.querySelector('summary #stats-heading');
+assert.ok(statsHeading, 'El summary debe contener el encabezado #stats-heading');
+assert.ok(statsHeading.textContent.includes('Estadísticas, Gráficos de Volumen y Tonelaje'), 'Debe contener el título Estadísticas, Gráficos de Volumen y Tonelaje');
+
+// Los gráficos y KPIs deben estar accesibles dentro del contenido del drawer
+const kpisInside = statsDrawer.querySelector('#kpi-stats-grid');
+assert.ok(kpisInside, 'El grid de KPIs debe estar dentro de #stats-analytics-drawer');
+const dailyBarsInside = statsDrawer.querySelector('#daily-bars-chart');
+assert.ok(dailyBarsInside, 'El gráfico de barras debe estar dentro de #stats-analytics-drawer');
+
+// 62.4 Mapa Semanal en Estadísticas: Contraído por defecto
+const weeklyMapDrawer = doc.querySelector('#screen-stats details[name="gym-stats-info"]');
+assert.ok(weeklyMapDrawer, 'Debe existir el acordeón del Mapa Semanal en estadísticas');
+assert.equal(weeklyMapDrawer.open, false, 'El acordeón del Mapa Semanal debe estar contraído por defecto');
+
+// 62.5 Cero etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
+
+app.restoreOriginalSchedule();
+console.log('PASS: Todas las 62 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

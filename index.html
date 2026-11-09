@@ -54,8 +54,8 @@
       </div>
     </div>
 
-    <!-- Barra compacta para Resumen Semanal mostrada en pantalla principal -->
-    <details id="header-metrics-drawer" class="header-metrics-drawer" open>
+    <!-- Barra compacta para Resumen Semanal mostrada en pantalla de entrenamiento (contraída por defecto) -->
+    <details id="header-metrics-drawer" class="header-metrics-drawer">
       <summary class="header-metrics-summary">
         <span class="compact-stat-pill">📊 Semana: <strong id="compact-week-pct">0%</strong></span>
         <span class="compact-drawer-toggle">Resumen Semanal ▾</span>
@@ -485,72 +485,75 @@
           </button>
         </div>
       </div>
-      <!-- Panel de Estadísticas, Gráficos e Historial -->
-      <section class="analytics-dashboard-section" aria-labelledby="stats-heading">
-        <div class="section-header-row">
-          <h2 id="stats-heading" class="section-title">📊 Estadísticas, Gráficos de Volumen y Tonelaje</h2>
-          <span class="unit-legend">Actualización en tiempo real</span>
-        </div>
+      <!-- Panel de Estadísticas, Gráficos e Historial (Collapsible contraído por defecto) -->
+      <details class="overview-accordion analytics-collapsible-drawer" id="stats-analytics-drawer">
+        <summary class="overview-summary analytics-summary">
+          <div class="section-header-row" style="margin: 0; width: 100%;">
+            <h2 id="stats-heading" class="section-title">📊 Estadísticas, Gráficos de Volumen y Tonelaje</h2>
+            <span class="unit-legend">Actualización en tiempo real ▾</span>
+          </div>
+        </summary>
+        <div class="overview-content analytics-content">
+          <div class="kpi-stats-grid" id="kpi-stats-grid">
+            <article class="kpi-card">
+              <span class="kpi-label">Volumen Movido</span>
+              <strong id="kpi-done-kg" class="kpi-value">0 kg</strong>
+              <small id="kpi-planned-kg" class="kpi-sub">de 0 kg programados</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">Repeticiones Hechas</span>
+              <strong id="kpi-done-reps" class="kpi-value">0</strong>
+              <small id="kpi-planned-reps" class="kpi-sub">de 1728 reps (4×12)</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">Gasto Estimado</span>
+              <strong id="kpi-kcal" class="kpi-value">0 kcal</strong>
+              <small class="kpi-sub">Tensión mecánica activa</small>
+            </article>
+            <article class="kpi-card">
+              <span class="kpi-label">Sesiones Guardadas</span>
+              <strong id="kpi-sessions-count" class="kpi-value">0</strong>
+              <small class="kpi-sub">En tu historial local</small>
+            </article>
+          </div>
 
-        <div class="kpi-stats-grid" id="kpi-stats-grid">
-          <article class="kpi-card">
-            <span class="kpi-label">Volumen Movido</span>
-            <strong id="kpi-done-kg" class="kpi-value">0 kg</strong>
-            <small id="kpi-planned-kg" class="kpi-sub">de 0 kg programados</small>
-          </article>
-          <article class="kpi-card">
-            <span class="kpi-label">Repeticiones Hechas</span>
-            <strong id="kpi-done-reps" class="kpi-value">0</strong>
-            <small id="kpi-planned-reps" class="kpi-sub">de 1728 reps (4×12)</small>
-          </article>
-          <article class="kpi-card">
-            <span class="kpi-label">Gasto Estimado</span>
-            <strong id="kpi-kcal" class="kpi-value">0 kcal</strong>
-            <small class="kpi-sub">Tensión mecánica activa</small>
-          </article>
-          <article class="kpi-card">
-            <span class="kpi-label">Sesiones Guardadas</span>
-            <strong id="kpi-sessions-count" class="kpi-value">0</strong>
-            <small class="kpi-sub">En tu historial local</small>
-          </article>
-        </div>
+          <div class="charts-grid">
+            <!-- Gráfico 1: Barras de Series y Volumen por Día (Lun a Dom) -->
+            <article class="chart-card">
+              <h3>Progreso de Series por Día (Lunes a Domingo)</h3>
+              <div id="daily-bars-chart" class="daily-bars-chart" role="img" aria-label="Gráfico de barras de series completadas por día"></div>
+            </article>
 
-        <div class="charts-grid">
-          <!-- Gráfico 1: Barras de Series y Volumen por Día (Lun a Dom) -->
-          <article class="chart-card">
-            <h3>Progreso de Series por Día (Lunes a Domingo)</h3>
-            <div id="daily-bars-chart" class="daily-bars-chart" role="img" aria-label="Gráfico de barras de series completadas por día"></div>
-          </article>
-
-          <!-- Gráfico 2: Donut de Distribución Muscular + Tabla Semántica Accesible -->
-          <article class="chart-card">
-            <h3>Distribución Semanal por Grupo Muscular</h3>
-            <div class="muscle-donut-layout">
-              <div id="muscle-donut-chart" class="muscle-donut-chart" aria-hidden="true">
-                <div class="donut-hole">
-                  <strong id="donut-center-total">144</strong>
-                  <span>Series</span>
+            <!-- Gráfico 2: Donut de Distribución Muscular + Tabla Semántica Accesible -->
+            <article class="chart-card">
+              <h3>Distribución Semanal por Grupo Muscular</h3>
+              <div class="muscle-donut-layout">
+                <div id="muscle-donut-chart" class="muscle-donut-chart" aria-hidden="true">
+                  <div class="donut-hole">
+                    <strong id="donut-center-total">144</strong>
+                    <span>Series</span>
+                  </div>
                 </div>
+                <table class="muscle-stats-table" aria-label="Tabla de distribución de series por grupo muscular">
+                  <thead>
+                    <tr>
+                      <th scope="col">Grupo Muscular</th>
+                      <th scope="col">Hechas</th>
+                      <th scope="col">Meta</th>
+                    </tr>
+                  </thead>
+                  <tbody id="muscle-stats-tbody">
+                    <!-- Filas generadas por app.js -->
+                  </tbody>
+                </table>
               </div>
-              <table class="muscle-stats-table" aria-label="Tabla de distribución de series por grupo muscular">
-                <thead>
-                  <tr>
-                    <th scope="col">Grupo Muscular</th>
-                    <th scope="col">Hechas</th>
-                    <th scope="col">Meta</th>
-                  </tr>
-                </thead>
-                <tbody id="muscle-stats-tbody">
-                  <!-- Filas generadas por app.js -->
-                </tbody>
-              </table>
-            </div>
-          </article>
+            </article>
+          </div>
         </div>
-      </section>
+      </details>
 
       <section class="weekly-overview-section" aria-labelledby="overview-heading">
-        <details class="overview-accordion" name="gym-stats-info" open>
+        <details class="overview-accordion" name="gym-stats-info">
           <summary>
             <span id="overview-heading" class="summary-title">📅 Mapa Semanal Lunes a Sábado + Excepción Domingo</span>
           </summary>
@@ -595,8 +598,8 @@
           <h2 class="section-title">🧰 Centro de Herramientas, Nutrición, Recuperación y Datos</h2>
         </div>
 
-      <!-- Acordeón 1: Mi Perfil Personalizado & Parámetros Biométricos -->
-      <details class="overview-accordion is-featured-accordion" name="gym-info" open>
+      <!-- Acordeón 1: Mi Perfil Personalizado & Parámetros Biométricos (contraído por defecto) -->
+      <details class="overview-accordion is-featured-accordion" name="gym-info">
         <summary>
           <span class="summary-title">👤 Mi Perfil Personalizado & Parámetros Biométricos</span>
           <span class="badge badge-user-base" id="hub-profile-status-badge">Configurado</span>
