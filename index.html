@@ -262,6 +262,30 @@
           </div>
         </details>
 
+        <!-- Panel Informativo de Ejercicios Correctivos y Terapia Articular (Contraído por defecto) -->
+        <details id="corrective-therapy-collapsible" class="overview-accordion corrective-therapy-collapsible">
+          <summary class="therapy-summary" id="therapy-summary">
+            <div class="therapy-summary-left">
+              <span class="therapy-badge" id="therapy-condition-icon">🩺</span>
+              <strong id="therapy-title-text">Terapia Articular & Ejercicios Correctivos: Pie Plano y Fascitis Plantar</strong>
+            </div>
+            <span id="therapy-condition-pill" class="therapy-condition-pill">Ejercicios Clínicos</span>
+          </summary>
+          <div class="therapy-body" id="therapy-body">
+            <div class="therapy-clinical-intro" id="therapy-clinical-intro">
+              <!-- Explicación biomecánica generada por app.js -->
+            </div>
+            <div class="therapy-actions-bar">
+              <button type="button" id="btn-apply-therapy-warmup" class="btn-primary btn-apply-therapy">
+                ➕ Integrar a mi Sesión de Calentamiento de Hoy
+              </button>
+            </div>
+            <div class="therapy-exercises-grid" id="therapy-exercises-grid">
+              <!-- Tarjetas de ejercicios terapéuticos generadas por app.js -->
+            </div>
+          </div>
+        </details>
+
         <h2 id="exercises-heading" class="visually-hidden">Ejercicios</h2>
 
         <ul id="exercises-list" class="exercises-list">
@@ -622,6 +646,17 @@
         </div>
       </details>
 
+      <!-- Acordeón: Centro de Terapia, Rehabilitación y Salud Articular (contraído por defecto) -->
+      <details class="overview-accordion" name="gym-info" id="therapeutic-rehab-accordion">
+        <summary>
+          <span class="summary-title">🩺 Centro de Terapia, Rehabilitación y Salud Articular</span>
+          <span class="badge badge-therapy-hub" id="rehab-hub-condition-badge">Salud Articular</span>
+        </summary>
+        <div class="overview-content" id="therapeutic-hub-content">
+          <!-- Renderizado dinámicamente con guías biomecánicas y ejercicios por app.js -->
+        </div>
+      </details>
+
       <!-- Acordeón: Herramientas y Ajustes de Rutina (Calculadora y Restauración) -->
       <details class="overview-accordion" name="gym-info" id="tools-settings-accordion">
         <summary>
@@ -960,6 +995,10 @@
               <span class="pm-card-label">🎯 Objetivo Principal</span>
               <strong class="pm-card-value" id="profile-card-goal">Hipertrofia Muscular</strong>
             </div>
+            <div class="pm-card" id="profile-card-condition-tile">
+              <span class="pm-card-label">🩺 Condición Articular</span>
+              <strong class="pm-card-value" id="profile-card-condition">Ninguna (100% móvil)</strong>
+            </div>
           </div>
 
           <!-- Sección de Evolución Estética y Atuendo de Gimnasio (Arte 9-Bits Progresivo) -->
@@ -1170,14 +1209,28 @@
               </select>
             </div>
             <div class="form-field">
-              <label for="profile-limitations-select">Molestias Articulares o Limitaciones</label>
-              <select id="profile-limitations-select">
+              <label for="profile-conditions-select">Condición Física, Lesiones o Restricciones</label>
+              <select id="profile-conditions-select" name="physicalCondition">
+                <option value="none" selected>✨ Ninguna restricción (Entrenamiento estándar completo)</option>
+                <option value="flat_feet_fasciitis">🦶 Pie Plano / Fascitis Plantar (Arco colapsado, dolor de talón y fascia)</option>
+                <option value="knees">🦵 Molestia en Rodillas (Tendinitis rotuliana, condromalacia)</option>
+                <option value="lower_back">🛡️ Molestia Lumbar / Espalda Baja (Hernia, sobrecarga axial)</option>
+                <option value="shoulders">💪 Molestia en Hombros (Manguito rotador, pinzamiento)</option>
+                <option value="wrists">✋ Molestia en Muñecas (Túnel carpiano, flexores/extensores)</option>
+              </select>
+              <!-- Selector compatible con versiones previas -->
+              <select id="profile-limitations-select" style="display:none;" aria-hidden="true" tabindex="-1">
                 <option value="none" selected>Ninguna (Entrenamiento 100% completo)</option>
+                <option value="flat_feet_fasciitis">Pie Plano / Fascitis Plantar</option>
                 <option value="lower_back">Molestia Lumbar / Espalda baja (Sustituye cargas axiales)</option>
                 <option value="shoulders">Molestia en Hombros (Protección articular y plano escapular)</option>
                 <option value="knees">Molestia en Rodillas (Sustituye sentadillas profundas)</option>
+                <option value="wrists">Molestia en Muñecas</option>
               </select>
             </div>
+          </div>
+          <div class="condition-hint-box" id="profile-condition-preview" style="margin-top: 10px; font-size: 0.82rem; color: #94a3b8; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 8px 12px;">
+            💡 Si tienes pie plano o fascitis plantar, la app activará un protocolo biomecánico de 5 ejercicios correctivos (Short Foot, masaje fascial, elevación de talones con pelota, etc.) integrados directamente en tu calentamiento.
           </div>
         </fieldset>
 

@@ -3236,8 +3236,103 @@ assert.equal(weeklyMapDrawer.open, false, 'El acordeón del Mapa Semanal debe es
 // 62.5 Cero etiquetas SVG
 assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
 
+// =========================================================================
+// SUITE 63: PREGUNTA DE CONDICIONES FÍSICAS EN ONBOARDING Y EJERCICIOS TERAPÉUTICOS
+// (PIE PLANO, FASCITIS PLANTAR, RODILLAS, LUMBAR, HOMBROS, MUÑECAS)
+// =========================================================================
+console.log('Ejecutando Suite 63: Pregunta de Condiciones Físicas en Onboarding y Ejercicios Terapéuticos...');
+
+// 63.1 Pregunta al inicio en el modal de onboarding
+const conditionsSelect = doc.getElementById('profile-conditions-select');
+assert.ok(conditionsSelect, 'Debe existir el selector de condiciones físicas #profile-conditions-select');
+const conditionOptions = Array.from(conditionsSelect.options).map(o => o.value);
+assert.ok(conditionOptions.includes('flat_feet_fasciitis'), 'Debe incluir opción de pie plano y fascitis plantar (flat_feet_fasciitis)');
+assert.ok(conditionOptions.includes('knees'), 'Debe incluir opción para molestias en rodillas (knees)');
+assert.ok(conditionOptions.includes('lower_back'), 'Debe incluir opción para molestias lumbares (lower_back)');
+assert.ok(conditionOptions.includes('shoulders'), 'Debe incluir opción para molestias en hombros (shoulders)');
+assert.ok(conditionOptions.includes('wrists'), 'Debe incluir opción para molestias en muñecas (wrists)');
+assert.ok(conditionOptions.includes('none'), 'Debe incluir opción sin restricciones (none)');
+
+const conditionPreviewEl = doc.getElementById('profile-condition-preview');
+assert.ok(conditionPreviewEl, 'Debe existir cuadro informativo interactivo #profile-condition-preview en el onboarding');
+
+// 63.2 Guardar perfil con Pie Plano / Fascitis Plantar y verificar persistencia
+const profileSaved = app.saveUserProfile({
+  name: 'Carlos Podal',
+  gender: 'male',
+  age: 30,
+  weightKg: 78,
+  heightCm: 176,
+  fitnessLevel: 'intermediate',
+  primaryGoal: 'hypertrophy',
+  daysPerWeek: 6,
+  physicalCondition: 'flat_feet_fasciitis'
+});
+
+const userProf63 = app.getUserProfile();
+assert.equal(userProf63.physicalCondition, 'flat_feet_fasciitis', 'physicalCondition debe ser flat_feet_fasciitis');
+assert.equal(userProf63.limitations, 'flat_feet_fasciitis', 'limitations debe mantenerse sincronizado con physicalCondition');
+
+// 63.3 Panel de Terapia Articular en Pantalla de Entrenamiento: Contraído por defecto (tipo collapse)
+app.switchAppScreen('plan');
+app.selectDay('lunes');
+const therapyCollapsible = doc.getElementById('corrective-therapy-collapsible');
+assert.ok(therapyCollapsible, 'Debe existir #corrective-therapy-collapsible en pantalla de entrenamiento');
+assert.equal(therapyCollapsible.tagName.toLowerCase(), 'details', '#corrective-therapy-collapsible debe ser un elemento <details>');
+assert.equal(therapyCollapsible.open, false, 'El panel de ejercicios correctivos debe estar contraído por defecto (open=false)');
+assert.equal(therapyCollapsible.hasAttribute('open'), false, 'El panel no debe tener atributo open');
+
+const therapyTitleEl = doc.getElementById('therapy-title-text');
+assert.ok(therapyTitleEl && therapyTitleEl.textContent.includes('Pie Plano y Fascitis Plantar'), 'Debe mostrar el título de la condición activa');
+
+// Verificar ejercicios clínicos de pie plano y fascitis plantar
+const therapyCards = therapyCollapsible.querySelectorAll('.therapy-exercise-card');
+assert.equal(therapyCards.length, 5, 'Deben existir 5 ejercicios correctivos específicos para pie plano y fascitis');
+
+const exercisesText = Array.from(therapyCards).map(c => c.textContent).join(' ');
+assert.ok(exercisesText.includes('Short Foot') || exercisesText.includes('Pie Corto'), 'Debe incluir Short Foot (Pie Corto de Janda)');
+assert.ok(exercisesText.includes('Liberación Miofascial') || exercisesText.includes('Pelota'), 'Debe incluir Liberación Miofascial con Pelota');
+assert.ok(exercisesText.includes('Elevación de Talones') || exercisesText.includes('Maléolos'), 'Debe incluir Elevación de Talones con pelota entre maléolos');
+assert.ok(exercisesText.includes('DiGiovanni') || exercisesText.includes('Hallux'), 'Debe incluir Estiramiento DiGiovanni de Hallux y Fascia');
+assert.ok(exercisesText.includes('Toalla') || exercisesText.includes('Toe Curls'), 'Debe incluir Toe Curls / Recogida de Toalla');
+
+// 63.4 Acción para integrar ejercicios terapéuticos a la sesión de hoy
+const btnApplyTherapy = doc.getElementById('btn-apply-therapy-warmup');
+assert.ok(btnApplyTherapy, 'Debe existir el botón #btn-apply-therapy-warmup');
+app.applyTherapyWarmupAction();
+
+assert.ok(btnApplyTherapy.classList.contains('is-applied'), 'El botón debe tener la clase .is-applied tras la integración');
+assert.ok(btnApplyTherapy.textContent.includes('Integrados'), 'El texto del botón debe reflejar que fueron integrados');
+
+const warmupListItems = doc.querySelectorAll('#warmup-steps-list .warmup-step-item');
+assert.ok(warmupListItems.length >= 5, 'El listado de activación debe incluir los pasos terapéuticos integrados');
+
+// 63.5 Centro de Terapia y Rehabilitación en Hub (Opciones Extras): Tipo collapse y contraído por defecto
+app.switchAppScreen('hub');
+const rehabAccordion = doc.getElementById('therapeutic-rehab-accordion');
+assert.ok(rehabAccordion, 'Debe existir #therapeutic-rehab-accordion en la pantalla Hub');
+assert.equal(rehabAccordion.tagName.toLowerCase(), 'details', '#therapeutic-rehab-accordion debe ser <details>');
+assert.equal(rehabAccordion.open, false, 'El Centro de Terapia debe estar contraído por defecto (open=false)');
+assert.equal(rehabAccordion.hasAttribute('open'), false, 'El acordeón de rehabilitación no debe tener atributo open');
+
+const rehabTabs = doc.querySelectorAll('#rehab-tabs-row .rehab-tab-btn');
+assert.ok(rehabTabs.length >= 5, 'El Hub de rehabilitación debe incluir pestañas para todas las condiciones clínicas');
+
+// Cambiar condición desde la API y verificar actualización
+app.setPhysicalCondition('knees');
+assert.equal(app.getUserProfile().physicalCondition, 'knees', 'setPhysicalCondition debe cambiar la condición activa');
+
+// 63.6 Tarjeta en Mi Perfil
+app.switchAppScreen('profile');
+const profileCondCard = doc.getElementById('profile-card-condition');
+assert.ok(profileCondCard, 'Debe existir #profile-card-condition en la pantalla de perfil');
+assert.ok(profileCondCard.textContent.includes('Rodillas'), 'Debe mostrar la condición activa en el perfil del usuario');
+
+// 63.7 Cero etiquetas SVG
+assert.equal(doc.querySelectorAll('svg').length, 0, 'No debe existir ninguna etiqueta <svg>');
+
 app.restoreOriginalSchedule();
-console.log('PASS: Todas las 62 Suites de pruebas pasaron con éxito.');
+console.log('PASS: Todas las 63 Suites de pruebas pasaron con éxito.');
 process.exit(0);
 
 

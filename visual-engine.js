@@ -1344,6 +1344,17 @@
         finalEx.equipment = 'Prensa de Piernas';
         finalEx.note = 'Sustituido por protección de rodillas: Pies altos reducen el momento de fuerza sobre el tendón rotuliano.';
       }
+    } else if (limitations === 'flat_feet_fasciitis' || profile.physicalCondition === 'flat_feet_fasciitis') {
+      if (baseEx.id === 'mie-sentadilla-goblet-hack' || /sentadilla/i.test(baseEx.name)) {
+        finalEx.note = (finalEx.note ? finalEx.note + ' · ' : '') + '💡 Enfoque podal: Mantén el trípode plantar firme y arco medial activo sin colapso en valgo.';
+      } else if (/elevación de talones|pantorrilla|gemelos/i.test(baseEx.name)) {
+        finalEx.name = 'Elevación de Talones con Pelota (Activación Tibial Posterior)';
+        finalEx.note = 'Adaptado para pie plano y fascitis plantar: Presión hacia adentro entre maléolos para elevar el arco y fortalecer tibial posterior.';
+      }
+    } else if (limitations === 'wrists' || profile.physicalCondition === 'wrists') {
+      if (/curl|fondos|press/i.test(baseEx.name)) {
+        finalEx.note = (finalEx.note ? finalEx.note + ' · ' : '') + '💡 Cuidado de muñeca: Agarre neutro para proteger el canal carpiano.';
+      }
     }
 
     return finalEx;

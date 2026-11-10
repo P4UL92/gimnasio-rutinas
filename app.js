@@ -68,6 +68,7 @@
         primaryGoal: 'hypertrophy',
         daysPerWeek: 6,
         limitations: 'none',
+        physicalCondition: 'none',
         updatedAt: null
       },
       schedule
@@ -173,6 +174,7 @@
           primaryGoal: 'hypertrophy',
           daysPerWeek: 6,
           limitations: 'none',
+          physicalCondition: 'none',
           updatedAt: null
         };
       }
@@ -3615,23 +3617,48 @@
     }
     card.hidden = false;
 
-    const steps = GYM_VISUALS.getWarmupProtocolForDay(day);
+    const baseSteps = GYM_VISUALS.getWarmupProtocolForDay(day);
+    const steps = [...baseSteps];
+
+    const condKey = state.userProfile?.physicalCondition || state.userProfile?.limitations || 'none';
+    const condObj = (typeof THERAPEUTIC_CONDITIONS !== 'undefined' && THERAPEUTIC_CONDITIONS[condKey]) ? THERAPEUTIC_CONDITIONS[condKey] : null;
+
+    if (state.integratedTherapyActive && condObj && Array.isArray(condObj.exercises)) {
+      for (const th of condObj.exercises) {
+        steps.push({
+          id: th.id,
+          label: `${condObj.icon} ${th.name} [Correctivo]`,
+          duration: th.duration || '2-3 min',
+          isTherapy: true,
+          therapyData: th
+        });
+      }
+    }
 
     listEl.innerHTML = '';
     // En la página principal, el calentamiento solo muestra la descripción del ejercicio
     for (const step of steps) {
-      const visual = getWarmupStepVisual(step, day);
-
       const li = document.createElement('li');
       li.className = 'warmup-step-item warmup-desc-only';
       li.dataset.stepId = step.id;
 
-      li.innerHTML = `
-        <div class="warmup-desc-card">
-          <strong class="warmup-desc-title">🔥 ${step.label} (${step.duration})</strong>
-          <p class="warmup-desc-text">${visual.instruction}</p>
-        </div>
-      `;
+      if (step.isTherapy) {
+        li.innerHTML = `
+          <div class="warmup-desc-card" style="border-left: 3px solid #38bdf8;">
+            <strong class="warmup-desc-title" style="color: #38bdf8;">${step.label} (${step.duration})</strong>
+            <p class="warmup-desc-text">${step.therapyData.instruction}</p>
+            <small style="color: #fbbf24; font-weight: 700; display: block; margin-top: 4px;">🎯 Prescripción: ${step.therapyData.prescription}</small>
+          </div>
+        `;
+      } else {
+        const visual = getWarmupStepVisual(step, day);
+        li.innerHTML = `
+          <div class="warmup-desc-card">
+            <strong class="warmup-desc-title">🔥 ${step.label} (${step.duration})</strong>
+            <p class="warmup-desc-text">${visual.instruction}</p>
+          </div>
+        `;
+      }
       listEl.appendChild(li);
     }
 
@@ -4222,9 +4249,232 @@
     }
   }
 
+  // =========================================================================
+  // CATÁLOGO DE INVESTIGACIÓN CLÍNICA Y BIOMECÁNICA: EJERCICIOS CORRECTIVOS
+  // =========================================================================
+
+  const THERAPEUTIC_CONDITIONS = {
+    flat_feet_fasciitis: {
+      id: 'flat_feet_fasciitis',
+      name: 'Pie Plano y Fascitis Plantar',
+      icon: '🦶',
+      badge: 'Rehabilitación Podal & Bóveda Plantar',
+      shortDesc: 'Colapso del arco medial, pronación del retropié y sobrecarga mecánica en la fascia plantar.',
+      biomechanics: 'El pie plano se produce por insuficiencia del músculo tibial posterior y debilidad de los músculos intrínsecos del pie (flexor corto del hallux, abductor del dedo gordo y lumbricales), lo que provoca la caída del arco longitudinal interno y sobretensión constante sobre la fascia plantar. Este protocolo restaura el trípode podal, fortalece la bóveda y descomprime las inserciones calcáneas.',
+      exercises: [
+        {
+          id: 'therapy_short_foot',
+          name: 'Short Foot (Pie Corto de Janda)',
+          target: 'Musculatura Intrínseca (Flexor corto y abductor del hallux)',
+          prescription: '3 series × 10 reps (Sostener 5-8 seg)',
+          duration: '3 min',
+          instruction: 'Descalzo con la planta plana en el suelo, desliza la cabeza del primer metatarsiano hacia el talón para elevar el arco medial SIN doblar ni encoger los dedos en garra. Sostén la contracción durante 5 a 8 segundos antes de relajar.',
+          caution: 'Trípode podal: Mantén en contacto firme el talón, la base del primer metatarso y la del quinto metatarso sin despegarlos.'
+        },
+        {
+          id: 'therapy_fascia_ball_roll',
+          name: 'Liberación Miofascial con Pelota de Tenis/Golf',
+          target: 'Aponeurosis Plantar y Fascia Profunda',
+          prescription: '2 a 3 minutos continuos por pie',
+          duration: '3 min',
+          instruction: 'De pie o sentado, rueda lentamente una pelota semirrígida bajo la planta del pie desde el calcáneo hasta la base de los metatarsos. Aplica presión constante y, al detectar puntos gatillo, mantén la presión estática respirando profundo.',
+          caution: 'Presión firme pero tolerable (4/10 de molestia); no generes dolor agudo que provoque defensa muscular.'
+        },
+        {
+          id: 'therapy_calf_ball_raise',
+          name: 'Elevación de Talones con Pelota entre Maléolos',
+          target: 'Tibial Posterior y Flexor Largo',
+          prescription: '3 series × 12-15 repeticiones',
+          duration: '4 min',
+          instruction: 'Coloca una pelota de tenis apretada firmemente entre ambos tobillos (maléolos mediales). Sube a puntillas contrayendo gemelos y manteniendo la pelota aprisionada para forzar la inversión calcánea y reclutar activamente el tibial posterior.',
+          caution: 'Evita que los tobillos se abran hacia afuera al descender; realiza una bajada excéntrica controlada de 2 a 3 segundos.'
+        },
+        {
+          id: 'therapy_hallux_stretch',
+          name: 'Estiramiento DiGiovanni de Fascia y Hallux',
+          target: 'Banda Medial de la Fascia Plantar',
+          prescription: '3 series × 30 seg por cada pie',
+          duration: '2 min',
+          instruction: 'Cruza la pierna afectada sobre la otra rodilla. Con una mano sujeta los dedos de los pies (en especial el dedo gordo) y llévalos hacia atrás en dorsiflexión máxima hacia la tibia, mientras con la otra mano palpas la tensión de la fascia en el arco.',
+          caution: 'Tracción constante y elástica sin rebotes; ideal realizarlo antes del apoyo tras periodos de descanso.'
+        },
+        {
+          id: 'therapy_towel_curls',
+          name: 'Recogida de Toalla con Dedos (Toe Curls)',
+          target: 'Flexores Cortos y Lumbricales Podales',
+          prescription: '3 series × 12 contracciones completas',
+          duration: '3 min',
+          instruction: 'Siéntate descalzo en una silla con los talones firmemente apoyados en el borde de una toalla extendida en el suelo. Mediante la flexión y agarre de los dedos, arruga y arrastra la toalla hacia ti.',
+          caution: 'El talón no debe despegarse del suelo durante la tracción.'
+        }
+      ]
+    },
+    knees: {
+      id: 'knees',
+      name: 'Molestias en Rodillas (Tendinitis & Meniscos)',
+      icon: '🦵',
+      badge: 'Protección de Tendón Rotuliano',
+      shortDesc: 'Disminución del estrés femororrotuliano y control del valgo dinámico con glúteo medio.',
+      biomechanics: 'La tendinopatía rotuliana responde eficazmente a contracciones isométricas que inducen analgesia cortical y tendinosa, mientras el fortalecimiento de abductores y rotadores externos de cadera previene el colapso medial de la rodilla.',
+      exercises: [
+        {
+          id: 'therapy_spanish_squats',
+          name: 'Spanish Squats Isométricas con Banda',
+          target: 'Tendón Rotuliano y Vasto Medial',
+          prescription: '4 series × 45 segundos isométricos',
+          duration: '4 min',
+          instruction: 'Engancha una banda resistente detrás del pliegue de las rodillas. Desciende a 70-90° manteniendo tibias perfectamente verticales y torso erguido. Sostén la posición isométrica descargando la tensión articular.',
+          caution: 'No permitas que las rodillas sobrepasen la punta de los pies; mantén el peso en la mitad trasera de la planta.'
+        },
+        {
+          id: 'therapy_monster_walks',
+          name: 'Monster Walks / Pasos con Minibanda',
+          target: 'Glúteo Medio y Estabilizadores de Cadera',
+          prescription: '3 series × 15 pasos por lado',
+          duration: '3 min',
+          instruction: 'Coloca una banda elástica circular por encima de las rodillas o tobillos. Da pasos laterales controlados manteniendo tensión permanente y rodillas alineadas con el segundo dedo del pie.',
+          caution: 'No permitas que las rodillas colapsen hacia adentro al dar el paso.'
+        },
+        {
+          id: 'therapy_single_leg_bridge',
+          name: 'Puente Glúteo Unipodal con Isometría',
+          target: 'Glúteo Mayor y Cadena Posterior',
+          prescription: '3 series × 10 reps por pierna (3s arriba)',
+          duration: '3 min',
+          instruction: 'Boca arriba con una pierna flexionada y la otra en el aire. Empuja desde el talón para elevar la pelvis hasta alinear rodilla, cadera y hombro, sosteniendo 3 segundos arriba con máxima contracción.',
+          caution: 'Mantén la pelvis nivelada sin rotaciones asimétricas.'
+        }
+      ]
+    },
+    lower_back: {
+      id: 'lower_back',
+      name: 'Molestia Lumbar / Espalda Baja',
+      icon: '🛡️',
+      badge: 'Estabilidad Espinal McGill',
+      shortDesc: 'Protocolo McGill Big 3 para rigidez de core y eliminación de compresión axial.',
+      biomechanics: 'Sustituye la flexión y torsión lumbar por co-contracción de los músculos estabilizadores de la columna (transverso abdominal, multífidos y cuadrado lumbar), protegiendo discos y articulaciones facetarias.',
+      exercises: [
+        {
+          id: 'therapy_mcgill_birddog',
+          name: 'McGill Bird-Dog (Perro de Caza)',
+          target: 'Multífidos, Glúteos y Dorsal Ancho',
+          prescription: '3 series piramidales (6-4-2 reps de 8s)',
+          duration: '3 min',
+          instruction: 'En posición cuadrúpeda con abdomen en brace, extiende simultáneamente brazo derecho y pierna izquierda en línea con el torso sin arquear la zona lumbar ni balancear la pelvis.',
+          caution: 'Extiende hacia atrás y adelante en longitud, no patees hacia el techo para evitar hiperextensión lumbar.'
+        },
+        {
+          id: 'therapy_mcgill_sideplank',
+          name: 'McGill Side Plank (Plancha Lateral)',
+          target: 'Cuadrado Lumbar y Oblicuos',
+          prescription: '3 series × 20-30 seg por lado',
+          duration: '3 min',
+          instruction: 'Apóyate sobre el codo manteniendo una línea recta desde la cabeza hasta los pies (o rodillas para menor palanca). Eleva la pelvis y mantén la contracción abdominal firme.',
+          caution: 'No dejes caer la cadera hacia el suelo ni gires el torso hacia el frente.'
+        },
+        {
+          id: 'therapy_mcgill_curlup',
+          name: 'McGill Curl-Up Modificado',
+          target: 'Recto Abdominal sin Flexión Lumbar',
+          prescription: '3 series × 8 repeticiones (6s en tensión)',
+          duration: '3 min',
+          instruction: 'Boca arriba con manos bajo el hueco de la curvatura lumbar para sostener la lordosis natural. Una pierna flexionada y otra estirada. Despega levemente la parte alta de los hombros sin doblar cuello ni columna baja.',
+          caution: 'No tires del cuello ni aplanes la zona lumbar contra las manos.'
+        }
+      ]
+    },
+    shoulders: {
+      id: 'shoulders',
+      name: 'Molestia en Hombros (Manguito Rotador)',
+      icon: '💪',
+      badge: 'Plano Escapular y Coaptación',
+      shortDesc: 'Apertura del espacio subacromial y rotación externa en plano escapular.',
+      biomechanics: 'Fortalece la rotación externa y la función del serrato anterior y trapecio inferior, estabilizando la escápula y reduciendo el rozamiento del tendón del supraespinoso en movimientos sobre la cabeza.',
+      exercises: [
+        {
+          id: 'therapy_rotator_cuff_band',
+          name: 'Rotaciones Externas con Banda y Toalla Axilar',
+          target: 'Infraespinoso y Redondo Menor',
+          prescription: '3 series × 15 repeticiones',
+          duration: '3 min',
+          instruction: 'Codo flexionado a 90° pegado al costado sujetando una toalla enrollada. Rota el antebrazo hacia afuera tirando de la banda sin despegar el codo ni mover la columna.',
+          caution: 'La toalla no debe caerse; asegura una rotación glenohumeral pura sin compensar con tronco.'
+        },
+        {
+          id: 'therapy_wall_slides',
+          name: 'Wall Slides Escapulares en W-Y',
+          target: 'Serrato Anterior y Trapecio Inferior',
+          prescription: '3 series × 10 repeticiones lentas',
+          duration: '3 min',
+          instruction: 'De espaldas o frente a la pared con antebrazos en W. Deslízalos hacia arriba hasta formar una Y mientras elevas y rotas las escápulas activamente.',
+          caution: 'Mantén costillas bajas y core firme sin arquear la espalda lumbar.'
+        },
+        {
+          id: 'therapy_face_pull_rot',
+          name: 'Face Pulls con Rotación Externa',
+          target: 'Romboides, Deltoides Posterior y Manguito',
+          prescription: '3 series × 15 repeticiones',
+          duration: '3 min',
+          instruction: 'Tracciona la cuerda o banda hacia la frente separando las manos y asegurando que los puños terminen detrás de los codos al final del tirón.',
+          caution: 'No encojas los hombros hacia las orejas.'
+        }
+      ]
+    },
+    wrists: {
+      id: 'wrists',
+      name: 'Molestia en Muñecas (Túnel Carpiano)',
+      icon: '✋',
+      badge: 'Descompresión y Movilidad Carpiana',
+      shortDesc: 'Deslizamiento neurodinámico del nervio mediano y fuerza isométrica neutra.',
+      biomechanics: 'Reduce la presión en el túnel carpiano mediante neurodinámica suave y previene tendinitis en flexores/extensores del antebrazo fortaleciendo en agarre neutro sin torsión.',
+      exercises: [
+        {
+          id: 'therapy_median_nerve_glide',
+          name: 'Deslizamiento Neurodinámico del Nervio Mediano',
+          target: 'Nervio Mediano y Retináculo Flexor',
+          prescription: '3 series × 10 oscilaciones suaves',
+          duration: '2 min',
+          instruction: 'Con el brazo estirado lateralmente a 90°, extiende la muñeca y los dedos mientras inclinas la cabeza hacia el mismo hombro; al regresar la cabeza, flexiona ligeramente la muñeca.',
+          caution: 'Movimiento fluido y suave sin forzar sensaciones eléctricas o dolor.'
+        },
+        {
+          id: 'therapy_wrist_ext_flex_stretch',
+          name: 'Estiramiento Suave de Flexores y Extensores',
+          target: 'Músculos Flexores y Extensores del Antebrazo',
+          prescription: '3 series × 25 seg por lado',
+          duration: '2 min',
+          instruction: 'Extiende el brazo con palma hacia arriba y ayuda con la otra mano a llevar suavemente la mano hacia atrás manteniendo el codo extendido.',
+          caution: 'Tracción progresiva sin forzar la articulación radiocarpiana.'
+        },
+        {
+          id: 'therapy_neutral_grip_hold',
+          name: 'Agarre Neutro Isométrico con Toalla / Barra Gruesa',
+          target: 'Estabilizadores Estáticos de Muñeca',
+          prescription: '3 series × 30 segundos de prensión',
+          duration: '2 min',
+          instruction: 'Aprieta firmemente una toalla enrollada o mango grueso manteniendo la muñeca en posición 100% neutra sin desviación cubital ni radial.',
+          caution: 'No hiperextiendas la muñeca durante la presión.'
+        }
+      ]
+    },
+    none: {
+      id: 'none',
+      name: 'Sin Restricciones Articulares',
+      icon: '✨',
+      badge: 'Entrenamiento Completo 100%',
+      shortDesc: 'Aparato locomotor en estado óptimo sin limitaciones mecánicas.',
+      biomechanics: 'Tu estructura articular y muscular se encuentra en condiciones óptimas para ejecutar los patrones de movimiento estándar con sobrecarga progresiva regular.',
+      exercises: []
+    }
+  };
+
   // Módulo de Onboarding y Perfil Biométrico Dinámico
   function getUserProfile() {
     return deepClone(state.userProfile);
+  }
+
+  function getTherapeuticConditions() {
+    return deepClone(THERAPEUTIC_CONDITIONS);
   }
 
   function updateProfilePreviewFromInputs() {
@@ -4237,6 +4487,16 @@
     const level = document.getElementById('profile-level-select')?.value || 'intermediate';
     const goal = document.getElementById('profile-goal-select')?.value || 'hypertrophy';
     const days = Number(document.getElementById('profile-days-select')?.value) || 6;
+
+    const condSelect = document.getElementById('profile-conditions-select');
+    const limitsSelect = document.getElementById('profile-limitations-select');
+    const condVal = condSelect?.value || limitsSelect?.value || 'none';
+
+    // Sincronizar selectores
+    if (condSelect && limitsSelect) {
+      if (document.activeElement === condSelect) limitsSelect.value = condSelect.value;
+      else if (document.activeElement === limitsSelect) condSelect.value = limitsSelect.value;
+    }
 
     const heightM = height / 100;
     const bmi = (weight / (heightM * heightM)).toFixed(1);
@@ -4254,11 +4514,30 @@
       advanced: 'Avanzado: RIR 0-1 (Cargas altas 125% cerca del fallo muscular)'
     };
 
+    const condObj = THERAPEUTIC_CONDITIONS[condVal] || THERAPEUTIC_CONDITIONS.none;
+    const condHintEl = document.getElementById('profile-condition-preview');
+    if (condHintEl) {
+      if (condVal === 'flat_feet_fasciitis') {
+        condHintEl.innerHTML = `🦶 <strong>Pie Plano y Fascitis Plantar:</strong> Se activará el protocolo podal de 5 ejercicios clínicos (Short Foot, masaje miofascial, tibial posterior, estiramiento DiGiovanni) integrados directamente en tu calentamiento.`;
+      } else if (condVal === 'knees') {
+        condHintEl.innerHTML = `🦵 <strong>Cuidado de Rodillas:</strong> Se priorizan Spanish Squats isométricas y trabajo de glúteo medio, sustituyendo sentadillas profundas.`;
+      } else if (condVal === 'lower_back') {
+        condHintEl.innerHTML = `🛡️ <strong>Cuidado Lumbar:</strong> Se activa el protocolo McGill Big 3 (Bird-dog, side plank, curl-up) y se eliminan cargas axiales compresivas.`;
+      } else if (condVal === 'shoulders') {
+        condHintEl.innerHTML = `💪 <strong>Cuidado de Hombros:</strong> Se priorizan rotadores externos, plano escapular a 30° y descompresión subacromial.`;
+      } else if (condVal === 'wrists') {
+        condHintEl.innerHTML = `✋ <strong>Cuidado de Muñecas:</strong> Se integran deslizamientos del nervio mediano y agarres neutros para descompresión del túnel carpiano.`;
+      } else {
+        condHintEl.innerHTML = `✨ <strong>Sin restricciones:</strong> Rutina regular 100% estándar con sobrecarga progresiva regular.`;
+      }
+    }
+
     const genderText = gender === 'female' ? 'Mujer' : 'Hombre';
     previewEl.innerHTML = `
       <strong>Perfil:</strong> ${genderText}, ${weight} kg, ${height} cm (IMC ${bmi}).<br>
       <strong>Intensidad:</strong> ${levelDescriptions[level] || levelDescriptions.intermediate}.<br>
       <strong>Objetivo:</strong> ${goalDescriptions[goal] || goalDescriptions.hypertrophy}.<br>
+      <strong>Cuidado Articular:</strong> ${condObj.icon} ${condObj.name}.<br>
       <strong>Frecuencia:</strong> ${days} días/semana con acomodación inteligente ante imprevistos.
     `;
   }
@@ -4277,7 +4556,10 @@
     const goalSelect = document.getElementById('profile-goal-select');
     const daysSelect = document.getElementById('profile-days-select');
     const limitsSelect = document.getElementById('profile-limitations-select');
+    const condSelect = document.getElementById('profile-conditions-select');
     const btnCancel = document.getElementById('btn-cancel-profile');
+
+    const condVal = p.physicalCondition || p.limitations || 'none';
 
     if (nameInput) nameInput.value = p.name || 'Atleta';
     if (genderSelect) genderSelect.value = p.gender || 'male';
@@ -4287,7 +4569,8 @@
     if (levelSelect) levelSelect.value = p.fitnessLevel || 'intermediate';
     if (goalSelect) goalSelect.value = p.primaryGoal || 'hypertrophy';
     if (daysSelect) daysSelect.value = String(p.daysPerWeek || 6);
-    if (limitsSelect) limitsSelect.value = p.limitations || 'none';
+    if (limitsSelect) limitsSelect.value = condVal;
+    if (condSelect) condSelect.value = condVal;
 
     if (btnCancel) {
       btnCancel.hidden = Boolean(isFirstTime && !p.configured);
@@ -4309,6 +4592,7 @@
   }
 
   function saveUserProfile(profileData) {
+    const condVal = (profileData.physicalCondition || profileData.limitations || 'none').trim();
     state.userProfile = {
       configured: true,
       name: (profileData.name || 'Atleta').trim(),
@@ -4319,7 +4603,8 @@
       fitnessLevel: profileData.fitnessLevel || 'intermediate',
       primaryGoal: profileData.primaryGoal || 'hypertrophy',
       daysPerWeek: Number(profileData.daysPerWeek) || 6,
-      limitations: profileData.limitations || 'none',
+      limitations: condVal,
+      physicalCondition: condVal,
       updatedAt: new Date().toISOString()
     };
 
@@ -4334,6 +4619,191 @@
     triggerHaptic([60, 40, 80]);
     showCelebrationToast(`🎯 Rutina personalizada generada para ${state.userProfile.name}`);
     return state.userProfile;
+  }
+
+  function setPhysicalCondition(condKey) {
+    if (!THERAPEUTIC_CONDITIONS[condKey]) condKey = 'none';
+    if (!state.userProfile) state.userProfile = { configured: true };
+    state.userProfile.physicalCondition = condKey;
+    state.userProfile.limitations = condKey;
+
+    if (GYM_VISUALS && typeof GYM_VISUALS.generatePersonalizedSchedule === 'function') {
+      state.schedule = GYM_VISUALS.generatePersonalizedSchedule(state.userProfile, GYM_DATA.INITIAL_SCHEDULE);
+    }
+
+    enforceRestDaysCount();
+    saveState();
+    renderAll();
+    const condObj = THERAPEUTIC_CONDITIONS[condKey];
+    showCelebrationToast(`🩺 Condición actualizada: ${condObj.icon} ${condObj.name}`);
+    return state.userProfile;
+  }
+
+  function applyTherapyWarmupAction(forcedDayId) {
+    const dayId = forcedDayId || state.selectedDay;
+    state.integratedTherapyActive = true;
+    renderWarmupChecklist();
+    renderCorrectiveTherapyPanel();
+
+    const condKey = state.userProfile?.physicalCondition || state.userProfile?.limitations || 'flat_feet_fasciitis';
+    const condObj = THERAPEUTIC_CONDITIONS[condKey] || THERAPEUTIC_CONDITIONS.flat_feet_fasciitis;
+
+    showCelebrationToast(`🩺 Ejercicios de ${condObj.name} integrados al calentamiento de hoy`);
+    triggerHaptic([60, 40, 80]);
+    saveState();
+  }
+
+  function renderCorrectiveTherapyPanel() {
+    const collapsible = document.getElementById('corrective-therapy-collapsible');
+    if (!collapsible) return;
+
+    const condKey = state.userProfile?.physicalCondition || state.userProfile?.limitations || 'none';
+    // Si el usuario no tiene condición, mostramos por defecto Pie Plano / Fascitis como protocolo clínico de muestra
+    const activeKey = (condKey !== 'none' && THERAPEUTIC_CONDITIONS[condKey]) ? condKey : 'flat_feet_fasciitis';
+    const condObj = THERAPEUTIC_CONDITIONS[activeKey] || THERAPEUTIC_CONDITIONS.flat_feet_fasciitis;
+
+    const iconEl = document.getElementById('therapy-condition-icon');
+    const titleEl = document.getElementById('therapy-title-text');
+    const pillEl = document.getElementById('therapy-condition-pill');
+    const introEl = document.getElementById('therapy-clinical-intro');
+    const gridEl = document.getElementById('therapy-exercises-grid');
+    const applyBtn = document.getElementById('btn-apply-therapy-warmup');
+
+    if (iconEl) iconEl.textContent = condObj.icon;
+    if (titleEl) titleEl.textContent = `Terapia Articular & Ejercicios Correctivos: ${condObj.name}`;
+    if (pillEl) pillEl.textContent = `${condObj.exercises.length} Ejercicios Clínicos`;
+
+    if (introEl) {
+      introEl.innerHTML = `
+        <div style="margin-bottom: 4px;">
+          <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #38bdf8; letter-spacing: 0.04em;">🔬 BASE BIOMECÁNICA & CLÍNICA</span>
+        </div>
+        <strong>Diagnóstico & Causa Mecánica:</strong> ${condObj.biomechanics}
+      `;
+    }
+
+    if (gridEl) {
+      gridEl.innerHTML = condObj.exercises.map(ex => `
+        <div class="therapy-exercise-card" data-therapy-id="${ex.id}">
+          <div class="therapy-card-top">
+            <strong class="therapy-card-title">${condObj.icon} ${ex.name}</strong>
+            <span class="therapy-target-tag">${ex.target}</span>
+          </div>
+          <div class="therapy-prescription-badge">
+            <span>⏱️ ${ex.prescription}</span>
+            <span>· ${ex.duration}</span>
+          </div>
+          <p class="therapy-instruction-text"><strong>Técnica de Ejecución:</strong> ${ex.instruction}</p>
+          <div class="therapy-caution-box">
+            <strong>⚠️ Precaución Biomecánica:</strong> ${ex.caution}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    if (applyBtn) {
+      if (state.integratedTherapyActive) {
+        applyBtn.textContent = '✅ Integrados a la Sesión de Hoy';
+        applyBtn.classList.add('is-applied');
+      } else {
+        applyBtn.textContent = '➕ Integrar a mi Sesión de Calentamiento de Hoy';
+        applyBtn.classList.remove('is-applied');
+      }
+
+      if (!applyBtn.dataset.boundListener) {
+        applyBtn.dataset.boundListener = 'true';
+        applyBtn.addEventListener('click', () => {
+          applyTherapyWarmupAction();
+        });
+      }
+    }
+  }
+
+  let activeRehabInspectKey = 'flat_feet_fasciitis';
+
+  function renderTherapeuticRehabHub() {
+    const hubContent = document.getElementById('therapeutic-hub-content');
+    const hubBadge = document.getElementById('rehab-hub-condition-badge');
+    if (!hubContent) return;
+
+    const currentKey = state.userProfile?.physicalCondition || state.userProfile?.limitations || 'none';
+    const condKeys = ['flat_feet_fasciitis', 'knees', 'lower_back', 'shoulders', 'wrists'];
+
+    if (hubBadge) {
+      const currentObj = THERAPEUTIC_CONDITIONS[currentKey] || THERAPEUTIC_CONDITIONS.none;
+      hubBadge.textContent = `${currentObj.icon} ${currentObj.name}`;
+    }
+
+    const activeObj = THERAPEUTIC_CONDITIONS[activeRehabInspectKey] || THERAPEUTIC_CONDITIONS.flat_feet_fasciitis;
+    const isThisConditionActive = (currentKey === activeRehabInspectKey);
+
+    hubContent.innerHTML = `
+      <p class="overview-intro">
+        Consulta la biblioteca de biomecánica clínica y prescribe ejercicios de rehabilitación para corregir patrones motores, proteger articulaciones y resolver lesiones como pie plano, fascitis plantar o molestias axiales.
+      </p>
+
+      <div class="rehab-tabs-row" id="rehab-tabs-row">
+        ${condKeys.map(key => {
+          const c = THERAPEUTIC_CONDITIONS[key];
+          const isSelected = (key === activeRehabInspectKey);
+          return `
+            <button type="button" class="rehab-tab-btn ${isSelected ? 'is-active' : ''}" data-rehab-key="${key}">
+              ${c.icon} ${c.name}
+            </button>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="rehab-protocol-detail" style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 14px; margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+          <div>
+            <span style="font-size: 0.74rem; font-weight: 800; color: #38bdf8; text-transform: uppercase;">${activeObj.badge}</span>
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 2px 0 0 0;">${activeObj.icon} ${activeObj.name}</h3>
+          </div>
+          <button type="button" id="btn-activate-hub-condition" class="btn-primary" style="font-size: 0.8rem; padding: 6px 14px;">
+            ${isThisConditionActive ? '✓ Condición Actual en mi Perfil' : '🎯 Establecer como mi Condición Activa'}
+          </button>
+        </div>
+
+        <p style="font-size: 0.84rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px;">
+          <strong>Explicación Biomecánica:</strong> ${activeObj.biomechanics}
+        </p>
+
+        <div class="therapy-exercises-grid">
+          ${activeObj.exercises.map(ex => `
+            <div class="therapy-exercise-card" data-therapy-id="${ex.id}">
+              <div class="therapy-card-top">
+                <strong class="therapy-card-title">${activeObj.icon} ${ex.name}</strong>
+                <span class="therapy-target-tag">${ex.target}</span>
+              </div>
+              <div class="therapy-prescription-badge">
+                <span>⏱️ ${ex.prescription}</span>
+                <span>· ${ex.duration}</span>
+              </div>
+              <p class="therapy-instruction-text"><strong>Técnica de Ejecución:</strong> ${ex.instruction}</p>
+              <div class="therapy-caution-box">
+                <strong>⚠️ Precaución:</strong> ${ex.caution}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Asignar eventos a las pestañas del Hub
+    hubContent.querySelectorAll('.rehab-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeRehabInspectKey = btn.dataset.rehabKey;
+        renderTherapeuticRehabHub();
+      });
+    });
+
+    const activateBtn = document.getElementById('btn-activate-hub-condition');
+    if (activateBtn && !isThisConditionActive) {
+      activateBtn.addEventListener('click', () => {
+        setPhysicalCondition(activeRehabInspectKey);
+      });
+    }
   }
 
   function renderUserProfileSummary() {
@@ -4381,12 +4851,9 @@
       intermediate: '🟡 Intermedio (RIR 1-2)',
       advanced: '🔴 Avanzado (RIR 0-1)'
     };
-    const limitLabels = {
-      none: 'Ninguna (100% móvil)',
-      lower_back: 'Espalda baja protegida',
-      shoulders: 'Hombros protegidos',
-      knees: 'Rodillas protegidas'
-    };
+
+    const condKey = p.physicalCondition || p.limitations || 'none';
+    const condObj = THERAPEUTIC_CONDITIONS[condKey] || THERAPEUTIC_CONDITIONS.none;
 
     summaryEl.innerHTML = `
       <div class="profile-summary-grid">
@@ -4413,7 +4880,7 @@
         </div>
         <div class="profile-metric-tile">
           <span class="pm-label">Cuidado Articular</span>
-          <strong class="pm-val">${limitLabels[p.limitations] || 'Estándar'}</strong>
+          <strong class="pm-val">${condObj.icon} ${condObj.name}</strong>
         </div>
       </div>
     `;
@@ -4878,6 +5345,7 @@
     const bmiEl = document.getElementById('profile-card-bmi');
     const daysEl = document.getElementById('profile-card-days');
     const goalEl = document.getElementById('profile-card-goal');
+    const condEl = document.getElementById('profile-card-condition');
 
     if (avatarEl) avatarEl.textContent = avatarEmoji;
     if (nameEl) nameEl.textContent = userName;
@@ -4889,6 +5357,14 @@
     if (bmiEl) bmiEl.textContent = `${bmi} IMC`;
     if (daysEl) daysEl.textContent = `${days} días / semana`;
     if (goalEl) goalEl.textContent = goalLabels[p.primaryGoal] || 'Hipertrofia Muscular';
+
+    if (condEl) {
+      const condKey = p.physicalCondition || p.limitations || 'none';
+      const condObj = (typeof THERAPEUTIC_CONDITIONS !== 'undefined' && THERAPEUTIC_CONDITIONS[condKey])
+        ? THERAPEUTIC_CONDITIONS[condKey]
+        : { icon: '✨', name: 'Sin Restricciones' };
+      condEl.textContent = `${condObj.icon} ${condObj.name}`;
+    }
 
     // Renderizar Card de Evolución Estética del Atleta (Arte 9-Bits Progresivo)
     const avatarStatus = getUserAvatarProgressionStatus();
@@ -6468,6 +6944,8 @@
     renderDayTabs();
     renderDayHero();
     renderWarmupChecklist();
+    renderCorrectiveTherapyPanel();
+    renderTherapeuticRehabHub();
     renderExercisesList();
     renderWorkoutFocusScreen();
     renderAnalyticsDashboard();
@@ -7575,7 +8053,10 @@
           fitnessLevel: document.getElementById('profile-level-select')?.value,
           primaryGoal: document.getElementById('profile-goal-select')?.value,
           daysPerWeek: document.getElementById('profile-days-select')?.value,
-          limitations: document.getElementById('profile-limitations-select')?.value
+          limitations: document.getElementById('profile-conditions-select')?.value
+            || document.getElementById('profile-limitations-select')?.value,
+          physicalCondition: document.getElementById('profile-conditions-select')?.value
+            || document.getElementById('profile-limitations-select')?.value
         };
         saveUserProfile(profileData);
         document.getElementById('profile-onboarding-dialog')?.close();
@@ -7897,7 +8378,14 @@
       selectedPreviewAvatarStage = stageIndex;
       renderUserProfileScreen();
     },
-    setSimulatedDay: (dayId) => { simulatedDay = dayId; }
+    setSimulatedDay: (dayId) => { simulatedDay = dayId; },
+    // APIs Terapia Articular y Rehabilitación Podal / Biomecánica
+    THERAPEUTIC_CONDITIONS,
+    getTherapeuticConditions,
+    applyTherapyWarmupAction,
+    setPhysicalCondition,
+    renderCorrectiveTherapyPanel,
+    renderTherapeuticRehabHub
   };
 
   bindEvents();
